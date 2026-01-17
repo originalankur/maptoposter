@@ -84,7 +84,9 @@ def load_theme(theme_name="feature_based"):
             "road_secondary": "#2A2A2A",
             "road_tertiary": "#3A3A3A",
             "road_residential": "#4A4A4A",
-            "road_default": "#3A3A3A"
+            "road_default": "#3A3A3A",
+            "marker_fill": "#E63946",
+            "marker_edge": "#FFFFFF"
         }
     
     with open(theme_file, 'r') as f:
@@ -213,7 +215,7 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file):
+def create_poster(city, country, point, dist, output_file, marker=None):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -272,6 +274,19 @@ def create_poster(city, country, point, dist, output_file):
     # Layer 3: Gradients (Top and Bottom)
     create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
     create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
+    
+    # Layer 4: Custom Marker (if provided)
+    if marker is not None:
+        marker_lat, marker_lon = marker
+        # Get marker colors from theme (with defaults)
+        marker_fill = THEME.get('marker_fill', '#E63946')
+        marker_edge = THEME.get('marker_edge', '#FFFFFF')
+        # Plot marker - note: in the projected coordinates, x=lon, y=lat
+        ax.plot(marker_lon, marker_lat, 'o', 
+                markersize=24, markerfacecolor=marker_fill, 
+                markeredgecolor=marker_edge, markeredgewidth=2, 
+                zorder=15, transform=ax.transData)
+        print(f"✓ Marker placed at {marker_lat}, {marker_lon}")
     
     # 4. Typography using Roboto font
     if FONTS:
@@ -359,6 +374,10 @@ Examples:
   python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
   python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
   
+  # Direct coordinates
+  python create_map_poster.py --lat 48.8584 --lon 2.2945 --name "Eiffel Tower" -t noir -d 5000
+  python create_map_poster.py --lat 40.6892 --lon -74.0445 --name "Liberty Island" -C "USA" -d 3000
+  
   # List themes
   python create_map_poster.py --list-themes
 
@@ -367,6 +386,8 @@ Options:
   --country, -C     Country name (required)
   --theme, -t       Theme name (default: feature_based)
   --distance, -d    Map radius in meters (default: 29000)
+  --marker-lat      Latitude for a highlight marker (e.g., your home)
+  --marker-lon      Longitude for a highlight marker
   --list-themes     List all available themes
 
 Distance guide:
@@ -420,6 +441,8 @@ Examples:
     parser.add_argument('--country', '-C', type=str, help='Country name')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
+    parser.add_argument('--marker-lat', type=float, help='Latitude for a highlight marker (e.g., your home)')
+    parser.add_argument('--marker-lon', type=float, help='Longitude for a highlight marker (e.g., your home)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     
     args = parser.parse_args()
@@ -457,8 +480,15 @@ Examples:
     # Get coordinates and generate poster
     try:
         coords = get_coordinates(args.city, args.country)
+        
         output_file = generate_output_filename(args.city, args.theme)
-        create_poster(args.city, args.country, coords, args.distance, output_file)
+        
+        # Prepare marker if coordinates provided
+        marker = None
+        if args.marker_lat is not None and args.marker_lon is not None:
+            marker = (args.marker_lat, args.marker_lon)
+        
+        create_poster(args.city, args.country, coords, args.distance, output_file, marker=marker)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")

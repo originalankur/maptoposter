@@ -40,6 +40,8 @@ python create_map_poster.py --city <city> --country <country> [options]
 | `--country` | `-C` | Country name | required |
 | `--theme` | `-t` | Theme name | feature_based |
 | `--distance` | `-d` | Map radius in meters | 29000 |
+| `--marker-lat` | | Latitude for highlight marker | |
+| `--marker-lon` | | Longitude for highlight marker | |
 | `--list-themes` | | List all available themes | |
 
 ### Examples
@@ -71,6 +73,9 @@ python create_map_poster.py -c "Mumbai" -C "India" -t contrast_zones -d 18000 # 
 # River cities
 python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
 python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
+
+# Highlight a special location (e.g., your home)
+python create_map_poster.py -c "Vienna" -C "Austria" -t japanese_ink --marker-lat 48.2082 --marker-lon 16.3738
 
 # List available themes
 python create_map_poster.py --list-themes
@@ -133,7 +138,9 @@ Create a JSON file in `themes/` directory:
   "road_secondary": "#2A2A2A",
   "road_tertiary": "#3A3A3A",
   "road_residential": "#4A4A4A",
-  "road_default": "#3A3A3A"
+  "road_default": "#3A3A3A",
+  "marker_fill": "#E63946",
+  "marker_edge": "#FFFFFF"
 }
 ```
 
@@ -181,6 +188,7 @@ Quick reference for contributors who want to extend or modify the script.
 ### Rendering Layers (z-order)
 
 ```
+z=15  Highlight marker (if specified)
 z=11  Text labels (city, country, coords)
 z=10  Gradient fades (top & bottom)
 z=3   Roads (via ox.plot_graph)
