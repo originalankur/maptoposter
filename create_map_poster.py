@@ -10,6 +10,8 @@ import json
 import os
 from datetime import datetime
 import argparse
+import truststore
+truststore.inject_into_ssl()
 
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
