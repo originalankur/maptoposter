@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maptoposter - Universal Local UI (Dual Mode)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">🗺️ Maptoposter</h1>
+                <p class="subtitle">Create beautiful map posters locally</p>
+                <div class="header-badges">
+                    <div class="badge">Local Only · No Cloud · No API</div>
+                    <div id="serverStatus" class="server-status checking">⋯ Checking server...</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Mode Indicator -->
+            <div class="mode-indicator">
+                <div id="modeIndicator" class="mode-text">Checking connection...</div>
+            </div>
+
+            <!-- Configuration Panel -->
+            <section class="config-panel">
+                <h2 class="section-title">Configure Your Poster</h2>
+                
+                <form id="posterForm" class="form">
+                    <!-- City Input -->
+                    <div class="form-group">
+                        <label for="city" class="form-label">
+                            City Name <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="city" 
+                            name="city" 
+                            class="form-input"
+                            placeholder="e.g., Paris, Tokyo, Berlin" 
+                            required
+                        >
+                    </div>
+
+                    <!-- Country Input -->
+                    <div class="form-group">
+                        <label for="country" class="form-label">
+                            Country <span class="optional">(optional)</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="country" 
+                            name="country" 
+                            class="form-input"
+                            placeholder="e.g., France, Japan, Germany"
+                        >
+                    </div>
+
+                    <!-- Theme Selector -->
+                    <div class="form-group">
+                        <label for="theme" class="form-label">
+                            Theme
+                        </label>
+                        <select id="theme" name="theme" class="form-select">
+                            <!-- Populated by JavaScript -->
+                        </select>
+                        <p id="themeDescription" class="form-hint"></p>
+                    </div>
+
+                    <!-- Radius Slider -->
+                    <div class="form-group">
+                        <label for="radius" class="form-label">
+                            Map Radius: <span id="radiusValue" class="value-display">5000</span> meters
+                        </label>
+                        <input 
+                            type="range" 
+                            id="radius" 
+                            name="radius" 
+                            class="form-slider"
+                            min="1000" 
+                            max="10000" 
+                            step="500" 
+                            value="5000"
+                        >
+                        <div class="slider-labels">
+                            <span>1 km</span>
+                            <span>10 km</span>
+                        </div>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button type="submit" class="btn btn-primary" id="generateBtn">
+                        <span class="btn-text">Generate Poster</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Command Display (Manual Mode) -->
+            <section id="commandSection" class="command-section hidden">
+                <h2 class="section-title">⚡ Terminal Command</h2>
+                <p class="command-instructions">Copy and run this command in your terminal:</p>
+                <div class="command-box">
+                    <code id="commandText" class="command-code"></code>
+                    <button id="copyBtn" class="btn btn-copy" title="Copy to clipboard">
+                        <span class="btn-text">Copy</span>
+                    </button>
+                </div>
+                <div class="command-help">
+                    <p><strong>After running the command:</strong></p>
+                    <ol>
+                        <li>Wait for the generation to complete</li>
+                        <li>Click "Load Poster" below to view the result</li>
+                    </ol>
+                </div>
+                <button id="loadPosterBtn" class="btn btn-secondary">
+                    <span class="btn-text">📁 Load Poster</span>
+                </button>
+            </section>
+
+            <!-- Status Messages -->
+            <div id="statusSection" class="status-section hidden">
+                <div id="statusMessage" class="status-message"></div>
+            </div>
+
+            <!-- Preview Area -->
+            <section id="previewSection" class="preview-section hidden">
+                <h2 class="section-title">🎨 Your Poster</h2>
+                <div class="preview-container">
+                    <div class="image-wrapper">
+                        <img id="posterImage" class="poster-image" alt="Generated map poster">
+                    </div>
+                    <div class="preview-info">
+                        <p id="previewDetails" class="preview-details"></p>
+                        <button id="loadPosterBtn" class="btn btn-secondary" style="margin-top: 1rem;">
+                            <span class="btn-text">📁 Load Another Poster</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Start Guide -->
+            <section class="guide-section">
+                <h2 class="section-title">📖 Quick Start</h2>
+                <div class="guide-content">
+                    <div class="guide-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Start Server (Optional)</h3>
+                            <p>For automatic generation, run: <code>python universal-ui/runner/run_local.py --serve</code></p>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Fill Form</h3>
+                            <p>Enter city name and customize theme/radius</p>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Generate</h3>
+                            <p>Click button to auto-generate or get command</p>
+                        </div>
+                    </div>
+                    <div class="guide-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>View Result</h3>
+                            <p>Load and preview your generated poster</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-text">
+                Universal UI for Maptoposter (Dual Mode) · 
+                <a href="../README.md" class="footer-link">Documentation</a>
+            </p>
+            <p class="footer-note">Core maptoposter logic was not modified</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="themes.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
