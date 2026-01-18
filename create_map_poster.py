@@ -296,9 +296,9 @@ def create_poster(city, country, point, dist, output_file):
             color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
     
     lat, lon = point
-    coords = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
-    if lon < 0:
-        coords = coords.replace("E", "W")
+    ns = "N" if lat >= 0 else "S"
+    ew = "E" if lon >= 0 else "W"
+    coords = f"{abs(lat):.4f}° {ns} / {abs(lon):.4f}° {ew}"
     
     ax.text(0.5, 0.07, coords, transform=ax.transAxes,
             color=THEME['text'], alpha=0.7, ha='center', fontproperties=font_coords, zorder=11)
@@ -405,67 +405,112 @@ def list_themes():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate beautiful map posters for any city",
+        description="Generate beautiful map posters for any city (or coordinates)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
+Examples (city geocode):
   python create_map_poster.py --city "New York" --country "USA"
   python create_map_poster.py --city Tokyo --country Japan --theme midnight_blue
   python create_map_poster.py --city Paris --country France --theme noir --distance 15000
+
+Examples (coordinates):
+  python create_map_poster.py --lat 43.1566 --lon -77.6088 --label "Rochester" --country-label "USA" --theme noir --distance 12000
+
+Other:
   python create_map_poster.py --list-themes
         """
     )
-    
+
+    # City / country mode (original)
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
-    parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
-    parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
-    parser.add_argument('--list-themes', action='store_true', help='List all available themes')
-    
+
+    # Coordinate mode (new)
+    parser.add_argument('--lat', type=float, help='Latitude for map center (e.g., 43.1566)')
+    parser.add_argument('--lon', type=float, help='Longitude for map center (e.g., -77.6088)')
+    parser.add_argument('--label', type=str, help='Label to print as "city" when using coordinates')
+    parser.add_argument('--country-label', dest='country_label', type=str,
+                        help='Label to print as "country" when using coordinates')
+
+    # Shared options
+    parser.add_argument('--theme', '-t', type=str, default='feature_based',
+                        help='Theme name (default: feature_based)')
+    parser.add_argument('--distance', '-d', type=int, default=29000,
+                        help='Map radius in meters (default: 29000)')
+    parser.add_argument('--list-themes', action='store_true',
+                        help='List all available themes')
+
     args = parser.parse_args()
-    
+
     # If no arguments provided, show examples
     if len(os.sys.argv) == 1:
         print_examples()
         os.sys.exit(0)
-    
+
     # List themes if requested
     if args.list_themes:
         list_themes()
         os.sys.exit(0)
-    
-    # Validate required arguments
-    if not args.city or not args.country:
-        print("Error: --city and --country are required.\n")
-        print_examples()
-        os.sys.exit(1)
-    
+
     # Validate theme exists
     available_themes = get_available_themes()
     if args.theme not in available_themes:
         print(f"Error: Theme '{args.theme}' not found.")
         print(f"Available themes: {', '.join(available_themes)}")
         os.sys.exit(1)
-    
+
     print("=" * 50)
     print("City Map Poster Generator")
     print("=" * 50)
-    
+
     # Load theme
     THEME = load_theme(args.theme)
-    
-    # Get coordinates and generate poster
-    try:
-        coords = get_coordinates(args.city, args.country)
-        output_file = generate_output_filename(args.city, args.theme)
-        create_poster(args.city, args.country, coords, args.distance, output_file)
-        
-        print("\n" + "=" * 50)
-        print("✓ Poster generation complete!")
-        print("=" * 50)
-        
-    except Exception as e:
-        print(f"\n✗ Error: {e}")
-        import traceback
-        traceback.print_exc()
-        os.sys.exit(1)
+
+    # Decide mode: coordinates vs geocode
+    using_coords = (args.lat is not None) or (args.lon is not None)
+
+    if using_coords:
+        # Require both
+        if args.lat is None or args.lon is None:
+            print("Error: --lat and --lon must be provided together.\n")
+            os.sys.exit(1)
+
+        point = (args.lat, args.lon)
+        city_label = args.label or f"{args.lat:.4f}, {args.lon:.4f}"
+        country_label = args.country_label or ""
+
+        # Generate filename from label (safe-ish slug)
+        output_file = generate_output_filename(city_label, args.theme)
+
+        try:
+            create_poster(city_label, country_label, point, args.distance, output_file)
+            print("\n" + "=" * 50)
+            print("✓ Poster generation complete!")
+            print("=" * 50)
+        except Exception as e:
+            print(f"\n✗ Error: {e}")
+            import traceback
+            traceback.print_exc()
+            os.sys.exit(1)
+
+    else:
+        # Geocode mode: require city/country
+        if not args.city or not args.country:
+            print("Error: Provide either (--city and --country) OR (--lat and --lon).\n")
+            print_examples()
+            os.sys.exit(1)
+
+        try:
+            point = get_coordinates(args.city, args.country)
+            output_file = generate_output_filename(args.city, args.theme)
+            create_poster(args.city, args.country, point, args.distance, output_file)
+
+            print("\n" + "=" * 50)
+            print("✓ Poster generation complete!")
+            print("=" * 50)
+
+        except Exception as e:
+            print(f"\n✗ Error: {e}")
+            import traceback
+            traceback.print_exc()
+            os.sys.exit(1)

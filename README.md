@@ -29,7 +29,7 @@ pip install -r requirements.txt
 ## Usage
 
 ```bash
-python create_map_poster.py --city <city> --country <country> [options]
+python create_map_poster.py (--city <city> --country <country> | --lat <latitude> --lon <longitude>) [options]
 ```
 
 ### Options
@@ -41,6 +41,13 @@ python create_map_poster.py --city <city> --country <country> [options]
 | `--theme` | `-t` | Theme name | feature_based |
 | `--distance` | `-d` | Map radius in meters | 29000 |
 | `--list-themes` | | List all available themes | |
+| `--lat` | | Latitude (decimal degrees) | optional |
+| `--lon` | | Longitude (decimal degrees) | optional | 
+
+Note:
+You must provide either --city and --country or --lat and --lon.
+When latitude/longitude are provided, geocoding is skipped.
+When generating posters via latitude/longitude, filenames use a `latXX_lonYY` format instead of a city name.
 
 ### Examples
 
@@ -74,6 +81,20 @@ python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000 
 
 # List available themes
 python create_map_poster.py --list-themes
+
+### Latitude / Longitude Examples
+
+# Generate posters for precise locations or places without a city name.
+
+# Exact coordinates (Manhattan)
+python create_map_poster.py --lat 40.7128 --lon -74.0060 -t noir -d 12000
+
+# Remote or non-city locations
+python create_map_poster.py --lat 37.8199 --lon -122.4783 -t sunset -d 8000   # Golden Gate area
+python create_map_poster.py --lat 51.5007 --lon -0.1246 -t blueprint -d 6000  # Westminster
+
+# Large-scale regional view
+python create_map_poster.py --lat 35.6762 --lon 139.6503 -t japanese_ink -d 18000
 ```
 
 ### Distance Guide
@@ -171,7 +192,7 @@ Quick reference for contributors who want to extend or modify the script.
 
 | Function | Purpose | Modify when... |
 |----------|---------|----------------|
-| `get_coordinates()` | City → lat/lon via Nominatim | Switching geocoding provider |
+| `get_coordinates()` | City → lat/lon via Nominatim (skipped if lat/lon provided) | Switching geocoding provider |
 | `create_poster()` | Main rendering pipeline | Adding new map layers |
 | `get_edge_colors_by_type()` | Road color by OSM highway tag | Changing road styling |
 | `get_edge_widths_by_type()` | Road width by importance | Adjusting line weights |
