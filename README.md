@@ -115,6 +115,44 @@ Posters are saved to `posters/` directory with format:
 {city}_{theme}_{YYYYMMDD_HHMMSS}.png
 ```
 
+
+## Using the Containerfile
+
+You can run the City Map Poster Generator in a containerized environment for maximum reproducibility and zero local setup.
+
+### Why `Containerfile` instead of `Dockerfile`?
+
+The file is named `Containerfile` to follow the [Open Container Initiative (OCI)](https://opencontainers.org/) recommendations and to signal compatibility with any OCI-compliant container runtime (not just Docker). Most modern tools (Docker, Podman, Buildah, etc.) recognize both `Dockerfile` and `Containerfile`.
+
+### Build the container image
+
+```bash
+# Using Docker
+docker build -t map-to-poster . -f Containerfile
+
+# Using Podman (rootless, recommended for Linux)
+podman build -t map-to-poster . -f Containerfile
+```
+
+### Run the generator in a container (examples for docker)
+
+
+```bash
+# List available themes
+docker run --rm map-to-poster --list-themes
+
+# Example: Generate a poster for Paris
+docker run --rm \
+    -v "$PWD/posters:/app/posters:Z" \
+    map-to-poster \
+    --city "Paris" \
+    --country "France" \
+    --distance 8000 \
+    --theme pastel_dream
+```
+
+Mount the `posters/` directory as a volume to access generated images on your host.
+
 ## Adding Custom Themes
 
 Create a JSON file in `themes/` directory:
