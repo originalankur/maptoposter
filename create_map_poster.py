@@ -36,7 +36,7 @@ def load_fonts():
 
 FONTS = load_fonts()
 
-def generate_output_filename(city, theme_name):
+def generate_output_filename(city, theme_name, preferred_name=None):
     """
     Generate unique output filename with city, theme, and datetime.
     """
@@ -44,7 +44,8 @@ def generate_output_filename(city, theme_name):
         os.makedirs(POSTERS_DIR)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    city_slug = city.lower().replace(' ', '_')
+    city_to_use = preferred_name or city
+    city_slug = city_to_use.lower().replace(' ', '_')
     filename = f"{city_slug}_{theme_name}_{timestamp}.png"
     return os.path.join(POSTERS_DIR, filename)
 
@@ -213,7 +214,7 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file):
+def create_poster(city, country, point, dist, output_file, preferred_name=None):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -286,7 +287,8 @@ def create_poster(city, country, point, dist, output_file):
         font_sub = FontProperties(family='monospace', weight='normal', size=22)
         font_coords = FontProperties(family='monospace', size=14)
     
-    spaced_city = "  ".join(list(city.upper()))
+    display_city_name = preferred_name or city
+    spaced_city = "  ".join(list(display_city_name.upper()))
 
     # --- BOTTOM TEXT ---
     ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
@@ -421,6 +423,7 @@ Examples:
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
+    parser.add_argument('--preferred-name', '-p', type=str, default=None, help='Preferred city name to display (optional)')
     
     args = parser.parse_args()
     
@@ -457,8 +460,8 @@ Examples:
     # Get coordinates and generate poster
     try:
         coords = get_coordinates(args.city, args.country)
-        output_file = generate_output_filename(args.city, args.theme)
-        create_poster(args.city, args.country, coords, args.distance, output_file)
+        output_file = generate_output_filename(args.city, args.theme, args.preferred_name)
+        create_poster(args.city, args.country, coords, args.distance, output_file, args.preferred_name)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
