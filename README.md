@@ -154,17 +154,12 @@ Quick reference for contributors who want to extend or modify the script.
 
 ### Architecture Overview
 
-```
-┌─────────────────┐     ┌──────────────┐     ┌─────────────────┐
-│   CLI Parser    │────▶│  Geocoding   │────▶│  Data Fetching  │
-│   (argparse)    │     │  (Nominatim) │     │    (OSMnx)      │
-└─────────────────┘     └──────────────┘     └─────────────────┘
-                                                     │
-                        ┌──────────────┐             ▼
-                        │    Output    │◀────┌─────────────────┐
-                        │  (matplotlib)│     │   Rendering     │
-                        └──────────────┘     │  (matplotlib)   │
-                                             └─────────────────┘
+```mermaid
+flowchart LR
+    CLI["CLI Parser<br/>(argparse)"] --> GEO["Geocoding<br/>(Nominatim)"]
+    GEO --> FETCH["Data Fetching<br/>(OSMnx)"]
+    FETCH --> RENDER["Rendering<br/>(matplotlib)"]
+    RENDER --> OUTPUT["Output<br/>(matplotlib)"]
 ```
 
 ### Key Functions
