@@ -6,7 +6,7 @@
  */
 
 // Configuration
-const SERVER_URL = 'http://127.0.0.1:8000';
+const SERVER_URL = 'http://127.0.0.1:8001';
 const SERVER_CHECK_TIMEOUT = 2000; // 2 seconds
 
 // DOM Elements
@@ -39,6 +39,8 @@ let currentCommand = '';
 let isGenerating = false;
 let serverAvailable = false;
 let serverMode = 'checking'; // 'checking', 'available', 'unavailable'
+let generationStartTime = null;
+let progressTimer = null;
 
 /**
  * Initialize the application
@@ -207,7 +209,11 @@ async function handleFormSubmit(e) {
  */
 async function generatePosterAutomatic(city, country, theme, radius) {
     setGenerating(true);
-    showStatus('Generating poster... This may take a few minutes.', 'info');
+    generationStartTime = Date.now();
+    showStatus('⏳ Generating poster... This typically takes 3-5 minutes for large cities.', 'info');
+    
+    // Start progress timer
+    startProgressTimer();
     
     // Hide previous results
     previewSection.classList.add('hidden');
@@ -247,6 +253,7 @@ async function generatePosterAutomatic(city, country, theme, radius) {
     } catch (error) {
         showStatus(`Error connecting to server: ${error.message}`, 'error');
     } finally {
+        stopProgressTimer();
         setGenerating(false);
     }
 }
@@ -434,6 +441,26 @@ function formatFileSize(bytes) {
 /**
  * Set generating state
  */
+function startProgressTimer() {
+    progressTimer = setInterval(() => {
+        if (generationStartTime) {
+            const elapsed = Math.floor((Date.now() - generationStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            showStatus(`⏳ Still generating... Elapsed time: ${timeStr} (typically 3-5 minutes)`, 'info');
+        }
+    }, 5000); // Update every 5 seconds
+}
+
+function stopProgressTimer() {
+    if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+    }
+    generationStartTime = null;
+}
+
 function setGenerating(generating) {
     isGenerating = generating;
     const btnText = generateBtn.querySelector('.btn-text');

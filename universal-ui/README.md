@@ -15,9 +15,38 @@ Both modes:
 - Keep the core Python script untouched
 - Support macOS, Windows, and Linux
 
-## ⚡ Quick Start
+---
 
-### Option 1: Automatic Mode (Recommended)
+## ⚡ Quick Start (Easiest Method)
+
+### 🚀 One-Click Launch
+
+**Step 1:** Install dependencies (one-time)
+```bash
+cd maptoposter
+pip install -r requirements.txt
+```
+
+**Step 2:** Double-click the launcher for your OS:
+
+- **macOS**: Double-click `launcher.command`
+- **Windows**: Double-click `launcher.bat`
+- **Linux**: Double-click `launcher.sh`
+- **Any OS**: Run `python3 launcher.py`
+
+**That's it!** The launcher will:
+1. ✅ Auto-install Flask dependencies (if needed)
+2. 🚀 Start the local server
+3. 🌐 Open your browser automatically
+4. 🎨 Ready to create posters!
+
+📖 **See [QUICKSTART.md](QUICKSTART.md) for detailed instructions**
+
+---
+
+## 📋 Alternative: Manual Setup
+
+### Option 1: Automatic Mode (Server)
 
 **Step 1:** Install dependencies
 ```bash
