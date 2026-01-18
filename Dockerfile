@@ -18,8 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy application files
 COPY . .
 
-# Expose port
-EXPOSE 8080
+# Render uses PORT env variable
+ENV PORT=10000
+EXPOSE $PORT
 
-# Run with gunicorn
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "120"]
+# Run with gunicorn (using shell form to expand $PORT)
+CMD gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
