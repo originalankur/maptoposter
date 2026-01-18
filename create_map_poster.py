@@ -101,6 +101,9 @@ def create_gradient_fade(ax, color, location='bottom', zorder=10):
     """
     Creates a fade effect at the top or bottom of the map.
     """
+    # Preserve the current aspect ratio; imshow can override it.
+    current_aspect = ax.get_aspect()
+
     vals = np.linspace(0, 1, 256).reshape(-1, 1)
     gradient = np.hstack((vals, vals))
     
@@ -130,6 +133,7 @@ def create_gradient_fade(ax, color, location='bottom', zorder=10):
     
     ax.imshow(gradient, extent=[xlim[0], xlim[1], y_bottom, y_top], 
               aspect='auto', cmap=custom_cmap, zorder=zorder, origin='lower')
+    ax.set_aspect(current_aspect)
 
 def get_edge_colors_by_type(G):
     """
@@ -213,7 +217,7 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file):
+def create_poster(city, country, point, dist, output_file, no_text=False):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -273,48 +277,49 @@ def create_poster(city, country, point, dist, output_file):
     create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
     create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
     
-    # 4. Typography using Roboto font
-    if FONTS:
-        font_main = FontProperties(fname=FONTS['bold'], size=60)
-        font_top = FontProperties(fname=FONTS['bold'], size=40)
-        font_sub = FontProperties(fname=FONTS['light'], size=22)
-        font_coords = FontProperties(fname=FONTS['regular'], size=14)
-    else:
-        # Fallback to system fonts
-        font_main = FontProperties(family='monospace', weight='bold', size=60)
-        font_top = FontProperties(family='monospace', weight='bold', size=40)
-        font_sub = FontProperties(family='monospace', weight='normal', size=22)
-        font_coords = FontProperties(family='monospace', size=14)
-    
-    spaced_city = "  ".join(list(city.upper()))
+    if not no_text:
+        # 4. Typography using Roboto font
+        if FONTS:
+            font_main = FontProperties(fname=FONTS['bold'], size=60)
+            font_top = FontProperties(fname=FONTS['bold'], size=40)
+            font_sub = FontProperties(fname=FONTS['light'], size=22)
+            font_coords = FontProperties(fname=FONTS['regular'], size=14)
+        else:
+            # Fallback to system fonts
+            font_main = FontProperties(family='monospace', weight='bold', size=60)
+            font_top = FontProperties(family='monospace', weight='bold', size=40)
+            font_sub = FontProperties(family='monospace', weight='normal', size=22)
+            font_coords = FontProperties(family='monospace', size=14)
 
-    # --- BOTTOM TEXT ---
-    ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
-            color=THEME['text'], ha='center', fontproperties=font_main, zorder=11)
-    
-    ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
-            color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
-    
-    lat, lon = point
-    coords = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
-    if lon < 0:
-        coords = coords.replace("E", "W")
-    
-    ax.text(0.5, 0.07, coords, transform=ax.transAxes,
-            color=THEME['text'], alpha=0.7, ha='center', fontproperties=font_coords, zorder=11)
-    
-    ax.plot([0.4, 0.6], [0.125, 0.125], transform=ax.transAxes, 
-            color=THEME['text'], linewidth=1, zorder=11)
+        spaced_city = "  ".join(list(city.upper()))
 
-    # --- ATTRIBUTION (bottom right) ---
-    if FONTS:
-        font_attr = FontProperties(fname=FONTS['light'], size=8)
-    else:
-        font_attr = FontProperties(family='monospace', size=8)
-    
-    ax.text(0.98, 0.02, "© OpenStreetMap contributors", transform=ax.transAxes,
-            color=THEME['text'], alpha=0.5, ha='right', va='bottom', 
-            fontproperties=font_attr, zorder=11)
+        # --- BOTTOM TEXT ---
+        ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
+                color=THEME['text'], ha='center', fontproperties=font_main, zorder=11)
+
+        ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
+                color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
+
+        lat, lon = point
+        coords = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
+        if lon < 0:
+            coords = coords.replace("E", "W")
+
+        ax.text(0.5, 0.07, coords, transform=ax.transAxes,
+                color=THEME['text'], alpha=0.7, ha='center', fontproperties=font_coords, zorder=11)
+
+        ax.plot([0.4, 0.6], [0.125, 0.125], transform=ax.transAxes,
+                color=THEME['text'], linewidth=1, zorder=11)
+
+        # --- ATTRIBUTION (bottom right) ---
+        if FONTS:
+            font_attr = FontProperties(fname=FONTS['light'], size=8)
+        else:
+            font_attr = FontProperties(family='monospace', size=8)
+
+        ax.text(0.98, 0.02, "© OpenStreetMap contributors", transform=ax.transAxes,
+                color=THEME['text'], alpha=0.5, ha='right', va='bottom',
+                fontproperties=font_attr, zorder=11)
 
     # 5. Save
     print(f"Saving to {output_file}...")
@@ -421,6 +426,7 @@ Examples:
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
+    parser.add_argument('--no-text', action='store_true', help='Export map without any text overlay')
     
     args = parser.parse_args()
     
@@ -458,7 +464,7 @@ Examples:
     try:
         coords = get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme)
-        create_poster(args.city, args.country, coords, args.distance, output_file)
+        create_poster(args.city, args.country, coords, args.distance, output_file, no_text=args.no_text)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")

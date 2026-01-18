@@ -1,0 +1,3 @@
+cd "/Users/florisvandesande/Library/Mobile Documents/com~apple~CloudDocs/Repositories/maptoposter"
+source .venv/bin/activate
+python create_map_poster.py -c "New York" -C "USA" -t blueprint -d 12000
