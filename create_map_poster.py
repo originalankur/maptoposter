@@ -213,7 +213,7 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file):
+def create_poster(city, country, point, dist, output_file, project_metric=False):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -241,6 +241,15 @@ def create_poster(city, country, point, dist, output_file):
             parks = None
         pbar.update(1)
     
+    # Optional reprojection to a local metric CRS to keep aspect ratio correct at any latitude
+    if project_metric:
+        G = ox.project_graph(G)
+        graph_crs = G.graph.get("crs")
+        if water is not None and not water.empty:
+            water = water.to_crs(graph_crs)
+        if parks is not None and not parks.empty:
+            parks = parks.to_crs(graph_crs)
+
     print("✓ All data downloaded successfully!")
     
     # 2. Setup Plot
@@ -368,6 +377,7 @@ Options:
   --theme, -t       Theme name (default: feature_based)
   --distance, -d    Map radius in meters (default: 29000)
   --list-themes     List all available themes
+  --project-metric  Reproject data to a local metric CRS to avoid distortion
 
 Distance guide:
   4000-6000m   Small/dense cities (Venice, Amsterdam old center)
@@ -421,6 +431,8 @@ Examples:
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
+    parser.add_argument('--project-metric', action='store_true',
+                        help='Reproject map data to a local metric CRS to avoid distortion')
     
     args = parser.parse_args()
     
@@ -458,7 +470,7 @@ Examples:
     try:
         coords = get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme)
-        create_poster(args.city, args.country, coords, args.distance, output_file)
+        create_poster(args.city, args.country, coords, args.distance, output_file, project_metric=args.project_metric)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
