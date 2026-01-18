@@ -1,0 +1,68 @@
+{
+  "build": {
+    "beforeDevCommand": "python ../runner/run_local.py --serve &",
+    "beforeBuildCommand": "",
+    "devPath": "../web",
+    "distDir": "../web"
+  },
+  "package": {
+    "productName": "Maptoposter",
+    "version": "1.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "execute": true,
+        "sidecar": true,
+        "open": false
+      },
+      "fs": {
+        "all": false,
+        "readFile": true,
+        "writeFile": false,
+        "readDir": true,
+        "copyFile": false,
+        "createDir": false,
+        "removeDir": false,
+        "removeFile": false,
+        "renameFile": false,
+        "scope": ["$RESOURCE/*", "$APP/*", "$HOME/posters/*"]
+      },
+      "dialog": {
+        "all": false,
+        "open": true,
+        "save": true
+      },
+      "http": {
+        "all": false,
+        "request": true,
+        "scope": ["http://127.0.0.1:8000/*"]
+      }
+    },
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "com.maptoposter.app",
+      "icon": [
+        "icons/icon.png"
+      ],
+      "resources": ["../runner/run_local.py", "../../create_map_poster.py", "../../themes"]
+    },
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:8000"
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Maptoposter - Universal UI",
+        "width": 1000,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600
+      }
+    ]
+  }
+}
