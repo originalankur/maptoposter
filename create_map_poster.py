@@ -10,6 +10,7 @@ import json
 import os
 from datetime import datetime
 import argparse
+import hashlib
 
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
@@ -213,35 +214,128 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
+def get_cache_key(point, dist, data_type):
+    """
+    Generate a unique cache key based on coordinates, distance, and data type.
+    """
+    lat, lon = point
+    key_string = f"{lat:.4f}_{lon:.4f}_{dist}_{data_type}"
+    return hashlib.sha1(key_string.encode()).hexdigest()
+
+def get_cached_graph(point, dist):
+    """
+    Load street network from cache if available.
+    Returns the graph if found, None otherwise.
+    """
+    cache_key = get_cache_key(point, dist, 'streets')
+    cache_file = os.path.join('cache', f"{cache_key}.graphml")
+    
+    if os.path.exists(cache_file):
+        try:
+            print(f"✓ Loading street network from cache...")
+            G = ox.load_graphml(cache_file)
+            return G
+        except Exception as e:
+            print(f"⚠ Cache read failed: {e}")
+            return None
+    return None
+
+def save_graph_to_cache(G, point, dist):
+    """
+    Save street network graph to cache.
+    """
+    if not os.path.exists('cache'):
+        os.makedirs('cache')
+    
+    cache_key = get_cache_key(point, dist, 'streets')
+    cache_file = os.path.join('cache', f"{cache_key}.graphml")
+    
+    try:
+        ox.save_graphml(G, cache_file)
+        print(f"✓ Saved street network to cache")
+    except Exception as e:
+        print(f"⚠ Cache write failed: {e}")
+
+def get_cached_features(point, dist, data_type):
+    """
+    Load water/parks features from cache if available.
+    Returns the GeoDataFrame if found, None otherwise.
+    """
+    cache_key = get_cache_key(point, dist, data_type)
+    cache_file = os.path.join('cache', f"{cache_key}.geojson")
+    
+    if os.path.exists(cache_file):
+        try:
+            import geopandas as gpd
+            print(f"✓ Loading {data_type} from cache...")
+            gdf = gpd.read_file(cache_file)
+            return gdf
+        except Exception as e:
+            print(f"⚠ Cache read failed: {e}")
+            return None
+    return None
+
+def save_features_to_cache(gdf, point, dist, data_type):
+    """
+    Save water/parks features to cache.
+    """
+    if gdf is None or gdf.empty:
+        return
+    
+    if not os.path.exists('cache'):
+        os.makedirs('cache')
+    
+    cache_key = get_cache_key(point, dist, data_type)
+    cache_file = os.path.join('cache', f"{cache_key}.geojson")
+    
+    try:
+        gdf.to_file(cache_file, driver='GeoJSON')
+        print(f"✓ Saved {data_type} to cache")
+    except Exception as e:
+        print(f"⚠ Cache write failed: {e}")
+
 def create_poster(city, country, point, dist, output_file):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
-        # 1. Fetch Street Network
-        pbar.set_description("Downloading street network")
-        G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
+        # 1. Fetch Street Network (with cache)
+        pbar.set_description("Loading street network")
+        G = get_cached_graph(point, dist)
+        if G is None:
+            pbar.set_description("Downloading street network")
+            G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
+            save_graph_to_cache(G, point, dist)
+            time.sleep(0.5)  # Rate limit between requests
         pbar.update(1)
-        time.sleep(0.5)  # Rate limit between requests
         
-        # 2. Fetch Water Features
-        pbar.set_description("Downloading water features")
-        try:
-            water = ox.features_from_point(point, tags={'natural': 'water', 'waterway': 'riverbank'}, dist=dist)
-        except:
-            water = None
+        # 2. Fetch Water Features (with cache)
+        pbar.set_description("Loading water features")
+        water = get_cached_features(point, dist, 'water')
+        if water is None:
+            pbar.set_description("Downloading water features")
+            try:
+                water = ox.features_from_point(point, tags={'natural': 'water', 'waterway': 'riverbank'}, dist=dist)
+                save_features_to_cache(water, point, dist, 'water')
+            except:
+                water = None
+            time.sleep(0.3)  # Rate limit between requests
         pbar.update(1)
-        time.sleep(0.3)
         
-        # 3. Fetch Parks
-        pbar.set_description("Downloading parks/green spaces")
-        try:
-            parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
-        except:
-            parks = None
+        # 3. Fetch Parks (with cache)
+        pbar.set_description("Loading parks/green spaces")
+        parks = get_cached_features(point, dist, 'parks')
+        if parks is None:
+            pbar.set_description("Downloading parks/green spaces")
+            try:
+                parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
+                save_features_to_cache(parks, point, dist, 'parks')
+            except:
+                parks = None
+            time.sleep(0.3)  # Rate limit between requests
         pbar.update(1)
     
-    print("✓ All data downloaded successfully!")
+    print("✓ All data loaded successfully!")
     
     # 2. Setup Plot
     print("Rendering map...")
