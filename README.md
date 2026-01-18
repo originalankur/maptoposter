@@ -40,6 +40,7 @@ python create_map_poster.py --city <city> --country <country> [options]
 | `--country` | `-C` | Country name | required |
 | `--theme` | `-t` | Theme name | feature_based |
 | `--distance` | `-d` | Map radius in meters | 29000 |
+| `--city-font-size` | | Font size for city name | 60 |
 | `--list-themes` | | List all available themes | |
 
 ### Examples
