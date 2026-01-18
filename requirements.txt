@@ -27,3 +27,5 @@ six==1.17.0
 tqdm==4.67.1
 tzdata==2025.3
 urllib3==2.6.3
+fastkml==1.4.0
+lxml==5.4.0
