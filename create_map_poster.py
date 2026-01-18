@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import osmnx as ox
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
