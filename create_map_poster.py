@@ -418,12 +418,14 @@ Examples:
     
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
+    parser.add_argument('--latitude', '-la', type=float, help='Latitude of map center')
+    parser.add_argument('--longitude', '-lo', type=float, help='Longitude of map center')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     
     args = parser.parse_args()
-    
+
     # If no arguments provided, show examples
     if len(os.sys.argv) == 1:
         print_examples()
@@ -434,9 +436,11 @@ Examples:
         list_themes()
         os.sys.exit(0)
     
+    city_country_method = args.city and args.country
+    latitude_longitude_method = args.latitude and args.longitude
     # Validate required arguments
-    if not args.city or not args.country:
-        print("Error: --city and --country are required.\n")
+    if not city_country_method and not latitude_longitude_method:
+        print("Error: --city and --country or --latitude and --longitude are required.\n")
         print_examples()
         os.sys.exit(1)
     
@@ -454,9 +458,12 @@ Examples:
     # Load theme
     THEME = load_theme(args.theme)
     
+    args.city = args.city if args.city else ""
+    args.country = args.country if args.country else ""
+
     # Get coordinates and generate poster
     try:
-        coords = get_coordinates(args.city, args.country)
+        coords = (args.latitude, args.longitude) if latitude_longitude_method else get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme)
         create_poster(args.city, args.country, coords, args.distance, output_file)
         
