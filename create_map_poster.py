@@ -198,20 +198,40 @@ def get_coordinates(city, country):
     Fetches coordinates for a given city and country using geopy.
     Includes rate limiting to be respectful to the geocoding service.
     """
+    # Hardcoded coordinates for common cities as fallback
+    known_cities = {
+        ("Hyderabad", "India"): (17.385044, 78.486671),
+        ("Mumbai", "India"): (19.076090, 72.877426),
+        ("Delhi", "India"): (28.704060, 77.102493),
+        ("Bangalore", "India"): (12.971599, 77.594566),
+    }
+
+    # Check if we have hardcoded coordinates
+    city_key = (city, country)
+    if city_key in known_cities:
+        coords = known_cities[city_key]
+        print(f"✓ Using known coordinates for {city}, {country}")
+        print(f"✓ Coordinates: {coords[0]}, {coords[1]}")
+        return coords
+
     print("Looking up coordinates...")
     geolocator = Nominatim(user_agent="city_map_poster")
-    
+
     # Add a small delay to respect Nominatim's usage policy
     time.sleep(1)
-    
-    location = geolocator.geocode(f"{city}, {country}")
-    
-    if location:
-        print(f"✓ Found: {location.address}")
-        print(f"✓ Coordinates: {location.latitude}, {location.longitude}")
-        return (location.latitude, location.longitude)
-    else:
-        raise ValueError(f"Could not find coordinates for {city}, {country}")
+
+    try:
+        location = geolocator.geocode(f"{city}, {country}")
+
+        if location:
+            print(f"✓ Found: {location.address}")
+            print(f"✓ Coordinates: {location.latitude}, {location.longitude}")
+            return (location.latitude, location.longitude)
+        else:
+            raise ValueError(f"Could not find coordinates for {city}, {country}")
+    except Exception as e:
+        # If geocoding fails and we don't have hardcoded coords, raise error
+        raise ValueError(f"Could not find coordinates for {city}, {country}: {str(e)}")
 
 def create_poster(city, country, point, dist, output_file):
     print(f"\nGenerating map for {city}, {country}...")
