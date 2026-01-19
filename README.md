@@ -32,6 +32,12 @@ pip install -r requirements.txt
 python create_map_poster.py --city <city> --country <country> [options]
 ```
 
+## Docker Usage
+
+```bash
+docker compose run maptoposter --city <city> --country <country> [options]
+```
+
 ### Options
 
 | Option | Short | Description | Default |
