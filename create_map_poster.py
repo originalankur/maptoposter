@@ -11,9 +11,17 @@ import os
 from datetime import datetime
 import argparse
 
-THEMES_DIR = "themes"
-FONTS_DIR = "fonts"
-POSTERS_DIR = "posters"
+# Get the directory where this script lives (for reliable path resolution)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+THEMES_DIR = os.path.join(SCRIPT_DIR, "themes")
+FONTS_DIR = os.path.join(SCRIPT_DIR, "fonts")
+POSTERS_DIR = os.path.join(SCRIPT_DIR, "posters")
+CACHE_DIR = os.path.join(SCRIPT_DIR, "cache")
+
+# Configure OSMnx caching - stores downloaded map data locally
+ox.settings.use_cache = True
+ox.settings.cache_folder = CACHE_DIR
 
 def load_fonts():
     """
@@ -36,16 +44,16 @@ def load_fonts():
 
 FONTS = load_fonts()
 
-def generate_output_filename(city, theme_name):
+def generate_output_filename(city, theme_name, extension='png'):
     """
     Generate unique output filename with city, theme, and datetime.
     """
     if not os.path.exists(POSTERS_DIR):
         os.makedirs(POSTERS_DIR)
-    
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     city_slug = city.lower().replace(' ', '_')
-    filename = f"{city_slug}_{theme_name}_{timestamp}.png"
+    filename = f"{city_slug}_{theme_name}_{timestamp}.{extension}"
     return os.path.join(POSTERS_DIR, filename)
 
 def get_available_themes():
@@ -213,48 +221,60 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file):
+def create_poster(city, country, point, dist, output_base, aspect='portrait', output_format='png'):
     print(f"\nGenerating map for {city}, {country}...")
-    
-    # Progress bar for data fetching
+
+    # Set figure dimensions based on aspect ratio
+    if aspect == 'square':
+        figsize = (14, 14)
+    elif aspect == 'landscape':
+        figsize = (16, 12)
+    else:  # portrait (default)
+        figsize = (12, 16)
+
+    # Progress bar for data fetching (uses cache if available)
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
         # 1. Fetch Street Network
-        pbar.set_description("Downloading street network")
+        pbar.set_description("Loading street network")
         G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
         pbar.update(1)
         time.sleep(0.5)  # Rate limit between requests
-        
+
         # 2. Fetch Water Features
-        pbar.set_description("Downloading water features")
+        pbar.set_description("Loading water features")
         try:
             water = ox.features_from_point(point, tags={'natural': 'water', 'waterway': 'riverbank'}, dist=dist)
         except:
             water = None
         pbar.update(1)
         time.sleep(0.3)
-        
+
         # 3. Fetch Parks
-        pbar.set_description("Downloading parks/green spaces")
+        pbar.set_description("Loading parks/green spaces")
         try:
             parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
         except:
             parks = None
         pbar.update(1)
-    
-    print("✓ All data downloaded successfully!")
-    
+
+    print("✓ All data loaded successfully!")
+
     # 2. Setup Plot
     print("Rendering map...")
-    fig, ax = plt.subplots(figsize=(12, 16), facecolor=THEME['bg'])
+    fig, ax = plt.subplots(figsize=figsize, facecolor=THEME['bg'])
     ax.set_facecolor(THEME['bg'])
     ax.set_position([0, 0, 1, 1])
-    
+
     # 3. Plot Layers
-    # Layer 1: Polygons
+    # Layer 1: Polygons (filter to exclude point geometries that cause dots on map)
     if water is not None and not water.empty:
-        water.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=1)
+        water_polys = water[water.geometry.type.isin(['Polygon', 'MultiPolygon'])]
+        if not water_polys.empty:
+            water_polys.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=1)
     if parks is not None and not parks.empty:
-        parks.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=2)
+        parks_polys = parks[parks.geometry.type.isin(['Polygon', 'MultiPolygon'])]
+        if not parks_polys.empty:
+            parks_polys.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=2)
     
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
@@ -317,10 +337,23 @@ def create_poster(city, country, point, dist, output_file):
             fontproperties=font_attr, zorder=11)
 
     # 5. Save
-    print(f"Saving to {output_file}...")
-    plt.savefig(output_file, dpi=300, facecolor=THEME['bg'])
+    saved_files = []
+    if output_format in ['png', 'both']:
+        output_png = output_base.replace('.png', '.png')  # ensure .png
+        print(f"Saving PNG to {output_png}...")
+        plt.savefig(output_png, dpi=300, facecolor=THEME['bg'])
+        saved_files.append(output_png)
+        print(f"✓ PNG saved as {output_png}")
+
+    if output_format in ['svg', 'both']:
+        output_svg = output_base.replace('.png', '.svg')
+        print(f"Saving SVG to {output_svg}...")
+        plt.savefig(output_svg, format='svg', facecolor=THEME['bg'])
+        saved_files.append(output_svg)
+        print(f"✓ SVG saved as {output_svg}")
+
     plt.close()
-    print(f"✓ Done! Poster saved as {output_file}")
+    print(f"✓ Done! Saved: {', '.join(saved_files)}")
 
 def print_examples():
     """Print usage examples."""
@@ -420,15 +453,31 @@ Examples:
     parser.add_argument('--country', '-C', type=str, help='Country name')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
+    parser.add_argument('--aspect', '-a', type=str, default='portrait', choices=['portrait', 'square', 'landscape'], help='Aspect ratio (default: portrait)')
+    parser.add_argument('--format', '-f', type=str, default='png', choices=['png', 'svg', 'both'], help='Output format (default: png)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
-    
+    parser.add_argument('--clear-cache', action='store_true', help='Delete cached map data to free disk space')
+
     args = parser.parse_args()
-    
+
     # If no arguments provided, show examples
     if len(os.sys.argv) == 1:
         print_examples()
         os.sys.exit(0)
-    
+
+    # Clear cache if requested
+    if args.clear_cache:
+        import shutil
+        if os.path.exists(CACHE_DIR):
+            total_size = sum(os.path.getsize(os.path.join(CACHE_DIR, f)) for f in os.listdir(CACHE_DIR) if os.path.isfile(os.path.join(CACHE_DIR, f)))
+            file_count = len([f for f in os.listdir(CACHE_DIR) if os.path.isfile(os.path.join(CACHE_DIR, f))])
+            shutil.rmtree(CACHE_DIR)
+            os.makedirs(CACHE_DIR)
+            print(f"✓ Cache cleared: {file_count} files, {total_size / (1024*1024):.1f} MB freed")
+        else:
+            print("Cache directory doesn't exist.")
+        os.sys.exit(0)
+
     # List themes if requested
     if args.list_themes:
         list_themes()
@@ -457,8 +506,8 @@ Examples:
     # Get coordinates and generate poster
     try:
         coords = get_coordinates(args.city, args.country)
-        output_file = generate_output_filename(args.city, args.theme)
-        create_poster(args.city, args.country, coords, args.distance, output_file)
+        output_file = generate_output_filename(args.city, args.theme, 'png')
+        create_poster(args.city, args.country, coords, args.distance, output_file, args.aspect, args.format)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
