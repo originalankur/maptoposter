@@ -135,7 +135,7 @@ MOTORWAY_TYPES = {'motorway', 'motorway_link'}
 PRIMARY_TYPES = {'trunk', 'trunk_link', 'primary', 'primary_link'}
 SECONDARY_TYPES = {'secondary', 'secondary_link'}
 TERTIARY_TYPES = {'tertiary', 'tertiary_link'}
-RESIDENTIAL_TYPES = {'residential', 'living_street', 'unclassified'}
+RESIDENTIAL_TYPES = {'residential', 'living_street', 'unclassified', 'service', 'footway'}
 
 def get_edge_styles_by_type(G):
     """
