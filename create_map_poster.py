@@ -213,18 +213,27 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file):
-    print(f"\nGenerating map for {city}, {country}...")
-    
-    # Progress bar for data fetching
+
+def reverse_lookup(point):
+    geolocator = Nominatim(user_agent="city_map_poster")
+    time.sleep(1)
+    lat, lon = point
+    location = geolocator.reverse(f"{lat}, {lon}", zoom=10, language="en")
+    if not location or not getattr(location, 'raw', None) or 'address' not in location.raw:
+        return None, None
+    addr = location.raw['address']
+    name = addr.get('city') or addr.get('town') or addr.get('village') or addr.get('hamlet') or addr.get('municipality') or addr.get('county') or addr.get('state')
+    country = addr.get('country')
+    return name, country
+
+
+def fetch_map_data(point, dist):
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
-        # 1. Fetch Street Network
         pbar.set_description("Downloading street network")
         G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
         pbar.update(1)
-        time.sleep(0.5)  # Rate limit between requests
-        
-        # 2. Fetch Water Features
+        time.sleep(0.5)
+
         pbar.set_description("Downloading water features")
         try:
             water = ox.features_from_point(point, tags={'natural': 'water', 'waterway': 'riverbank'}, dist=dist)
@@ -232,15 +241,27 @@ def create_poster(city, country, point, dist, output_file):
             water = None
         pbar.update(1)
         time.sleep(0.3)
-        
-        # 3. Fetch Parks
+
         pbar.set_description("Downloading parks/green spaces")
         try:
             parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
         except:
             parks = None
         pbar.update(1)
-    
+
+    return G, water, parks
+
+def create_poster(city, country, point, dist, output_file, hide_watermark=False, preloaded=None):
+    if country:
+        print(f"\nGenerating map for {city}, {country}...")
+    else:
+        print(f"\nGenerating map for {city}...")
+
+    if preloaded is None:
+        G, water, parks = fetch_map_data(point, dist)
+    else:
+        G, water, parks = preloaded
+
     print("✓ All data downloaded successfully!")
     
     # 2. Setup Plot
@@ -292,8 +313,9 @@ def create_poster(city, country, point, dist, output_file):
     ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_main, zorder=11)
     
-    ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
-            color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
+    if country:
+        ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
+                color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
     
     lat, lon = point
     coords = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
@@ -312,9 +334,10 @@ def create_poster(city, country, point, dist, output_file):
     else:
         font_attr = FontProperties(family='monospace', size=8)
     
-    ax.text(0.98, 0.02, "© OpenStreetMap contributors", transform=ax.transAxes,
-            color=THEME['text'], alpha=0.5, ha='right', va='bottom', 
-            fontproperties=font_attr, zorder=11)
+    if not hide_watermark:
+        ax.text(0.98, 0.02, "© OpenStreetMap contributors", transform=ax.transAxes,
+                color=THEME['text'], alpha=0.5, ha='right', va='bottom',
+                fontproperties=font_attr, zorder=11)
 
     # 5. Save
     print(f"Saving to {output_file}...")
@@ -330,6 +353,7 @@ City Map Poster Generator
 
 Usage:
   python create_map_poster.py --city <city> --country <country> [options]
+  python create_map_poster.py --lat <lat> --lon <lon> [options]
 
 Examples:
   # Iconic grid patterns
@@ -365,8 +389,14 @@ Examples:
 Options:
   --city, -c        City name (required)
   --country, -C     Country name (required)
+  --lat             Latitude (use with --lon)
+  --lon             Longitude (use with --lat)
+  --name, -n        Display name printed on poster (defaults to city / reverse lookup)
+  --country-label   Override country text displayed on poster
   --theme, -t       Theme name (default: feature_based)
+  --all-themes      Generate posters for all themes
   --distance, -d    Map radius in meters (default: 29000)
+  --hide-watermark  Hide OpenStreetMap contributors watermark (ethical considerations apply)
   --list-themes     List all available themes
 
 Distance guide:
@@ -418,7 +448,14 @@ Examples:
     
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
+    parser.add_argument('--lat', type=float, help='Latitude')
+    parser.add_argument('--lon', type=float, help='Longitude')
+    parser.add_argument('--name', '-n', dest='name', type=str, help='Display name printed on poster')
+    parser.add_argument('--label', dest='name', type=str, help=argparse.SUPPRESS)
+    parser.add_argument('--country-label', dest='country_label', type=str, help='Override country text displayed on poster')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
+    parser.add_argument('--all-themes', '--All-themes', dest='all_themes', action='store_true', help='Generate posters for all themes')
+    parser.add_argument('--hide-watermark', action='store_true', help='Hide OpenStreetMap contributors watermark (ethical considerations apply)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     
@@ -434,36 +471,62 @@ Examples:
         list_themes()
         os.sys.exit(0)
     
-    # Validate required arguments
-    if not args.city or not args.country:
-        print("Error: --city and --country are required.\n")
+    using_coords = args.lat is not None and args.lon is not None
+    if (args.lat is None) != (args.lon is None):
+        print("Error: --lat and --lon must be provided together.\n")
         print_examples()
         os.sys.exit(1)
-    
-    # Validate theme exists
-    available_themes = get_available_themes()
-    if args.theme not in available_themes:
-        print(f"Error: Theme '{args.theme}' not found.")
-        print(f"Available themes: {', '.join(available_themes)}")
+
+    if not using_coords and (not args.city or not args.country):
+        print("Error: Provide --city and --country, or --lat and --lon.\n")
+        print_examples()
         os.sys.exit(1)
+
+    available_themes = get_available_themes()
+    if not available_themes:
+        print("Error: No themes found in 'themes/' directory.")
+        os.sys.exit(1)
+
+    if args.all_themes:
+        themes_to_generate = available_themes
+    else:
+        if args.theme not in available_themes:
+            print(f"Error: Theme '{args.theme}' not found.")
+            print(f"Available themes: {', '.join(available_themes)}")
+            os.sys.exit(1)
+        themes_to_generate = [args.theme]
     
     print("=" * 50)
     print("City Map Poster Generator")
     print("=" * 50)
     
-    # Load theme
-    THEME = load_theme(args.theme)
-    
-    # Get coordinates and generate poster
+    if args.hide_watermark:
+        print("\n⚠ Ethics note: Hiding the OpenStreetMap attribution can violate OpenStreetMap's attribution requirements. Use responsibly and consider leaving it enabled when sharing or distributing posters.\n")
+
     try:
-        coords = get_coordinates(args.city, args.country)
-        output_file = generate_output_filename(args.city, args.theme)
-        create_poster(args.city, args.country, coords, args.distance, output_file)
-        
+        if using_coords:
+            coords = (args.lat, args.lon)
+            rev_name, rev_country = reverse_lookup(coords)
+            display_city = args.name or args.city or rev_name or "LOCATION"
+            base_country = args.country or rev_country or ""
+        else:
+            coords = get_coordinates(args.city, args.country)
+            display_city = args.name or args.city
+            base_country = args.country
+
+        display_country = args.country_label or base_country
+
+        preloaded = fetch_map_data(coords, args.distance)
+
+        for theme_name in themes_to_generate:
+            THEME = load_theme(theme_name)
+            output_file = generate_output_filename(display_city, theme_name)
+            create_poster(display_city, display_country, coords, args.distance, output_file, hide_watermark=args.hide_watermark, preloaded=preloaded)
+
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
         print("=" * 50)
-        
+
     except Exception as e:
         print(f"\n✗ Error: {e}")
         import traceback
