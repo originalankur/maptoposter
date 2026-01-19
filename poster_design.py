@@ -191,6 +191,19 @@ def simplify_roads(edges_gdf: gpd.GeoDataFrame, detail: str = "standard", hide_f
         
     df['highway_type'] = df['highway'].apply(get_highway_type)
     
+    # Get service attribute (for parking_aisle detection)
+    def get_service_type(x):
+        if x is None or (isinstance(x, float) and np.isnan(x)):
+            return None
+        if isinstance(x, list):
+            return str(x[0]) if x else None
+        return str(x)
+    
+    if 'service' in df.columns:
+        df['service_type'] = df['service'].apply(get_service_type)
+    else:
+        df['service_type'] = None
+    
     # Exclude logic
     exclude_types = set()
     
@@ -205,17 +218,29 @@ def simplify_roads(edges_gdf: gpd.GeoDataFrame, detail: str = "standard", hide_f
         exclude_types.update(["footway", "path", "cycleway", "steps", "pedestrian"])
 
     # Detail levels
-    if detail == "campus":
-        # Campus mode: very strict unless specifically allowed? 
-        # Actually usually campus maps WANT paths.
-        # So campus mode might mean "focus on walkable network + buildings" (buildings not yet implemented)
-        # For now, let's treat campus as "high detail but clean"
-        pass
-    elif detail == "standard":
-        pass
-    elif detail == "max":
-        # Include everything, minimal filtering
-        pass
+    keep_core = {"primary", "secondary", "tertiary", "residential", "unclassified", "living_street", "service", "road"}
+    drop_paths = {"footway", "path", "pedestrian", "steps", "cycleway", "track"}
+    
+    def road_keep(row, detail):
+        """Determine if a road should be kept based on detail level."""
+        hwy = row.get("highway_type")
+        svc = row.get("service_type")
+        
+        if detail == "campus":
+            # Drop foot/cycle paths (unless max detail)
+            if hwy in drop_paths:
+                return False
+            # Drop parking aisles but keep other service roads
+            if hwy == "service" and svc == "parking_aisle":
+                return False
+            # Keep core road types
+            return hwy in keep_core
+        elif detail == "max":
+            # Include everything, minimal filtering (only explicit hides)
+            return True
+        else:  # standard
+            # Standard filtering (existing behavior)
+            return True
 
     # Apply filtering
     # 1. remove explicit hides
@@ -223,8 +248,14 @@ def simplify_roads(edges_gdf: gpd.GeoDataFrame, detail: str = "standard", hide_f
     
     # 2. specific detail logic
     if detail == "campus":
-        # Maybe filter out high-speed roads if we are looking at a campus? No, context is good.
-        # But we definitely want paths.
+        # Apply campus-specific filtering
+        campus_mask = df.apply(lambda row: road_keep(row, detail), axis=1)
+        mask = mask & campus_mask
+    elif detail == "max":
+        # Max detail: only apply explicit hides
+        pass
+    else:  # standard
+        # Standard detail: apply explicit hides only
         pass
         
     return df[mask]
@@ -374,6 +405,11 @@ def render_poster(bundle: Dict, output_path: str, format_type: str = "png"):
         # Usually: path < minor < major for map clarity, or major < minor < path for campus?
         # Standard map: minor, then major.
         
+        # Get detail and tiers mode from config
+        config = bundle.get("config", {})
+        detail = config.get("detail", "standard")
+        tiers_mode = config.get("tiers", "simple")
+        
         # Split by tier
         tiers = ["path", "minor", "major"]
         for tier in tiers:
@@ -384,6 +420,14 @@ def render_poster(bundle: Dict, output_path: str, format_type: str = "png"):
             color = style.road_colors.get(tier, "#000000")
             width = style.road_widths.get(tier, 1.0)
             alpha = style.road_alphas.get(tier, 1.0)
+            
+            # Ensure minor roads are visible in campus mode with simple tiers
+            if tier == "minor" and tiers_mode == "simple" and detail == "campus":
+                # Ensure minimum visibility for minor roads
+                if width < 0.5:
+                    width = 0.5
+                if alpha < 0.6:
+                    alpha = 0.6
             
             # Layered mode: draw casing
             if style.linework_style == "layered":

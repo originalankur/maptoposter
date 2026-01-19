@@ -1,10 +1,27 @@
 import osmnx as ox
 
-# OSMnx compat: project_gdf moved under ox.projection in v2.x
-try:
-    project_gdf = ox.project_gdf
-except AttributeError:
-    project_gdf = ox.projection.project_gdf
+def project_gdf_compat(gdf, to_crs=None):
+    """
+    Compatibility helper for OSMnx project_gdf across versions.
+    Supports OSMnx 1.x (ox.project_gdf) and 2.x (ox.projection.project_gdf).
+    Falls back to GeoPandas to_crs if OSMnx projection not available.
+    """
+    if gdf is None or getattr(gdf, "empty", False):
+        return gdf
+    # OSMnx 1.x
+    if hasattr(ox, "project_gdf"):
+        try:
+            return ox.project_gdf(gdf, to_crs=to_crs) if to_crs is not None else ox.project_gdf(gdf)
+        except TypeError:
+            return ox.project_gdf(gdf)
+    # OSMnx 2.x style
+    if hasattr(ox, "projection") and hasattr(ox.projection, "project_gdf"):
+        try:
+            return ox.projection.project_gdf(gdf, to_crs=to_crs) if to_crs is not None else ox.projection.project_gdf(gdf)
+        except TypeError:
+            return ox.projection.project_gdf(gdf)
+    # Fallback: just reproject via GeoPandas if possible
+    return gdf.to_crs(to_crs) if to_crs is not None else gdf
 
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
@@ -250,14 +267,12 @@ def create_poster(city, country, point, dist, output_file, args=None):
     G_proj = ox.project_graph(G)
     
     if water is not None and not water.empty:
-        water_proj = project_gdf(water)
-        water_proj = water_proj.to_crs(G_proj.graph['crs'])
+        water_proj = project_gdf_compat(water, to_crs=G_proj.graph['crs'])
     else:
         water_proj = None
         
     if parks is not None and not parks.empty:
-        parks_proj = project_gdf(parks)
-        parks_proj = parks_proj.to_crs(G_proj.graph['crs'])
+        parks_proj = project_gdf_compat(parks, to_crs=G_proj.graph['crs'])
     else:
         parks_proj = None
         
@@ -405,7 +420,9 @@ def create_poster(city, country, point, dist, output_file, args=None):
             "size_inches": (w_in, h_in),
             "dpi": args.dpi,
             "show_scale": args.show_scale,
-            "show_north_arrow": args.show_north_arrow
+            "show_north_arrow": args.show_north_arrow,
+            "detail": args.detail,
+            "tiers": args.tiers
         },
         "labels": {
             "label1": l1,
