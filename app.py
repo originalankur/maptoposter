@@ -29,7 +29,7 @@ def generate():
     radius = str(data.get('radius', 15000))
 
     if not city or not country:
-        return jsonify({'success': False, 'error': 'Ville et Pays requis.'})
+        return jsonify({'success': False, 'error': 'City and Country required.'})
 
     # Call the original script present in the clone
     cmd = ["python", "create_map_poster.py", "--city", city, "--country", country, "--distance", radius, "--theme", theme]
@@ -46,7 +46,7 @@ def generate():
             latest_file = max(new_files, key=os.path.getctime)
             return jsonify({'success': True, 'filename': os.path.basename(latest_file)})
         else:
-            return jsonify({'success': False, 'error': 'Script terminé mais aucun fichier image trouvé.'})
+            return jsonify({'success': False, 'error': 'Script finished but no image file found.'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 

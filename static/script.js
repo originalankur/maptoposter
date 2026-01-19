@@ -32,7 +32,7 @@ document.getElementById('mapForm').addEventListener('submit', async (e) => {
             throw new Error(data.error);
         }
     } catch (e) {
-        err.textContent = e.message || "Erreur de connexion.";
+        err.textContent = e.message || "Connection error.";
         loader.classList.add('hidden');
     } finally {
         btn.disabled = false;
