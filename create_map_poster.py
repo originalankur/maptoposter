@@ -214,7 +214,7 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file, preferred_name=None):
+def create_poster(city, country, point, dist, output_file, preferred_name=None, landscape=False):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -245,8 +245,11 @@ def create_poster(city, country, point, dist, output_file, preferred_name=None):
     print("✓ All data downloaded successfully!")
     
     # 2. Setup Plot
+    size = (12, 16)
+    if landscape:
+        size = (16, 12)
     print("Rendering map...")
-    fig, ax = plt.subplots(figsize=(12, 16), facecolor=THEME['bg'])
+    fig, ax = plt.subplots(figsize=size, facecolor=THEME['bg'])
     ax.set_facecolor(THEME['bg'])
     ax.set_position([0, 0, 1, 1])
     
@@ -369,6 +372,8 @@ Options:
   --country, -C     Country name (required)
   --theme, -t       Theme name (default: feature_based)
   --distance, -d    Map radius in meters (default: 29000)
+  --preferred-name   Name to use on bottom instead of the city/country
+  --landscape, -L   Render in landscape mode (default: False)
   --list-themes     List all available themes
 
 Distance guide:
@@ -422,6 +427,7 @@ Examples:
     parser.add_argument('--country', '-C', type=str, help='Country name')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
+    parser.add_argument('--landscape', '-L', action='store_true', default=False, help='Render in landscape mode (default: False)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--preferred-name', '-p', type=str, default=None, help='Preferred city name to display (optional)')
     
@@ -460,8 +466,8 @@ Examples:
     # Get coordinates and generate poster
     try:
         coords = get_coordinates(args.city, args.country)
-        output_file = generate_output_filename(args.city, args.theme, args.preferred_name)
-        create_poster(args.city, args.country, coords, args.distance, output_file, args.preferred_name)
+        output_file = generate_output_filename(args.city, args.theme, preferred_name=args.preferred_name)
+        create_poster(args.city, args.country, coords, args.distance, output_file, preferred_name=args.preferred_name, landscape=args.landscape)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")

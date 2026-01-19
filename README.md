@@ -41,6 +41,7 @@ python create_map_poster.py --city <city> --country <country> [options]
 | `--theme` | `-t` | Theme name | feature_based |
 | `--distance` | `-d` | Map radius in meters | 29000 |
 | `--preferred-name` | `-p` | Preferred display name to show on the poster and use in the output filename | `city` |
+| `--landscape` | `-L` | Render in landscape mode | False |
 | `--list-themes` | | List all available themes | |
 
 ### Examples
