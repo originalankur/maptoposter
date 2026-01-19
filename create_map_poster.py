@@ -287,10 +287,25 @@ def create_poster(city, country, point, dist, output_file):
         font_coords = FontProperties(family='monospace', size=14)
     
     spaced_city = "  ".join(list(city.upper()))
+    
+    # Dynamically adjust font size based on city name length to prevent truncation
+    base_font_size = 60
+    city_char_count = len(city)
+    if city_char_count > 10:
+        # Scale down font size for longer names
+        scale_factor = 10 / city_char_count
+        adjusted_font_size = max(base_font_size * scale_factor, 24)  # Minimum size of 24
+    else:
+        adjusted_font_size = base_font_size
+    
+    if FONTS:
+        font_main_adjusted = FontProperties(fname=FONTS['bold'], size=adjusted_font_size)
+    else:
+        font_main_adjusted = FontProperties(family='monospace', weight='bold', size=adjusted_font_size)
 
     # --- BOTTOM TEXT ---
     ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
-            color=THEME['text'], ha='center', fontproperties=font_main, zorder=11)
+            color=THEME['text'], ha='center', fontproperties=font_main_adjusted, zorder=11)
     
     ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
