@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './App.css'
 
+// Configure axios defaults
+axios.defaults.timeout = 30000 // 30 seconds default timeout
+
 function App() {
   const [city, setCity] = useState('')
   const [country, setCountry] = useState('')
@@ -37,10 +40,26 @@ function App() {
 
   const fetchThemes = async () => {
     try {
-      const response = await axios.get('/api/themes')
+      const response = await axios.get('/api/themes', {
+        timeout: 10000 // 10 second timeout
+      })
       setThemes(response.data)
     } catch (error) {
       console.error('Error fetching themes:', error)
+      // Set a default theme if fetch fails
+      setThemes([{
+        name: 'feature_based',
+        display_name: 'Feature-Based Shading',
+        description: 'Classic black & white with road hierarchy',
+        colors: {
+          bg: '#FFFFFF',
+          text: '#000000',
+          water: '#C0C0C0',
+          parks: '#F0F0F0',
+          road_motorway: '#0A0A0A',
+          road_primary: '#1A1A1A'
+        }
+      }])
     }
   }
 
@@ -56,19 +75,24 @@ function App() {
         country,
         theme,
         distance: parseInt(distance)
+      }, {
+        timeout: 30000 // 30 second timeout for initial request
       })
       setJobId(response.data.job_id)
       setJobStatus(response.data)
     } catch (error) {
       console.error('Error generating poster:', error)
-      alert(error.response?.data?.detail || 'Error generating poster')
+      const errorMsg = error.response?.data?.detail || error.message || 'Error generating poster'
+      alert(errorMsg)
       setLoading(false)
     }
   }
 
   const checkJobStatus = async (id) => {
     try {
-      const response = await axios.get(`/api/job/${id}`)
+      const response = await axios.get(`/api/job/${id}`, {
+        timeout: 10000 // 10 second timeout for status checks
+      })
       setJobStatus(response.data)
 
       if (response.data.status === 'completed') {
@@ -77,9 +101,11 @@ function App() {
       } else if (response.data.status === 'failed') {
         alert('Poster generation failed: ' + response.data.message)
         setLoading(false)
+        setJobId(null)
       }
     } catch (error) {
       console.error('Error checking job status:', error)
+      // Don't alert on polling errors, just log them
     }
   }
 
@@ -210,12 +236,17 @@ function App() {
                 {jobStatus.message}
               </div>
               {jobStatus.status === 'processing' && (
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${jobStatus.progress}%` }}
-                  ></div>
-                </div>
+                <>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${jobStatus.progress}%` }}
+                    ></div>
+                  </div>
+                  <div className="status-note">
+                    <small>⏱️ This may take 2-5 minutes depending on map size...</small>
+                  </div>
+                </>
               )}
             </div>
           )}

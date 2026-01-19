@@ -217,6 +217,16 @@
   transition: width 0.3s ease;
 }
 
+.status-note {
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.status-note small {
+  color: #64748b;
+  font-style: italic;
+}
+
 .preview-section {
   background: white;
   border-radius: 16px;

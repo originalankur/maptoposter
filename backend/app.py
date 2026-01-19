@@ -132,8 +132,8 @@ async def generate_poster(request: PosterRequest, background_tasks: BackgroundTa
         progress=0
     )
 
-async def process_poster_generation(job_id: str, request: PosterRequest):
-    """Background task to generate poster."""
+def _generate_poster_sync(job_id: str, request: PosterRequest):
+    """Synchronous poster generation function to run in thread pool."""
     try:
         jobs[job_id]["status"] = "processing"
         jobs[job_id]["message"] = "Looking up coordinates..."
@@ -167,6 +167,11 @@ async def process_poster_generation(job_id: str, request: PosterRequest):
         print(f"Job {job_id} failed: {e}")
         import traceback
         traceback.print_exc()
+
+async def process_poster_generation(job_id: str, request: PosterRequest):
+    """Background task to generate poster - runs blocking code in thread pool."""
+    # Run the synchronous poster generation in a thread pool to avoid blocking the event loop
+    await asyncio.to_thread(_generate_poster_sync, job_id, request)
 
 @app.get("/api/job/{job_id}", response_model=JobStatus)
 async def get_job_status(job_id: str):
