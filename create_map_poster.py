@@ -17,6 +17,12 @@ POSTERS_DIR = "posters"
 
 # Quality presets: (figsize_width, figsize_height, dpi)
 QUALITY_PRESETS = {
+    'preview': {
+        'figsize': (6, 8),
+        'dpi': 100,
+        'resolution': '1800x2400px',
+        'description': 'Preview'
+    },
     'standard': {
         'figsize': (12, 16),
         'dpi': 300,
