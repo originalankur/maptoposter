@@ -213,14 +213,37 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file):
+def crop_map_viewport(ax, target_aspect):
+    x_min, x_max = ax.get_xlim()
+    y_min, y_max = ax.get_ylim()
+
+    width = x_max - x_min
+    height = y_max - y_min
+    current_aspect = width / height
+
+    cx = (x_min + x_max) / 2
+    cy = (y_min + y_max) / 2
+
+    if current_aspect > target_aspect:
+        # too wide → crop left/right
+        new_width = height * target_aspect
+        ax.set_xlim(cx - new_width / 2, cx + new_width / 2)
+    else:
+        # too tall → crop top/bottom
+        new_height = width / target_aspect
+        ax.set_ylim(cy - new_height / 2, cy + new_height / 2)
+
+def create_poster(city, country, point, dist, output_file, width=12, height=16):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
         # 1. Fetch Street Network
         pbar.set_description("Downloading street network")
-        G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
+        G = ox.graph_from_point(point, 
+                                dist=dist* (max(height, width) / min(height, width)),  # To compensate for viewport crop
+                                dist_type='bbox',
+                                network_type='all')
         pbar.update(1)
         time.sleep(0.5)  # Rate limit between requests
         
@@ -245,7 +268,7 @@ def create_poster(city, country, point, dist, output_file):
     
     # 2. Setup Plot
     print("Rendering map...")
-    fig, ax = plt.subplots(figsize=(12, 16), facecolor=THEME['bg'])
+    fig, ax = plt.subplots(figsize=(width, height), facecolor=THEME['bg'])
     ax.set_facecolor(THEME['bg'])
     ax.set_position([0, 0, 1, 1])
     
@@ -268,7 +291,12 @@ def create_poster(city, country, point, dist, output_file):
         edge_linewidth=edge_widths,
         show=False, close=False
     )
-    
+
+    # Map Adjustments to set into region properly
+    ax.set_aspect('equal')           # lock map scale
+    crop_map_viewport(ax, width / height)    # crop Map Data
+    ax.set_autoscale_on(False)       # freeze viewport
+
     # Layer 3: Gradients (Top and Bottom)
     create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
     create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
@@ -420,6 +448,8 @@ Examples:
     parser.add_argument('--country', '-C', type=str, help='Country name')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
+    parser.add_argument('--width', '-w', type=float, default=12, help='Image width in inches (default: 12)')
+    parser.add_argument('--height', '-h', type=float, default=16, help='Image height in inches (default: 16)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     
     args = parser.parse_args()
@@ -458,7 +488,7 @@ Examples:
     try:
         coords = get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme)
-        create_poster(args.city, args.country, coords, args.distance, output_file)
+        create_poster(args.city, args.country, coords, args.distance, output_file, args.width, args.height)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
