@@ -1,7 +1,7 @@
-# --- STAGE 1 : BUILDER (L'image de travail) ---
+# --- STAGE 1 : BUILDER (Compilation) ---
 FROM python:3.11-slim as builder
 
-# 1. Install des outils de compilation (LOURD mais nécessaire uniquement ici)
+# 1. Outils de build
 RUN apt-get update && apt-get install -y \
     git \
     build-essential \
@@ -10,39 +10,36 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# 2. Création d'un environnement virtuel (pour isoler les libs)
+# 2. Virtualenv isolé
 RUN python -m venv /opt/venv
-# On active l'environnement pour les commandes suivantes
 ENV PATH="/opt/venv/bin:$PATH"
 
-# 3. Clone "Super Léger" (Depth 1 = Pas d'historique git)
-# Cela évite de télécharger les 200Mo d'historique du repo
+# 3. Clone ultra-léger (sans historique)
 RUN git clone --depth 1 https://github.com/cthonney/maptoposter-docker.git .
 
-# 4. Installation des dépendances Python dans le venv
+# 4. Install des deps (Ça passera crème avec Py 3.11)
 RUN pip install --no-cache-dir -r requirements.txt
 
 
-# --- STAGE 2 : FINAL (L'image de production) ---
-FROM python:3.10-slim
+# --- STAGE 2 : RUNTIME (Production) ---
+FROM python:3.11-slim
 
-# 1. On installe juste le minimum vital pour l'exécution (Runtime)
-# libspatialindex-c6 est la version légère requise par Rtree/OSMnx
-RUN apt-get update && apt-get install -y \
-    libspatialindex-c6 \
+# 1. Lib système requise pour OSMnx/Rtree
+# On utilise la version -dev qui est stable sur Debian Bookworm (base de python:3.11)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libspatialindex-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# 2. On copie l'environnement virtuel préparé dans le Stage 1
+# 2. On récupère le venv et le code du stage 1
 COPY --from=builder /opt/venv /opt/venv
-
-# 3. On copie le code préparé dans le Stage 1
-# On exclut explicitement le dossier .git s'il traîne encore
 COPY --from=builder /app /app
+
+# 3. Nettoyage de sécurité
 RUN rm -rf /app/.git
 
-# 4. Configuration de l'environnement
+# 4. Config
 ENV PATH="/opt/venv/bin:$PATH"
 ENV MPLBACKEND=Agg
 
