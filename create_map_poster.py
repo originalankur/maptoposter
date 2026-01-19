@@ -131,67 +131,52 @@ def create_gradient_fade(ax, color, location='bottom', zorder=10):
     ax.imshow(gradient, extent=[xlim[0], xlim[1], y_bottom, y_top], 
               aspect='auto', cmap=custom_cmap, zorder=zorder, origin='lower')
 
-def get_edge_colors_by_type(G):
+MOTORWAY_TYPES = {'motorway', 'motorway_link'}
+PRIMARY_TYPES = {'trunk', 'trunk_link', 'primary', 'primary_link'}
+SECONDARY_TYPES = {'secondary', 'secondary_link'}
+TERTIARY_TYPES = {'tertiary', 'tertiary_link'}
+RESIDENTIAL_TYPES = {'residential', 'living_street', 'unclassified'}
+
+def get_edge_styles_by_type(G):
     """
-    Assigns colors to edges based on road type hierarchy.
-    Returns a list of colors corresponding to each edge in the graph.
+    Assigns colors and line widths to edges based on road type.
+    Returns a list of colors and widths corresponding to each edge in the graph.
     """
     edge_colors = []
-    
-    for u, v, data in G.edges(data=True):
+    edge_widths = []
+
+    for _, _, data in G.edges(data=True):
         # Get the highway type (can be a list or string)
         highway = data.get('highway', 'unclassified')
-        
+
         # Handle list of highway types (take the first one)
         if isinstance(highway, list):
             highway = highway[0] if highway else 'unclassified'
-        
-        # Assign color based on road type
-        if highway in ['motorway', 'motorway_link']:
+
+        # Assign style based on road type
+        if highway in MOTORWAY_TYPES:
             color = THEME['road_motorway']
-        elif highway in ['trunk', 'trunk_link', 'primary', 'primary_link']:
+            width = 1.2
+        elif highway in PRIMARY_TYPES:
             color = THEME['road_primary']
-        elif highway in ['secondary', 'secondary_link']:
+            width = 1.0
+        elif highway in SECONDARY_TYPES:
             color = THEME['road_secondary']
-        elif highway in ['tertiary', 'tertiary_link']:
+            width = 0.8
+        elif highway in TERTIARY_TYPES:
             color = THEME['road_tertiary']
-        elif highway in ['residential', 'living_street', 'unclassified']:
+            width = 0.6
+        elif highway in RESIDENTIAL_TYPES:
             color = THEME['road_residential']
+            width = 0.4
         else:
             color = THEME['road_default']
-        
-        edge_colors.append(color)
-    
-    return edge_colors
-
-def get_edge_widths_by_type(G):
-    """
-    Assigns line widths to edges based on road type.
-    Major roads get thicker lines.
-    """
-    edge_widths = []
-    
-    for u, v, data in G.edges(data=True):
-        highway = data.get('highway', 'unclassified')
-        
-        if isinstance(highway, list):
-            highway = highway[0] if highway else 'unclassified'
-        
-        # Assign width based on road importance
-        if highway in ['motorway', 'motorway_link']:
-            width = 1.2
-        elif highway in ['trunk', 'trunk_link', 'primary', 'primary_link']:
-            width = 1.0
-        elif highway in ['secondary', 'secondary_link']:
-            width = 0.8
-        elif highway in ['tertiary', 'tertiary_link']:
-            width = 0.6
-        else:
             width = 0.4
-        
+
+        edge_colors.append(color)
         edge_widths.append(width)
-    
-    return edge_widths
+
+    return edge_colors, edge_widths
 
 def get_coordinates(city, country):
     """
@@ -258,8 +243,7 @@ def create_poster(city, country, point, dist, output_file):
     
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
-    edge_colors = get_edge_colors_by_type(G)
-    edge_widths = get_edge_widths_by_type(G)
+    edge_colors, edge_widths = get_edge_styles_by_type(G)
     
     ox.plot_graph(
         G, ax=ax, bgcolor=THEME['bg'],
