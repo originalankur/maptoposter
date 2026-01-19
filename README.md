@@ -20,14 +20,13 @@ Generate beautiful, minimalist map posters for any city in the world.
 | Australia    | Melbourne      | forest          | <img src="posters/melbourne_forest_20260108_181459.png" width="250"> |
 | UAE          | Dubai          | midnight_blue   | <img src="posters/dubai_midnight_blue_20260108_174920.png" width="250"> |
 
-
-## Installation (Python CLI)
+## Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage (Python CLI)
+## Usage
 
 ```bash
 python create_map_poster.py --city <city> --country <country> [options]
