@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  maptoposter:
+    image: ghcr.io/cthonney/maptoposter-docker:latest
+    container_name: maptoposter-docker
+    ports:
+      - "5025:5025"
+    volumes:
+      # Local directory to retrieve generated PNGs
+      - ./posters:/app/posters
+    restart: unless-stopped

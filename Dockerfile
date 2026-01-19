@@ -1,7 +1,7 @@
 # --- STAGE 1 : BUILDER (Compilation) ---
 FROM python:3.11-slim as builder
 
-# 1. Outils de build
+# 1. Build tools
 RUN apt-get update && apt-get install -y \
     git \
     build-essential \
@@ -10,33 +10,33 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# 2. Virtualenv isolé
+# 2. Isolated virtualenv
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# 3. Clone ultra-léger (sans historique)
+# 3. Ultra-light clone (without history)
 RUN git clone --depth 1 https://github.com/cthonney/maptoposter-docker.git .
 
-# 4. Install des deps (Ça passera crème avec Py 3.11)
+# 4. Install deps (Works well with Py 3.11)
 RUN pip install --no-cache-dir -r requirements.txt
 
 
 # --- STAGE 2 : RUNTIME (Production) ---
 FROM python:3.11-slim
 
-# 1. Lib système requise pour OSMnx/Rtree
-# On utilise la version -dev qui est stable sur Debian Bookworm (base de python:3.11)
+# 1. System lib required for OSMnx/Rtree
+# Using the -dev version which is stable on Debian Bookworm (base of python:3.11)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libspatialindex-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# 2. On récupère le venv et le code du stage 1
+# 2. Copy venv and code from stage 1
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /app /app
 
-# 3. Nettoyage de sécurité
+# 3. Security cleanup
 RUN rm -rf /app/.git
 
 # 4. Config

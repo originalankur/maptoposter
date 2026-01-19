@@ -20,13 +20,63 @@ Generate beautiful, minimalist map posters for any city in the world.
 | Australia    | Melbourne      | forest          | <img src="posters/melbourne_forest_20260108_181459.png" width="250"> |
 | UAE          | Dubai          | midnight_blue   | <img src="posters/dubai_midnight_blue_20260108_174920.png" width="250"> |
 
-## Installation
+## Docker Usage
+
+### Using Docker Compose (Recommended)
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+
+services:
+  maptoposter:
+    image: ghcr.io/cthonney/maptoposter-docker:latest
+    container_name: maptoposter
+    ports:
+      - "5025:5025"
+    volumes:
+      # Local directory to retrieve generated PNGs
+      - ./posters:/app/posters
+    restart: unless-stopped
+```
+
+
+To start the web application:
+
+```bash
+docker-compose up -d
+```
+
+Access the application at `http://localhost:5025`.
+
+### Using Docker CLI
+
+Build the image:
+
+```bash
+docker build -t maptoposter .
+```
+
+Run the container:
+
+```bash
+docker run -p 5025:5025 -v $(pwd)/posters:/app/posters maptoposter
+```
+
+### Accessing the Application
+
+Once the container is running (via Docker Compose or Docker CLI), access the web interface at:
+
+**http://localhost:5025**
+
+## Installation (Python CLI)
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
+## Usage (Python CLI)
 
 ```bash
 python create_map_poster.py --city <city> --country <country> [options]
@@ -252,3 +302,8 @@ G = ox.graph_from_point(point, dist=dist, network_type='walk')   # pedestrian
 - Cache coordinates locally to avoid Nominatim rate limits
 - Use `network_type='drive'` instead of `'all'` for faster renders
 - Reduce `dpi` from 300 to 150 for quick previews
+
+## Credits
+
+Based on the original work by **[Ankur](https://github.com/originalankur)**.
+Original Repository: **[maptoposter](https://github.com/originalankur/maptoposter)**

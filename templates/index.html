@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -14,9 +14,9 @@
         <div class="main-content">
             <div class="card control-panel">
                 <form id="mapForm">
-                    <label>Ville <input type="text" id="city" placeholder="ex: Port Louis" required></label>
-                    <label>Pays <input type="text" id="country" placeholder="ex: Mauritius" required></label>
-                    <label>Thème
+                    <label>City <input type="text" id="city" placeholder="e.g. Port Louis" required></label>
+                    <label>Country <input type="text" id="country" placeholder="e.g. Mauritius" required></label>
+                    <label>Theme
                         <select id="theme">
                             {% for theme in themes %}<option value="{{ theme }}">{{ theme }}</option>{% endfor %}
                         </select>
@@ -24,14 +24,14 @@
                     <label>Zoom (<span id="radiusVal">15</span> km)
                         <input type="range" id="radius" min="1000" max="50000" step="1000" value="15000">
                     </label>
-                    <button type="submit" id="generateBtn">Générer la Carte</button>
+                    <button type="submit" id="generateBtn">Generate Map</button>
                     <div id="errorMsg" class="error"></div>
                 </form>
             </div>
             <div class="card result-panel">
-                <div id="loader" class="hidden">🔄 Génération en cours... (Patience)</div>
+                <div id="loader" class="hidden">🔄 Generating... (Please wait)</div>
                 <img id="resultImage" class="hidden">
-                <a id="downloadLink" href="#" class="btn-download hidden">⬇️ Télécharger PNG</a>
+                <a id="downloadLink" href="#" class="btn-download hidden">⬇️ Download PNG</a>
             </div>
         </div>
     </div>

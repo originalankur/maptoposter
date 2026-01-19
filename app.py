@@ -13,7 +13,7 @@ os.makedirs(POSTER_DIR, exist_ok=True)
 @app.route('/')
 def index():
     themes = []
-    # Liste les thèmes du dossier cloné
+    # List themes from the cloned directory
     if os.path.exists(THEME_DIR):
         files = glob.glob(os.path.join(THEME_DIR, "*.json"))
         themes = [os.path.basename(f).replace(".json", "") for f in files]
@@ -29,14 +29,14 @@ def generate():
     radius = str(data.get('radius', 15000))
 
     if not city or not country:
-        return jsonify({'success': False, 'error': 'Ville et Pays requis.'})
+        return jsonify({'success': False, 'error': 'City and Country required.'})
 
-    # Appel du script original présent dans le clone
+    # Call the original script present in the clone
     cmd = ["python", "create_map_poster.py", "--city", city, "--country", country, "--distance", radius, "--theme", theme]
 
     try:
         existing_files = set(glob.glob(os.path.join(POSTER_DIR, "*.png")))
-        # Timeout de 5 minutes
+        # 5-minute timeout
         subprocess.run(cmd, check=True, timeout=300)
         
         current_files = set(glob.glob(os.path.join(POSTER_DIR, "*.png")))
@@ -46,7 +46,7 @@ def generate():
             latest_file = max(new_files, key=os.path.getctime)
             return jsonify({'success': True, 'filename': os.path.basename(latest_file)})
         else:
-            return jsonify({'success': False, 'error': 'Script terminé mais aucun fichier image trouvé.'})
+            return jsonify({'success': False, 'error': 'Script finished but no image file found.'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
