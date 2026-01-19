@@ -1,6 +1,7 @@
 import osmnx as ox
 import matplotlib.pyplot as plt
-from matplotlib.font_manager import FontProperties, font_manager
+from matplotlib.font_manager import FontProperties
+from matplotlib import font_manager
 import matplotlib.colors as mcolors
 import numpy as np
 from geopy.geocoders import Nominatim
