@@ -4,6 +4,7 @@ services:
     volumes:
       # Mount output directory to persist generated posters
       - ./posters:/app/posters
+      - ./cache:/app/cache
       # Optional: mount custom themes
       # - ./my-themes:/app/themes
     # Override command to generate a poster

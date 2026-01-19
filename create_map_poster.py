@@ -14,6 +14,11 @@ import argparse
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
+CACHE_DIR = "cache"
+
+# Configure OSMnx to use cache
+ox.settings.use_cache = True
+ox.settings.cache_folder = CACHE_DIR
 
 def load_fonts():
     """
