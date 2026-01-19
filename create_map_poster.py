@@ -36,15 +36,27 @@ def load_fonts():
 
 FONTS = load_fonts()
 
-def generate_output_filename(city, theme_name):
+def generate_output_filename(city, theme_name, lat=None, lon=None):
     """
     Generate unique output filename with city, theme, and datetime.
+    If coordinates are provided and city is generic, include coords in filename.
     """
     if not os.path.exists(POSTERS_DIR):
         os.makedirs(POSTERS_DIR)
-    
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    city_slug = city.lower().replace(' ', '_')
+
+    # If using coordinates and city is default/generic, create a better filename
+    if lat is not None and lon is not None and city == "Custom Location":
+        city_slug = f"lat{abs(lat):.2f}{'N' if lat >= 0 else 'S'}_lon{abs(lon):.2f}{'E' if lon >= 0 else 'W'}"
+    elif lat is not None and lon is not None:
+        # Include both city name and coordinates for clarity
+        base_slug = city.lower().replace(' ', '_')
+        coord_slug = f"lat{abs(lat):.2f}{'N' if lat >= 0 else 'S'}_lon{abs(lon):.2f}{'E' if lon >= 0 else 'W'}"
+        city_slug = f"{base_slug}_{coord_slug}"
+    else:
+        city_slug = city.lower().replace(' ', '_')
+
     filename = f"{city_slug}_{theme_name}_{timestamp}.png"
     return os.path.join(POSTERS_DIR, filename)
 
@@ -214,7 +226,11 @@ def get_coordinates(city, country):
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
 def create_poster(city, country, point, dist, output_file):
-    print(f"\nGenerating map for {city}, {country}...")
+    # Display appropriate message based on whether country is provided
+    if country:
+        print(f"\nGenerating map for {city}, {country}...")
+    else:
+        print(f"\nGenerating map for {city}...")
     
     # Progress bar for data fetching
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
@@ -291,16 +307,21 @@ def create_poster(city, country, point, dist, output_file):
     # --- BOTTOM TEXT ---
     ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_main, zorder=11)
-    
-    ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
-            color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
+
+    # Only display country if provided
+    if country:
+        ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
+                color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
+        coords_y = 0.07
+    else:
+        coords_y = 0.10  # Move coordinates up if no country
     
     lat, lon = point
     coords = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
     if lon < 0:
         coords = coords.replace("E", "W")
-    
-    ax.text(0.5, 0.07, coords, transform=ax.transAxes,
+
+    ax.text(0.5, coords_y, coords, transform=ax.transAxes,
             color=THEME['text'], alpha=0.7, ha='center', fontproperties=font_coords, zorder=11)
     
     ax.plot([0.4, 0.6], [0.125, 0.125], transform=ax.transAxes, 
@@ -330,12 +351,18 @@ City Map Poster Generator
 
 Usage:
   python create_map_poster.py --city <city> --country <country> [options]
+  python create_map_poster.py --lat <latitude> --lon <longitude> [options]
 
 Examples:
   # Iconic grid patterns
   python create_map_poster.py -c "New York" -C "USA" -t noir -d 12000           # Manhattan grid
   python create_map_poster.py -c "Barcelona" -C "Spain" -t warm_beige -d 8000   # Eixample district grid
-  
+
+  # Using coordinates directly (precise location control)
+  python create_map_poster.py --lat 39.9042 --lon 116.4074 -c "Beijing" -C "China" -t beijing -d 12000  # Tiananmen Square
+  python create_map_poster.py --lat 48.8584 --lon 2.2945 -c "Eiffel Tower" -t noir -d 5000              # Eiffel Tower area
+  python create_map_poster.py --lat 40.7580 --lon -73.9855 -c "Times Square" -C "USA" -t neon_cyberpunk -d 3000
+
   # Waterfront & canals
   python create_map_poster.py -c "Venice" -C "Italy" -t blueprint -d 4000       # Canal network
   python create_map_poster.py -c "Amsterdam" -C "Netherlands" -t ocean -d 6000  # Concentric canals
@@ -363,11 +390,16 @@ Examples:
   python create_map_poster.py --list-themes
 
 Options:
-  --city, -c        City name (required)
-  --country, -C     Country name (required)
+  --city, -c        City name (required unless using --lat/--lon)
+  --country, -C     Country name (required unless using --lat/--lon)
+  --lat             Latitude coordinate (use with --lon, range: -90 to 90)
+  --lon             Longitude coordinate (use with --lat, range: -180 to 180)
   --theme, -t       Theme name (default: feature_based)
   --distance, -d    Map radius in meters (default: 29000)
   --list-themes     List all available themes
+
+Note:
+  When both city/country and coordinates are provided, coordinates take priority.
 
 Distance guide:
   4000-6000m   Small/dense cities (Venice, Amsterdam old center)
@@ -412,12 +444,19 @@ Examples:
   python create_map_poster.py --city "New York" --country "USA"
   python create_map_poster.py --city Tokyo --country Japan --theme midnight_blue
   python create_map_poster.py --city Paris --country France --theme noir --distance 15000
+
+  # Using coordinates for precise location control
+  python create_map_poster.py --lat 39.9042 --lon 116.4074 -c "Beijing" -C "China" -t beijing -d 12000
+  python create_map_poster.py --lat 48.8584 --lon 2.2945 -c "Eiffel Tower" -t noir -d 5000
+
   python create_map_poster.py --list-themes
         """
     )
     
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
+    parser.add_argument('--lat', type=float, help='Latitude (use with --lon to specify coordinates directly)')
+    parser.add_argument('--lon', type=float, help='Longitude (use with --lat to specify coordinates directly)')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
@@ -435,10 +474,29 @@ Examples:
         os.sys.exit(0)
     
     # Validate required arguments
-    if not args.city or not args.country:
-        print("Error: --city and --country are required.\n")
+    # Either (city + country) or (lat + lon) must be provided
+    has_location = (args.city and args.country) or (args.lat is not None and args.lon is not None)
+    if not has_location:
+        print("Error: Either (--city and --country) or (--lat and --lon) are required.\n")
         print_examples()
         os.sys.exit(1)
+
+    # Validate coordinate ranges
+    if args.lat is not None:
+        if not -90 <= args.lat <= 90:
+            print(f"Error: Latitude must be between -90 and 90, got {args.lat}")
+            os.sys.exit(1)
+    if args.lon is not None:
+        if not -180 <= args.lon <= 180:
+            print(f"Error: Longitude must be between -180 and 180, got {args.lon}")
+            os.sys.exit(1)
+
+    # If using lat/lon, city name defaults to coordinates
+    if args.lat is not None and args.lon is not None:
+        if not args.city:
+            args.city = "Custom Location"
+        if not args.country:
+            args.country = ""
     
     # Validate theme exists
     available_themes = get_available_themes()
@@ -456,8 +514,16 @@ Examples:
     
     # Get coordinates and generate poster
     try:
-        coords = get_coordinates(args.city, args.country)
-        output_file = generate_output_filename(args.city, args.theme)
+        # Use provided coordinates or geocode city
+        if args.lat is not None and args.lon is not None:
+            coords = (args.lat, args.lon)
+            print(f"Using provided coordinates: {args.lat}, {args.lon}")
+            if args.city and args.country:
+                print(f"  (Ignoring geocoding for {args.city}, {args.country})")
+        else:
+            coords = get_coordinates(args.city, args.country)
+
+        output_file = generate_output_filename(args.city, args.theme, lat=args.lat, lon=args.lon)
         create_poster(args.city, args.country, coords, args.distance, output_file)
         
         print("\n" + "=" * 50)
