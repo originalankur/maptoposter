@@ -1,3 +1,6 @@
 cache/*
 env/
+venv/
 .env/
+posters/
+
