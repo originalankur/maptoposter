@@ -33,17 +33,19 @@ python create_map_poster.py --city <city> --country <country> [options]
 
 ### Options
 
-| Option          | Short | Description               | Default       |
-| --------------- | ----- | ------------------------- | ------------- |
-| `--city`        | `-c`  | City name                 | required      |
-| `--country`     | `-C`  | Country name              | required      |
-| `--latitude`    | `-la` | Latitude of map center    | required      |
-| `--longitude`   | `-lo` | Longitude of map center   | required      |
-| `--theme`       | `-t`  | Theme name                | feature_based |
-| `--distance`    | `-d`  | Map radius in meters      | 29000         |
-| `--list-themes` |       | List all available themes |               |
+| Option          | Short | Description                        | Default       |
+| --------------- | ----- | ---------------------------------- | ------------- |
+| `--city`        | `-c`  | City name                          | required      |
+| `--country`     | `-C`  | Country name                       | required      |
+| `--latlong`     | `-ll` | Latitude & Longitude of map center | required      |
+| `--longitude`   | `-lo` | Longitude of map center            | required      |
+| `--theme`       | `-t`  | Theme name                         | feature_based |
+| `--distance`    | `-d`  | Map radius in meters               | 29000         |
+| `--list-themes` |       | List all available themes          |               |
 
-- --city and --country or --latitude and --longitude are required
+```bash
+--city and --country or --latlong are required
+```
 
 ### Examples
 

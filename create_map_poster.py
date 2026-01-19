@@ -303,8 +303,9 @@ def create_poster(city, country, point, dist, output_file):
     ax.text(0.5, 0.07, coords, transform=ax.transAxes,
             color=THEME['text'], alpha=0.7, ha='center', fontproperties=font_coords, zorder=11)
     
-    ax.plot([0.4, 0.6], [0.125, 0.125], transform=ax.transAxes, 
-            color=THEME['text'], linewidth=1, zorder=11)
+    if (city != "" and country != ""):
+        ax.plot([0.4, 0.6], [0.125, 0.125], transform=ax.transAxes, 
+        color=THEME['text'], linewidth=1, zorder=11)
 
     # --- ATTRIBUTION (bottom right) ---
     if FONTS:
@@ -418,8 +419,7 @@ Examples:
     
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
-    parser.add_argument('--latitude', '-la', type=float, help='Latitude of map center')
-    parser.add_argument('--longitude', '-lo', type=float, help='Longitude of map center')
+    parser.add_argument('--latlong', '-ll', type=float, nargs=2, metavar=("Latitude", "Longitude"), help='Alternate designation for the map center by latitude and longitude')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
@@ -435,12 +435,10 @@ Examples:
     if args.list_themes:
         list_themes()
         os.sys.exit(0)
-    
-    city_country_method = args.city and args.country
-    latitude_longitude_method = args.latitude and args.longitude
+
     # Validate required arguments
-    if not city_country_method and not latitude_longitude_method:
-        print("Error: --city and --country or --latitude and --longitude are required.\n")
+    if not (args.city and args.country) and not args.latlong:
+        print("Error: either --city and --country or --latlong are required.\n")
         print_examples()
         os.sys.exit(1)
     
@@ -463,7 +461,7 @@ Examples:
 
     # Get coordinates and generate poster
     try:
-        coords = (args.latitude, args.longitude) if latitude_longitude_method else get_coordinates(args.city, args.country)
+        coords = args.latlong if args.latlong else get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme)
         create_poster(args.city, args.country, coords, args.distance, output_file)
         
