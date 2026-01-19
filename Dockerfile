@@ -18,6 +18,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 4. Config environnement
 ENV MPLBACKEND=Agg
 
-EXPOSE 5000
+EXPOSE 5025
 
 CMD ["python", "app.py"]
