@@ -40,6 +40,7 @@ python create_map_poster.py --city <city> --country <country> [options]
 | `--country` | `-C` | Country name | required |
 | `--theme` | `-t` | Theme name | feature_based |
 | `--distance` | `-d` | Map radius in meters | 29000 |
+| `--preferred-name` | `-p` | Preferred display name to show on the poster and use in the output filename | `city` |
 | `--list-themes` | | List all available themes | |
 
 ### Examples
@@ -74,6 +75,9 @@ python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000 
 
 # List available themes
 python create_map_poster.py --list-themes
+
+# Use a preferred display name (e.g., split words or alternate spelling)
+python create_map_poster.py -c "Yuzhong" -C "China" --preferred-name "Chongqing" -t noir -d 8000
 ```
 
 ### Distance Guide
@@ -112,8 +116,10 @@ python create_map_poster.py --list-themes
 
 Posters are saved to `posters/` directory with format:
 ```
-{city}_{theme}_{YYYYMMDD_HHMMSS}.png
+{preferred_city}_{theme}_{YYYYMMDD_HHMMSS}.png
 ```
+
+If `--preferred-name` is provided, that value is used for the filename and for the spaced city text on the poster; otherwise the `--city` value is used.
 
 ## Adding Custom Themes
 

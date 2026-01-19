@@ -3,4 +3,4 @@ env/
 venv/
 .env/
 posters/
-
+.DS_Store
