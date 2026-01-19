@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # 1. Dépendances système (Git + Libs géographiques)
 RUN apt-get update && apt-get install -y \
