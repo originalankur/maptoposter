@@ -5,6 +5,47 @@ Generate beautiful, minimalist map posters for any city in the world.
 <img src="posters/singapore_neon_cyberpunk_20260108_184503.png" width="250">
 <img src="posters/dubai_midnight_blue_20260108_174920.png" width="250">
 
+## 🌐 Web UI (NEW!)
+
+The easiest way to generate posters is through our modern web interface!
+
+### Quick Start with Docker
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/maptoposter.git
+cd maptoposter
+
+# Start the application
+docker-compose up -d
+
+# Open your browser
+open http://localhost:3000
+```
+
+The web UI provides:
+- 🎨 Visual theme selector with live color previews
+- 🗺️ Interactive distance slider
+- 📊 Real-time generation progress
+- 💾 Instant download of generated posters
+- 🎯 User-friendly interface - no command line needed!
+
+### Architecture
+
+The application consists of:
+- **Frontend**: React-based web UI (port 3000)
+- **Backend**: FastAPI server (port 8000)
+- **Docker Compose**: Orchestrates both services
+
+### API Endpoints
+
+The backend API is also available for programmatic access:
+
+- `GET /api/themes` - List all available themes
+- `POST /api/generate` - Generate a poster (returns job ID)
+- `GET /api/job/{job_id}` - Check generation status
+- `GET /posters/{filename}` - Download generated poster
+
 ## Examples
 
 
@@ -22,11 +63,67 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 ## Installation
 
+### Option 1: Docker (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/maptoposter.git
+cd maptoposter
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Option 2: Local Development
+
+**Backend:**
+```bash
+cd backend
+pip install -r requirements.txt
+python app.py
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Option 3: CLI Only
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
+
+### Web UI Usage
+
+1. Start the application with Docker:
+   ```bash
+   docker-compose up -d
+   ```
+
+2. Open your browser to http://localhost:3000
+
+3. Fill in the form:
+   - Enter city name (e.g., "Paris")
+   - Enter country name (e.g., "France")
+   - Select a theme from the dropdown
+   - Adjust the map radius with the slider
+
+4. Click "Generate Poster" and wait for the magic!
+
+5. Download your poster when ready
+
+### CLI Usage
 
 ```bash
 python create_map_poster.py --city <city> --country <country> [options]
@@ -140,11 +237,25 @@ Create a JSON file in `themes/` directory:
 ## Project Structure
 
 ```
-map_poster/
-├── create_map_poster.py          # Main script
-├── themes/               # Theme JSON files
-├── fonts/                # Roboto font files
-├── posters/              # Generated posters
+maptoposter/
+├── create_map_poster.py      # Main CLI script
+├── docker-compose.yml        # Docker orchestration
+├── backend/                  # FastAPI backend
+│   ├── app.py               # API server
+│   ├── Dockerfile           # Backend container
+│   └── requirements.txt     # Python dependencies
+├── frontend/                 # React frontend
+│   ├── src/                 # React components
+│   │   ├── App.jsx          # Main app component
+│   │   ├── App.css          # Styles
+│   │   └── main.jsx         # Entry point
+│   ├── Dockerfile           # Frontend container
+│   ├── nginx.conf           # Nginx configuration
+│   ├── package.json         # Node dependencies
+│   └── vite.config.js       # Vite configuration
+├── themes/                   # Theme JSON files
+├── fonts/                    # Roboto font files
+├── posters/                  # Generated posters
 └── README.md
 ```
 

@@ -1,3 +1,29 @@
 cache/*
 env/
 .env/
+
+# Node modules and frontend build
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

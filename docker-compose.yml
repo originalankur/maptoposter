@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: maptoposter-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./posters:/app/posters
+      - ./themes:/app/themes
+      - ./fonts:/app/fonts
+      - ./create_map_poster.py:/app/create_map_poster.py
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - maptoposter-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: maptoposter-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - maptoposter-network
+    restart: unless-stopped
+
+networks:
+  maptoposter-network:
+    driver: bridge
+
+volumes:
+  posters:
