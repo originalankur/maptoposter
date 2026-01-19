@@ -22,15 +22,25 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 ## Installation
 
+This project targets Python 3.12 (see `.python-version`).
+
 ```bash
+uv python install 3.12
+uv sync
+```
+
+```bash
+# Alternative (pip)
 pip install -r requirements.txt
 ```
 
 ## Usage
 
 ```bash
-python create_map_poster.py --city <city> --country <country> [options]
+uv run python create_map_poster.py --city <city> --country <country> [options]
 ```
+
+If you're using uv, prefix the examples below with `uv run`.
 
 ### Options
 

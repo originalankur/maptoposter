@@ -10,7 +10,7 @@ idna==3.11
 kiwisolver==1.4.9
 matplotlib==3.10.8
 networkx==3.6.1
-numpy==2.4.0
+numpy==2.4.1
 osmnx==2.0.7
 packaging==25.0
 pandas==2.3.3
