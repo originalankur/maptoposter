@@ -200,7 +200,7 @@ def get_coordinates(city, country):
     Includes rate limiting to be respectful to the geocoding service.
     """
     print("Looking up coordinates...")
-    geolocator = Nominatim(user_agent="city_map_poster")
+    geolocator = Nominatim(user_agent="city_map_poster", timeout=10)
     
     # Add a small delay to respect Nominatim's usage policy
     time.sleep(1)
