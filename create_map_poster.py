@@ -340,7 +340,7 @@ def get_crop_limits(G: MultiDiGraph, fig: Figure) -> Tuple[Tuple[float, float], 
     
     return crop_xlim, crop_ylim
 
-def fetch_graph(point, dist) -> MultiDiGraph | None:
+def fetch_graph(point, dist) -> Optional[MultiDiGraph]:
     lat, lon = point
     graph = f"graph_{lat}_{lon}_{dist}"
     cached = cache_get(graph)
@@ -361,7 +361,7 @@ def fetch_graph(point, dist) -> MultiDiGraph | None:
         print(f"OSMnx error while fetching graph: {e}")
         return None
 
-def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
+def fetch_features(point, dist, tags, name) -> Optional[GeoDataFrame]:
     lat, lon = point
     tag_str = "_".join(tags.keys())
     features = f"{name}_{lat}_{lon}_{dist}_{tag_str}"
