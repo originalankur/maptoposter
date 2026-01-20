@@ -20,6 +20,10 @@ from typing import Optional, Dict, Tuple, cast
 from geopandas import GeoDataFrame
 import pickle
 
+# Keep vector outputs as real text and embed TrueType fonts
+plt.rcParams["svg.fonttype"] = "none"
+plt.rcParams["pdf.fonttype"] = 42
+
 class CacheError(Exception):
     """Raised when a cache operation fails."""
     pass

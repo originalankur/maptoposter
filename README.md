@@ -39,6 +39,7 @@ python create_map_poster.py --city <city> --country <country> [options]
 | `--city` | `-c` | City name | required |
 | `--country` | `-C` | Country name | required |
 | `--theme` | `-t` | Theme name | feature_based |
+| `--format` | `-f` | Output format (`png`, `svg`, `pdf`) | png |
 | `--distance` | `-d` | Map radius in meters | 29000 |
 | `--list-themes` | | List all available themes | |
 
@@ -71,6 +72,10 @@ python create_map_poster.py -c "Mumbai" -C "India" -t contrast_zones -d 18000 # 
 # River cities
 python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
 python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
+
+# Vector outputs
+python create_map_poster.py -c "Paris" -C "France" -t noir -f svg             # SVG
+python create_map_poster.py -c "Tokyo" -C "Japan" -t japanese_ink -f pdf      # PDF
 
 # List available themes
 python create_map_poster.py --list-themes
@@ -114,6 +119,7 @@ Posters are saved to `posters/` directory with format:
 ```
 {city}_{theme}_{YYYYMMDD_HHMMSS}.png
 ```
+Use `--format svg` or `--format pdf` to export vector files for print or editing.
 
 ## Adding Custom Themes
 
