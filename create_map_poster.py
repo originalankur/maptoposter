@@ -84,7 +84,8 @@ def load_theme(theme_name="feature_based"):
             "road_secondary": "#2A2A2A",
             "road_tertiary": "#3A3A3A",
             "road_residential": "#4A4A4A",
-            "road_default": "#3A3A3A"
+            "road_default": "#3A3A3A",
+            "railway": "#707070"
         }
     
     with open(theme_file, 'r') as f:
@@ -156,22 +157,22 @@ def get_edge_styles_by_type(G):
         # Assign style based on road type
         if highway in MOTORWAY_TYPES:
             color = THEME['road_motorway']
-            width = 1.2
+            width = 0.55
         elif highway in PRIMARY_TYPES:
             color = THEME['road_primary']
-            width = 1.0
+            width = 0.55
         elif highway in SECONDARY_TYPES:
             color = THEME['road_secondary']
-            width = 0.8
+            width = 0.3
         elif highway in TERTIARY_TYPES:
             color = THEME['road_tertiary']
-            width = 0.6
+            width = 0.3
         elif highway in RESIDENTIAL_TYPES:
             color = THEME['road_residential']
-            width = 0.4
+            width = 0.25
         else:
             color = THEME['road_default']
-            width = 0.4
+            width = 0.25
 
         edge_colors.append(color)
         edge_widths.append(width)
@@ -225,6 +226,14 @@ def create_poster(city, country, point, dist, output_file):
         except:
             parks = None
         pbar.update(1)
+
+        # 4. Fetch railroads
+        pbar.set_description("Downloading railroads")
+        try:
+            railroads = ox.features_from_point(point, tags={'railway': 'rail'}, dist=dist)
+        except:
+            railroads = None
+        pbar.update(1)
     
     print("✓ All data downloaded successfully!")
     
@@ -240,11 +249,16 @@ def create_poster(city, country, point, dist, output_file):
         water_polygons = water[water.geometry.type.isin(['Polygon', 'MultiPolygon'])]
         if not water_polygons.empty:
             water_polygons.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=1)
-    if parks is not None and not parks.empty:
-        parks_polygons = parks[parks.geometry.type.isin(['Polygon', 'MultiPolygon'])]
-        if not parks_polygons.empty:
-            parks_polygons.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=2)
+    # if parks is not None and not parks.empty:
+    #     parks_polygons = parks[parks.geometry.type.isin(['Polygon', 'MultiPolygon'])]
+    #     if not parks_polygons.empty:
+    #         parks_polygons.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=2)
     
+    # Layer 1.5: Railroads
+    if railroads is not None and not railroads.empty:
+        railroads.plot(ax=ax, color=THEME['railroad'], linewidth=0.3, linetype='longdash', zorder=3)
+
+
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
     edge_colors, edge_widths = get_edge_styles_by_type(G)

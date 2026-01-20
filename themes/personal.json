@@ -1,0 +1,16 @@
+{
+  "name": "Personal",
+  "description": "OG Version of the maps",
+  "bg": "#f2f0f0",
+  "text": "#000000",
+  "gradient_color": "#FBF7F0",
+  "water": "#4682B4",
+  "parks": "#F0EDE8",
+  "road_motorway": "#000000",
+  "road_primary": "#000000",
+  "road_secondary": "#666666",
+  "road_tertiary": "#666666",
+  "road_residential": "#666666",
+  "road_default": "#CC7A30",
+  "railroad": "#7f7f7f"
+}
