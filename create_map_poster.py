@@ -11,6 +11,10 @@ import os
 from datetime import datetime
 import argparse
 
+# Configure OSMnx
+ox.settings.use_cache = True
+ox.settings.log_console = False
+
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
@@ -214,14 +218,15 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file, output_format):
+def create_poster(city, country, point, dist, output_file, output_format, fast_mode=False):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
         # 1. Fetch Street Network
-        pbar.set_description("Downloading street network")
-        G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
+        network_type = 'drive' if fast_mode else 'all'
+        pbar.set_description(f"Downloading street network ({network_type})")
+        G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type=network_type)
         pbar.update(1)
         time.sleep(0.5)  # Rate limit between requests
         
@@ -452,9 +457,10 @@ Examples:
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
-    parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
+    parser.add_argument('--distance', '-d', type=int, default=12000, help='Map radius in meters (default: 12000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--fast', action='store_true', help='Fast mode: fetches only driving roads (faster but less detailed)')
     
     args = parser.parse_args()
     
@@ -492,7 +498,7 @@ Examples:
     try:
         coords = get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme, args.format)
-        create_poster(args.city, args.country, coords, args.distance, output_file, args.format)
+        create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.fast)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
