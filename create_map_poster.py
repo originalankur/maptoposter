@@ -12,6 +12,7 @@ from datetime import datetime
 import argparse
 from pathlib import Path
 from hashlib import md5
+from typing import Optional
 import pickle
 
 class CacheError(Exception):
@@ -27,7 +28,7 @@ def cache_file(key: str) -> str:
     encoded = md5(key.encode()).hexdigest()
     return f"{encoded}.pkl"
 
-def cache_get(name: str) -> dict | None:
+def cache_get(name: str) -> Optional[dict]:
     path = CACHE_DIR / cache_file(name)
     if path.exists():
         with path.open("rb") as f:
