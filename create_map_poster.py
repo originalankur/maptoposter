@@ -271,7 +271,10 @@ def create_poster(city, country, point, dist, output_file, output_format):
     
     ox.plot_graph(
         G, ax=ax, bgcolor=THEME['bg'],
-        node_size=0,
+        node_size=0,  # Disable node markers entirely
+        node_color='none',
+        node_edgecolor='none',
+        node_zorder=-1,
         edge_color=edge_colors,
         edge_linewidth=edge_widths,
         show=False, close=False
