@@ -16,7 +16,7 @@ import argparse
 import asyncio
 from pathlib import Path
 from hashlib import md5
-from typing import cast
+from typing import Optional, Dict, Tuple, cast
 from geopandas import GeoDataFrame
 import pickle
 
@@ -33,7 +33,7 @@ def cache_file(key: str) -> str:
     encoded = md5(key.encode()).hexdigest()
     return f"{encoded}.pkl"
 
-def cache_get(name: str) -> dict | None:
+def cache_get(name: str) -> Optional[dict]:
     path = CACHE_DIR / cache_file(name)
     if path.exists():
         with path.open("rb") as f:
@@ -139,7 +139,7 @@ def load_theme(theme_name="feature_based"):
         return theme
 
 # Load theme (can be changed via command line or input)
-THEME = dict[str, str]()  # Will be loaded later
+THEME: Dict[str, str] = {}  # Will be loaded later
 
 def create_gradient_fade(ax, color, location='bottom', zorder=10):
     """
@@ -284,7 +284,7 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
     
-def get_crop_limits(G: MultiDiGraph, fig: Figure) -> tuple[tuple[float, float], tuple[float, float]]:
+def get_crop_limits(G: MultiDiGraph, fig: Figure) -> Tuple[Tuple[float, float], Tuple[float, float]]:
     """
     Determine cropping limits to maintain aspect ratio of the figure.
 
