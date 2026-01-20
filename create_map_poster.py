@@ -16,9 +16,11 @@ import argparse
 import asyncio
 from pathlib import Path
 from hashlib import md5
-from typing import cast
+from typing import cast, Optional
 from geopandas import GeoDataFrame
 import pickle
+import urllib.request
+import re
 
 class CacheError(Exception):
     """Raised when a cache operation fails."""
@@ -58,11 +60,125 @@ THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
 
-def load_fonts():
+def download_google_font(font_family: str, weights: list = [300, 400, 700]) -> Optional[dict]:
     """
-    Load Roboto fonts from the fonts directory.
+    Download a font family from Google Fonts and cache it locally.
+    Returns dict with font paths for different weights, or None if download fails.
+    
+    :param font_family: Google Fonts family name (e.g., 'Roboto', 'Open Sans')
+    :param weights: List of font weights to download (300=light, 400=regular, 700=bold)
+    :return: Dict with 'light', 'regular', 'bold' keys mapping to font file paths
+    """
+    # Create fonts cache directory
+    fonts_cache_dir = Path(FONTS_DIR) / "cache"
+    fonts_cache_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Normalize font family name for file paths
+    font_name_safe = font_family.replace(' ', '_').lower()
+    
+    font_files = {}
+    
+    try:
+        # Google Fonts API endpoint - request all weights at once
+        font_name_encoded = font_family.replace(' ', '+')
+        api_url = f"https://fonts.googleapis.com/css2?family={font_name_encoded}:wght@{';'.join(map(str, weights))}"
+        
+        # Set user agent to get .woff2 files (better compression)
+        req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+        
+        # Fetch CSS file
+        with urllib.request.urlopen(req) as response:
+            css_content = response.read().decode('utf-8')
+        
+        # Parse CSS to extract weight-specific URLs
+        # Google Fonts CSS has @font-face blocks with font-weight and src: url()
+        weight_url_map = {}
+        
+        # Split CSS into font-face blocks
+        font_face_blocks = re.split(r'@font-face\s*\{', css_content)
+        
+        for block in font_face_blocks[1:]:  # Skip first empty split
+            # Extract font-weight
+            weight_match = re.search(r'font-weight:\s*(\d+)', block)
+            if not weight_match:
+                continue
+            
+            weight = int(weight_match.group(1))
+            
+            # Extract URL (prefer woff2, fallback to ttf)
+            url_match = re.search(r'url\((https://[^)]+\.(woff2|ttf))\)', block)
+            if url_match:
+                weight_url_map[weight] = url_match.group(1)
+        
+        # Map weights to our keys
+        weight_map = {300: 'light', 400: 'regular', 700: 'bold'}
+        
+        # Download each weight
+        for weight in weights:
+            weight_key = weight_map.get(weight, 'regular')
+            
+            # Find URL for this weight
+            weight_url = weight_url_map.get(weight)
+            
+            # If exact weight not found, try to find closest
+            if not weight_url and weight_url_map:
+                # Find closest weight
+                closest_weight = min(weight_url_map.keys(), key=lambda x: abs(x - weight))
+                weight_url = weight_url_map[closest_weight]
+            
+            if weight_url:
+                # Determine file extension
+                file_ext = 'woff2' if weight_url.endswith('.woff2') else 'ttf'
+                
+                # Download font file
+                font_filename = f"{font_name_safe}_{weight_key}.{file_ext}"
+                font_path = fonts_cache_dir / font_filename
+                
+                if not font_path.exists():
+                    print(f"Downloading {font_family} {weight_key} ({weight})...")
+                    try:
+                        urllib.request.urlretrieve(weight_url, font_path)
+                    except Exception as e:
+                        print(f"⚠ Failed to download {weight_key}: {e}")
+                        continue
+                
+                font_files[weight_key] = str(font_path)
+        
+        # Ensure we have at least regular weight
+        if 'regular' not in font_files and font_files:
+            # Use first available as regular
+            font_files['regular'] = list(font_files.values())[0]
+        
+        # If we don't have all three weights, duplicate available ones
+        if 'bold' not in font_files and 'regular' in font_files:
+            font_files['bold'] = font_files['regular']
+        if 'light' not in font_files and 'regular' in font_files:
+            font_files['light'] = font_files['regular']
+        
+        return font_files if font_files else None
+        
+    except Exception as e:
+        print(f"⚠ Error downloading Google Font {font_family}: {e}")
+        return None
+
+def load_fonts(font_family: Optional[str] = None):
+    """
+    Load fonts from local directory or download from Google Fonts.
     Returns dict with font paths for different weights.
+    
+    :param font_family: Google Fonts family name (e.g., 'Roboto', 'Open Sans'). 
+                       If None, uses local Roboto fonts.
     """
+    # If custom font family specified, try to download from Google Fonts
+    if font_family and font_family.lower() != 'roboto':
+        print(f"Loading Google Font: {font_family}")
+        fonts = download_google_font(font_family)
+        if fonts:
+            return fonts
+        else:
+            print(f"⚠ Failed to load {font_family}, falling back to local Roboto")
+    
+    # Default: Load local Roboto fonts
     fonts = {
         'bold': os.path.join(FONTS_DIR, 'Roboto-Bold.ttf'),
         'regular': os.path.join(FONTS_DIR, 'Roboto-Regular.ttf'),
@@ -379,7 +495,24 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
         print(f"OSMnx error while fetching features: {e}")
         return None
 
-def create_poster(city, country, point, dist, output_file, output_format):
+def create_poster(city, country, point, dist, output_file, output_format, 
+                  display_city=None, display_country=None, fonts=None):
+    """
+    Create a map poster.
+    
+    :param city: City name for geocoding
+    :param country: Country name for geocoding
+    :param point: (lat, lon) tuple
+    :param dist: Distance in meters
+    :param output_file: Output file path
+    :param output_format: Output format (png, svg, pdf)
+    :param display_city: Custom display name for city (for i18n). If None, uses city.
+    :param display_country: Custom display name for country (for i18n). If None, uses country.
+    :param fonts: Font dict with 'bold', 'regular', 'light' keys. If None, uses default.
+    """
+    display_city = display_city or city
+    display_country = display_country or country
+    
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -460,12 +593,14 @@ def create_poster(city, country, point, dist, output_file, output_format):
     create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
     create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
     
-    # 4. Typography using Roboto font
-    if FONTS:
-        font_main = FontProperties(fname=FONTS['bold'], size=60)
-        font_top = FontProperties(fname=FONTS['bold'], size=40)
-        font_sub = FontProperties(fname=FONTS['light'], size=22)
-        font_coords = FontProperties(fname=FONTS['regular'], size=14)
+    # 4. Typography
+    # Use provided fonts or fall back to default
+    active_fonts = fonts or FONTS
+    if active_fonts:
+        font_main = FontProperties(fname=active_fonts['bold'], size=60)
+        font_top = FontProperties(fname=active_fonts['bold'], size=40)
+        font_sub = FontProperties(fname=active_fonts['light'], size=22)
+        font_coords = FontProperties(fname=active_fonts['regular'], size=14)
     else:
         # Fallback to system fonts
         font_main = FontProperties(family='monospace', weight='bold', size=60)
@@ -473,11 +608,11 @@ def create_poster(city, country, point, dist, output_file, output_format):
         font_sub = FontProperties(family='monospace', weight='normal', size=22)
         font_coords = FontProperties(family='monospace', size=14)
     
-    spaced_city = "  ".join(list(city.upper()))
+    spaced_city = "  ".join(list(display_city.upper()))
     
     # Dynamically adjust font size based on city name length to prevent truncation
     base_font_size = 60
-    city_char_count = len(city)
+    city_char_count = len(display_city)
     if city_char_count > 10:
         # Scale down font size for longer names
         scale_factor = 10 / city_char_count
@@ -485,8 +620,8 @@ def create_poster(city, country, point, dist, output_file, output_format):
     else:
         adjusted_font_size = base_font_size
     
-    if FONTS:
-        font_main_adjusted = FontProperties(fname=FONTS['bold'], size=adjusted_font_size)
+    if active_fonts:
+        font_main_adjusted = FontProperties(fname=active_fonts['bold'], size=adjusted_font_size)
     else:
         font_main_adjusted = FontProperties(family='monospace', weight='bold', size=adjusted_font_size)
 
@@ -494,7 +629,7 @@ def create_poster(city, country, point, dist, output_file, output_format):
     ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_main_adjusted, zorder=11)
     
-    ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
+    ax.text(0.5, 0.10, display_country.upper(), transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
     
     lat, lon = point
@@ -509,8 +644,8 @@ def create_poster(city, country, point, dist, output_file, output_format):
             color=THEME['text'], linewidth=1, zorder=11)
 
     # --- ATTRIBUTION (bottom right) ---
-    if FONTS:
-        font_attr = FontProperties(fname=FONTS['light'], size=8)
+    if active_fonts:
+        font_attr = FontProperties(fname=active_fonts['light'], size=8)
     else:
         font_attr = FontProperties(family='monospace', size=8)
     
@@ -571,6 +706,12 @@ Examples:
   python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
   python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
   
+  # i18n support with custom display names
+  python create_map_poster.py -c "Tokyo" -C "Japan" -dc "東京" -dC "日本" --font-family "Noto Sans JP" -t japanese_ink
+  
+  # Custom Google Fonts
+  python create_map_poster.py -c "Paris" -C "France" --font-family "Open Sans" -t noir
+  
   # List themes
   python create_map_poster.py --list-themes
 
@@ -580,6 +721,9 @@ Options:
   --theme, -t       Theme name (default: feature_based)
   --distance, -d    Map radius in meters (default: 29000)
   --list-themes     List all available themes
+  --display-city, -dc    Custom display name for city (for i18n support)
+  --display-country, -dC Custom display name for country (for i18n support)
+  --font-family          Google Fonts family name (e.g., "Open Sans", "Roboto")
 
 Distance guide:
   4000-6000m   Small/dense cities (Venice, Amsterdam old center)
@@ -634,6 +778,9 @@ Examples:
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--display-city', '-dc', type=str, help='Custom display name for city (for i18n support)')
+    parser.add_argument('--display-country', '-dC', type=str, help='Custom display name for country (for i18n support)')
+    parser.add_argument('--font-family', type=str, help='Google Fonts family name (e.g., "Open Sans", "Roboto"). If not specified, uses local Roboto fonts.')
     
     args = parser.parse_args()
     
@@ -667,11 +814,19 @@ Examples:
     # Load theme
     THEME = load_theme(args.theme)
     
+    # Load fonts (Google Fonts or local)
+    fonts = load_fonts(args.font_family) if args.font_family else load_fonts()
+    
     # Get coordinates and generate poster
     try:
         coords = get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme, args.format)
-        create_poster(args.city, args.country, coords, args.distance, output_file, args.format)
+        create_poster(
+            args.city, args.country, coords, args.distance, output_file, args.format,
+            display_city=args.display_city,
+            display_country=args.display_country,
+            fonts=fonts
+        )
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
