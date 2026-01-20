@@ -38,7 +38,6 @@ python create_map_poster.py --city <city> --country <country> [options]
 | `--city`        | `-c`  | City name                          | required      |
 | `--country`     | `-C`  | Country name                       | required      |
 | `--latlong`     | `-ll` | Latitude & Longitude of map center | required      |
-| `--longitude`   | `-lo` | Longitude of map center            | required      |
 | `--theme`       | `-t`  | Theme name                         | feature_based |
 | `--distance`    | `-d`  | Map radius in meters               | 29000         |
 | `--list-themes` |       | List all available themes          |               |
