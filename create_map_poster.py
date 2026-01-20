@@ -460,7 +460,7 @@ def fetch_features(point, dist, tags, name):
         return None
 
 
-def create_poster(city, country, point, dist, output_file, output_format, country_label=None, name_label=None):
+def create_poster(city, country, point, dist, output_file, output_format, country_label=None, name_label=None, orientation='portrait'):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -486,7 +486,10 @@ def create_poster(city, country, point, dist, output_file, output_format, countr
     
     # 2. Setup Plot
     print("Rendering map...")
-    fig, ax = plt.subplots(figsize=(12, 16), facecolor=THEME['bg'])
+    if orientation == 'landscape':
+        _fig, ax = plt.subplots(figsize=(16, 12), facecolor=THEME['bg'])
+    else:
+        _fig, ax = plt.subplots(figsize=(12, 16), facecolor=THEME['bg'])
     ax.set_facecolor(THEME['bg'])
     ax.set_position((0.0, 0.0, 1.0, 1.0))
 
@@ -664,6 +667,12 @@ Options:
   --all-themes      Generate posters for all themes
   --distance, -d    Map radius in meters (default: 29000)
   --list-themes     List all available themes
+  --coords      Directly provide coordinates as "lat,lon" (overrides city/country lookup)
+  --orientation, -o Orientation of the poster (default: portrait)
+  --format, -f      Output format for the poster (default: png)
+
+Themes:
+  Available themes can be found in the 'themes/' directory.
 
 Distance guide:
   4000-6000m   Small/dense cities (Venice, Amsterdam old center)
@@ -720,6 +729,8 @@ Examples:
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--coords', type=str, help='Directly provide coordinates as "lat,lon" (overrides city/country lookup)')
+    parser.add_argument('--orientation', '-o', type=str, choices=['portrait', 'landscape'], default='portrait', help='Poster orientation (default: portrait)')
     
     args = parser.parse_args()
     
@@ -733,6 +744,17 @@ Examples:
         list_themes()
         sys.exit(0)
     
+    if (args.coords):
+        try:
+            lat_str, lon_str = args.coords.split(',')
+            lat = float(lat_str.strip())
+            lon = float(lon_str.strip())
+            coords = (lat, lon)
+            print(f"✓ Using provided coordinates: {coords[0]}, {coords[1]}")
+        except Exception as e:
+            print(f"Error parsing coordinates: {e}")
+            os.sys.exit(1)
+
     # Validate required arguments
     if not args.city or not args.country:
         print("Error: --city and --country are required.\n")
@@ -759,11 +781,13 @@ Examples:
     
     # Get coordinates and generate poster
     try:
-        coords = get_coordinates(args.city, args.country)
+        if (not coords):
+            coords = get_coordinates(args.city, args.country)
+
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
             output_file = generate_output_filename(args.city, theme_name, args.format)
-            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, country_label=args.country_label)
+            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, country_label=args.country_label, args.orientation)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
