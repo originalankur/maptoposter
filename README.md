@@ -41,6 +41,7 @@ python create_map_poster.py --city <city> --country <country> [options]
 | `--theme` | `-t` | Theme name | feature_based |
 | `--distance` | `-d` | Map radius in meters | 29000 |
 | `--list-themes` | | List all available themes | |
+| `--label-places` | | Comma-separated list of place names to label on the map | |
 
 ### Examples
 

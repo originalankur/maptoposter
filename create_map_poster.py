@@ -213,6 +213,17 @@ def get_coordinates(city, country):
         return (location.latitude, location.longitude)
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
+    
+def geocode_places(place_list, city, country):
+    results = []
+    for place in place_list:
+        query = f"{place}, {city}, {country}"
+        try:
+            location = ox.geocode(query)
+            results.append((place, location))
+        except Exception:
+            print(f"Note: Could not find {place}")
+    return results
 
 def create_poster(city, country, point, dist, output_file, output_format):
     print(f"\nGenerating map for {city}, {country}...")
@@ -295,6 +306,47 @@ def create_poster(city, country, point, dist, output_file, output_format):
         font_coords = FontProperties(family='monospace', size=14)
     
     spaced_city = "  ".join(list(city.upper()))
+
+    if args.label_places:
+        place_names = [p.strip() for p in args.label_places.split(",")]
+        labeled_places = geocode_places(place_names, city, country)
+
+        legend_items = []
+
+        for idx, (name, (lat_p, lon_p)) in enumerate(labeled_places, start=1):
+
+            ax.text(
+                lon_p, lat_p,
+                str(idx),
+                weight="bold",
+                fontsize=22,
+                color=THEME['text'],
+                ha="center",
+                va="center",
+                zorder=11
+            )
+
+            legend_items.append(f"{idx}. {name}")
+
+        if legend_items:
+            legend_text = "\n".join(legend_items)
+
+            ax.text(
+                0.02, 0.98,
+                legend_text,
+                transform=ax.transAxes,
+                fontsize=22,
+                va="top",
+                ha="left",
+                color=THEME['text'],
+                bbox=dict(
+                    boxstyle="round,pad=0.4",
+                    facecolor=THEME['bg'],
+                    edgecolor="none",
+                    alpha=0.85
+                ),
+                zorder=11
+            )
 
     # --- BOTTOM TEXT ---
     ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
@@ -440,6 +492,7 @@ Examples:
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--label-places',type=str,help="Comma-separated list of place names to label on the map")
     
     args = parser.parse_args()
     
