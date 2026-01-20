@@ -5,6 +5,17 @@ Generate beautiful, minimalist map posters for any city in the world.
 <img src="posters/singapore_neon_cyberpunk_20260118_153328.png" width="250">
 <img src="posters/dubai_midnight_blue_20260118_140807.png" width="250">
 
+## Features
+
+- 🗺️ Generate high-quality map posters from any location worldwide
+- 🎨 17 beautiful pre-designed themes
+- 🏢 Optional building layer for urban detail
+- 📐 Multiple poster sizes (A4, A3, A2, Square, Portrait, Landscape, Wide)
+- 📁 Multiple output formats (PNG, SVG, PDF)
+- 🌐 Modern Web UI with 12 language translations
+- ⚡ Live progress tracking during generation
+- 🔍 Address search with autocomplete
+
 ## Examples
 
 
@@ -26,7 +37,50 @@ Generate beautiful, minimalist map posters for any city in the world.
 pip install -r requirements.txt
 ```
 
-## Usage
+## Web UI (Recommended)
+
+The easiest way to create posters is through the modern web interface:
+
+```bash
+python web_ui.py
+```
+
+Then open http://localhost:5000 in your browser.
+
+### Web UI Features
+
+| Feature | Description |
+|---------|-------------|
+| 🔍 **Address Search** | Search any address, city or place with autocomplete |
+| 📍 **Live Preview** | See a preview of your poster before generating |
+| 📊 **Progress Tracking** | Real-time progress with step-by-step visualization |
+| 🎨 **Theme Selection** | Visual theme picker with color preview |
+| 📏 **Radius Slider** | Choose map radius from 1 km to 50 km |
+| 🏢 **Building Toggle** | Add or remove building outlines |
+| 📐 **Size Selection** | Multiple poster sizes (A4, A3, A2, Portrait, etc.) |
+| 📁 **Format Selection** | PNG (300 DPI), SVG (Vector), PDF (Print-ready) |
+| 🖼️ **Poster Gallery** | View all created posters with image previews |
+| 🌙 **Dark/Light Mode** | Toggle between dark and light theme |
+| 🌍 **12 Languages** | Full i18n support (see below) |
+
+### Supported Languages
+
+| Language | Code |
+|----------|------|
+| 🇩🇪 Deutsch | de |
+| 🇬🇧 English | en |
+| 🇫🇷 Français | fr |
+| 🇪🇸 Español | es |
+| 🇮🇹 Italiano | it |
+| 🇵🇹 Português | pt |
+| 🇳🇱 Nederlands | nl |
+| 🇵🇱 Polski | pl |
+| 🇯🇵 日本語 | ja |
+| 🇨🇳 中文 | zh |
+| 🇰🇷 한국어 | ko |
+| 🇷🇺 Русский | ru |
+
+## Command Line Usage
 
 ```bash
 python create_map_poster.py --city <city> --country <country> [options]
@@ -140,11 +194,16 @@ Create a JSON file in `themes/` directory:
 ## Project Structure
 
 ```
-map_poster/
-├── create_map_poster.py          # Main script
+maptoposter/
+├── create_map_poster.py  # CLI script
+├── web_ui.py             # Flask web application
+├── templates/
+│   └── index.html        # Web UI frontend
 ├── themes/               # Theme JSON files
 ├── fonts/                # Roboto font files
 ├── posters/              # Generated posters
+├── cache/                # OSM data cache
+├── requirements.txt      # Python dependencies
 └── README.md
 ```
 
@@ -252,3 +311,37 @@ G = ox.graph_from_point(point, dist=dist, network_type='walk')   # pedestrian
 - Cache coordinates locally to avoid Nominatim rate limits
 - Use `network_type='drive'` instead of `'all'` for faster renders
 - Reduce `dpi` from 300 to 150 for quick previews
+
+## API Endpoints (Web UI)
+
+The web UI exposes the following REST API endpoints:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Main web interface |
+| `/api/search?q=<query>` | GET | Search for addresses |
+| `/api/generate` | POST | Start poster generation |
+| `/api/progress/<job_id>` | GET | SSE stream for progress updates |
+| `/api/posters` | GET | List all generated posters |
+| `/download/<filename>` | GET | Download a poster |
+| `/preview/<filename>` | GET | Preview poster image |
+
+### Generate Request Body
+
+```json
+{
+  "city": "Berlin",
+  "country": "Germany",
+  "lat": 52.52,
+  "lon": 13.405,
+  "distance": 10000,
+  "theme": "feature_based",
+  "format": "png",
+  "size": "Portrait",
+  "buildings": true
+}
+```
+
+## License
+
+MIT License

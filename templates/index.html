@@ -1,0 +1,2360 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MapToPoster - Create Beautiful City Posters</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-glass: rgba(255, 255, 255, 0.7);
+            
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            
+            --border: rgba(148, 163, 184, 0.2);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-glass: rgba(30, 41, 59, 0.8);
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #64748b;
+            
+            --border: rgba(148, 163, 184, 0.1);
+            --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background decoration */
+        .bg-decoration {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bg-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .bg-blob-1 {
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            top: -200px;
+            right: -200px;
+            animation-delay: 0s;
+        }
+
+        .bg-blob-2 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            bottom: -100px;
+            left: -100px;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+
+        /* Layout */
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Language Selector */
+        .lang-selector {
+            position: relative;
+        }
+
+        .lang-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .lang-btn:hover {
+            background: var(--bg-secondary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .lang-flag {
+            font-size: 1.25rem;
+        }
+
+        .lang-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            padding: 0.5rem;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: var(--transition);
+            z-index: 1000;
+        }
+
+        .lang-selector:hover .lang-dropdown,
+        .lang-dropdown:hover {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .lang-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.875rem;
+        }
+
+        .lang-option:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .lang-option.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            width: 44px;
+            height: 44px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.125rem;
+            color: var(--text-primary);
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-secondary);
+            box-shadow: var(--shadow-md);
+            transform: rotate(15deg);
+        }
+
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-glow);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Search */
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.25rem;
+            color: var(--text-tertiary);
+            font-size: 1.125rem;
+            transition: var(--transition);
+        }
+
+        .search-input:focus ~ .search-icon {
+            color: var(--primary);
+        }
+
+        .search-loader {
+            position: absolute;
+            right: 1rem;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .search-loader.active {
+            opacity: 1;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .search-results {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            max-height: 320px;
+            overflow-y: auto;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: var(--transition);
+        }
+
+        .search-results.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .search-result-item {
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .search-result-main {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .search-result-sub {
+            font-size: 0.8125rem;
+            color: var(--text-tertiary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Selected Location */
+        .selected-location {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1));
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .selected-location.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .selected-location-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .selected-location-header i {
+            color: var(--primary);
+        }
+
+        .selected-location h4 {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .selected-location p {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        /* Form Elements */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            font-size: 0.9375rem;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6,9 12,15 18,9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem;
+        }
+
+        /* Slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .form-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-full);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .form-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+        }
+
+        .form-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+        }
+
+        .form-slider::-moz-range-track {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-full);
+            height: 8px;
+        }
+
+        .slider-value {
+            min-width: 60px;
+            padding: 0.5rem 0.75rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .toggle-group:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .toggle-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toggle-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .toggle-label {
+            font-weight: 600;
+            font-size: 0.9375rem;
+        }
+
+        .toggle-desc {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: var(--border);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(24px);
+        }
+
+        /* Theme Grid */
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 0.75rem;
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 0.25rem;
+        }
+
+        .theme-item {
+            position: relative;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .theme-item:hover {
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .theme-item.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .theme-item.selected::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.625rem;
+        }
+
+        .theme-preview {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: var(--radius-sm);
+            margin-bottom: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .theme-name {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Generate Button */
+        .generate-btn {
+            width: 100%;
+            padding: 1.125rem 2rem;
+            font-size: 1.0625rem;
+            font-weight: 700;
+            font-family: inherit;
+            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .generate-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--primary-dark), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .generate-btn:hover:not(:disabled)::before {
+            opacity: 1;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .generate-btn span,
+        .generate-btn i {
+            position: relative;
+            z-index: 1;
+        }
+
+        .generate-btn + .card,
+        .generate-btn + .progress-card + .card,
+        .generate-btn + .progress-card + .result-card + .card {
+            margin-top: 1.5rem;
+        }
+
+        /* Progress Section */
+        .progress-card {
+            display: none;
+        }
+
+        .progress-card.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .progress-bar-wrapper {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-full);
+            height: 12px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            background-size: 200% 100%;
+            border-radius: var(--radius-full);
+            transition: width 0.5s ease;
+            animation: shimmer 2s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .progress-steps {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.5rem;
+        }
+
+        .progress-step {
+            text-align: center;
+            padding: 0.75rem 0.25rem;
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            transition: var(--transition);
+        }
+
+        .progress-step i {
+            font-size: 1.25rem;
+            margin-bottom: 0.375rem;
+            display: block;
+            color: var(--text-tertiary);
+            transition: var(--transition);
+        }
+
+        .progress-step span {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+        }
+
+        .progress-step.active {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .progress-step.active i {
+            color: var(--primary);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .progress-step.completed {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .progress-step.completed i {
+            color: var(--success);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .progress-message {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Result Section */
+        .result-card {
+            display: none;
+        }
+
+        .result-card.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .result-success {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+
+        .result-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--success), var(--accent));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+            color: white;
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .result-success h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-success p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, var(--success), var(--accent));
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        .result-error {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+
+        .result-error .result-icon {
+            background: linear-gradient(135deg, var(--error), var(--warning));
+        }
+
+        /* Preview Panel */
+        .preview-panel {
+            position: sticky;
+            top: 1.5rem;
+        }
+
+        .preview-container {
+            aspect-ratio: 3/4;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .preview-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+        }
+
+        .preview-placeholder i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .preview-placeholder p {
+            font-size: 0.9375rem;
+        }
+
+        .preview-poster {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 1.25rem;
+        }
+
+        .preview-poster.active {
+            display: flex;
+        }
+
+        .preview-gradient-top,
+        .preview-gradient-bottom {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 30%;
+            pointer-events: none;
+        }
+
+        .preview-gradient-top {
+            top: 0;
+        }
+
+        .preview-gradient-bottom {
+            bottom: 0;
+        }
+
+        .preview-text {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .preview-city {
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            margin-bottom: 0.375rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .preview-country {
+            font-size: 0.75rem;
+            font-weight: 500;
+            opacity: 0.8;
+            margin-bottom: 0.25rem;
+        }
+
+        .preview-coords {
+            font-size: 0.625rem;
+            opacity: 0.6;
+        }
+
+        /* Gallery */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1rem;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .gallery-item {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .gallery-preview {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            background: var(--bg-tertiary);
+            display: block;
+        }
+
+        .gallery-preview-pdf {
+            width: 100%;
+            aspect-ratio: 3/4;
+            background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+        }
+
+        .gallery-preview-pdf i {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: #ef4444;
+        }
+
+        .gallery-preview-pdf span {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .gallery-info {
+            padding: 0.75rem;
+        }
+
+        .gallery-name {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .gallery-theme {
+            font-size: 0.6875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.375rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .gallery-theme i {
+            color: var(--primary);
+            font-size: 0.625rem;
+        }
+
+        .gallery-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.6875rem;
+            color: var(--text-tertiary);
+            margin-bottom: 0.5rem;
+        }
+
+        .gallery-format {
+            padding: 0.125rem 0.375rem;
+            background: var(--primary);
+            color: white;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 0.625rem;
+        }
+
+        .gallery-download {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            padding: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.75rem;
+            transition: var(--transition);
+        }
+
+        .gallery-download:hover {
+            filter: brightness(1.1);
+        }
+
+        .gallery-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-tertiary);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .progress-steps {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .header-actions {
+                gap: 0.5rem;
+            }
+
+            .lang-btn span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration">
+        <div class="bg-blob bg-blob-1"></div>
+        <div class="bg-blob bg-blob-2"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-map-location-dot"></i>
+                </div>
+                <span class="logo-text">MapToPoster</span>
+            </div>
+            
+            <div class="header-actions">
+                <!-- Language Selector -->
+                <div class="lang-selector">
+                    <button class="lang-btn" id="langBtn">
+                        <span class="lang-flag" id="currentFlag">🇩🇪</span>
+                        <span id="currentLang">Deutsch</span>
+                        <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
+                    </button>
+                    <div class="lang-dropdown" id="langDropdown">
+                        <div class="lang-option active" data-lang="de" data-flag="🇩🇪">
+                            <span class="lang-flag">🇩🇪</span>
+                            <span>Deutsch</span>
+                        </div>
+                        <div class="lang-option" data-lang="en" data-flag="🇬🇧">
+                            <span class="lang-flag">🇬🇧</span>
+                            <span>English</span>
+                        </div>
+                        <div class="lang-option" data-lang="fr" data-flag="🇫🇷">
+                            <span class="lang-flag">🇫🇷</span>
+                            <span>Français</span>
+                        </div>
+                        <div class="lang-option" data-lang="es" data-flag="🇪🇸">
+                            <span class="lang-flag">🇪🇸</span>
+                            <span>Español</span>
+                        </div>
+                        <div class="lang-option" data-lang="it" data-flag="🇮🇹">
+                            <span class="lang-flag">🇮🇹</span>
+                            <span>Italiano</span>
+                        </div>
+                        <div class="lang-option" data-lang="pt" data-flag="🇵🇹">
+                            <span class="lang-flag">🇵🇹</span>
+                            <span>Português</span>
+                        </div>
+                        <div class="lang-option" data-lang="nl" data-flag="🇳🇱">
+                            <span class="lang-flag">🇳🇱</span>
+                            <span>Nederlands</span>
+                        </div>
+                        <div class="lang-option" data-lang="pl" data-flag="🇵🇱">
+                            <span class="lang-flag">🇵🇱</span>
+                            <span>Polski</span>
+                        </div>
+                        <div class="lang-option" data-lang="ja" data-flag="🇯🇵">
+                            <span class="lang-flag">🇯🇵</span>
+                            <span>日本語</span>
+                        </div>
+                        <div class="lang-option" data-lang="zh" data-flag="🇨🇳">
+                            <span class="lang-flag">🇨🇳</span>
+                            <span>中文</span>
+                        </div>
+                        <div class="lang-option" data-lang="ko" data-flag="🇰🇷">
+                            <span class="lang-flag">🇰🇷</span>
+                            <span>한국어</span>
+                        </div>
+                        <div class="lang-option" data-lang="ru" data-flag="🇷🇺">
+                            <span class="lang-flag">🇷🇺</span>
+                            <span>Русский</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-grid">
+            <div class="form-section">
+                <!-- Search Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h2 class="card-title" data-i18n="search_title">Adresse suchen</h2>
+                    </div>
+                    
+                    <div class="search-wrapper">
+                        <div class="search-input-container">
+                            <input type="text" class="search-input" id="searchInput" 
+                                   data-i18n-placeholder="search_placeholder" 
+                                   placeholder="Stadt, Adresse oder Ort eingeben..." autocomplete="off">
+                            <i class="fas fa-location-dot search-icon"></i>
+                            <div class="search-loader" id="searchLoader"></div>
+                        </div>
+                        <div class="search-results" id="searchResults"></div>
+                    </div>
+
+                    <div class="selected-location" id="selectedLocation">
+                        <div class="selected-location-header">
+                            <i class="fas fa-check-circle"></i>
+                            <h4 id="selectedCity">-</h4>
+                        </div>
+                        <p id="selectedAddress">-</p>
+                        <p id="selectedCoords" style="font-size: 0.75rem; margin-top: 0.25rem;">-</p>
+                    </div>
+                </div>
+
+                <!-- Settings Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-sliders"></i>
+                        </div>
+                        <h2 class="card-title" data-i18n="settings_title">Einstellungen</h2>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="city_label">Stadtname</label>
+                            <input type="text" class="form-input" id="cityName" data-i18n-placeholder="city_placeholder" placeholder="z.B. Berlin">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="country_label">Land</label>
+                            <input type="text" class="form-input" id="countryName" data-i18n-placeholder="country_placeholder" placeholder="z.B. Deutschland">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" data-i18n="radius_label">Kartenradius</label>
+                            <div class="slider-container">
+                                <input type="range" class="form-slider" id="distance" 
+                                       min="1000" max="50000" value="10000" step="1000">
+                                <div class="slider-value" id="distanceValue">10 km</div>
+                            </div>
+                            <div class="slider-labels">
+                                <span>1 km</span>
+                                <span>25 km</span>
+                                <span>50 km</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="size_label">Postergröße</label>
+                            <select class="form-select" id="posterSize">
+                                {% for size in sizes %}
+                                <option value="{{ size }}" {% if size == 'Portrait' %}selected{% endif %}>{{ size }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label" data-i18n="format_label">Ausgabeformat</label>
+                            <select class="form-select" id="outputFormat">
+                                <option value="png" data-i18n="format_png">PNG (Hochauflösend, 300 DPI)</option>
+                                <option value="svg" data-i18n="format_svg">SVG (Vektorgrafik)</option>
+                                <option value="pdf" data-i18n="format_pdf">PDF (Druckfertig)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="toggle-group" onclick="document.getElementById('includeBuildings').click()">
+                        <div class="toggle-info">
+                            <div class="toggle-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div>
+                                <div class="toggle-label" data-i18n="buildings_label">Gebäude anzeigen</div>
+                                <div class="toggle-desc" data-i18n="buildings_desc">Gebäudeumrisse auf der Karte</div>
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="includeBuildings" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Theme Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-palette"></i>
+                        </div>
+                        <h2 class="card-title" data-i18n="theme_title">Design-Theme</h2>
+                    </div>
+                    
+                    <div class="theme-grid" id="themeGrid">
+                        {% for theme in themes %}
+                        <div class="theme-item {% if theme.id == 'feature_based' %}selected{% endif %}" 
+                             data-theme="{{ theme.id }}" 
+                             data-bg="{{ theme.bg }}" 
+                             data-text="{{ theme.text }}"
+                             title="{{ theme.description }}">
+                            <div class="theme-preview" style="background: {{ theme.bg }}; border-color: {{ theme.text }};"></div>
+                            <div class="theme-name">{{ theme.name }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <button class="generate-btn" id="generateBtn" disabled>
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                    <span data-i18n="generate_btn">Poster erstellen</span>
+                </button>
+
+                <!-- Progress Card -->
+                <div class="card progress-card" id="progressCard">
+                    <div class="card-header">
+                        <div class="card-icon" style="animation: pulse 1s ease-in-out infinite;">
+                            <i class="fas fa-cog fa-spin"></i>
+                        </div>
+                        <h2 class="card-title" data-i18n="progress_title">Wird erstellt...</h2>
+                    </div>
+
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
+                    </div>
+
+                    <div class="progress-steps">
+                        <div class="progress-step" data-step="fetch_streets">
+                            <i class="fas fa-road"></i>
+                            <span data-i18n="step_streets">Straßen</span>
+                        </div>
+                        <div class="progress-step" data-step="fetch_water">
+                            <i class="fas fa-water"></i>
+                            <span data-i18n="step_water">Gewässer</span>
+                        </div>
+                        <div class="progress-step" data-step="fetch_parks">
+                            <i class="fas fa-tree"></i>
+                            <span data-i18n="step_parks">Parks</span>
+                        </div>
+                        <div class="progress-step" data-step="fetch_buildings">
+                            <i class="fas fa-building"></i>
+                            <span data-i18n="step_buildings">Gebäude</span>
+                        </div>
+                        <div class="progress-step" data-step="render">
+                            <i class="fas fa-paint-brush"></i>
+                            <span data-i18n="step_render">Rendern</span>
+                        </div>
+                        <div class="progress-step" data-step="save">
+                            <i class="fas fa-download"></i>
+                            <span data-i18n="step_save">Speichern</span>
+                        </div>
+                    </div>
+
+                    <p class="progress-message" id="progressMessage" data-i18n="progress_starting">Starte...</p>
+                </div>
+
+                <!-- Result Card -->
+                <div class="card result-card" id="resultCard">
+                    <div class="result-success" id="resultSuccess">
+                        <div class="result-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <h3 data-i18n="result_success">Poster erfolgreich erstellt!</h3>
+                        <p id="resultFilename">-</p>
+                        <a href="#" class="download-btn" id="downloadBtn">
+                            <i class="fas fa-download"></i>
+                            <span data-i18n="download_btn">Herunterladen</span>
+                        </a>
+                    </div>
+                    <div class="result-error" id="resultError" style="display: none;">
+                        <div class="result-icon">
+                            <i class="fas fa-exclamation"></i>
+                        </div>
+                        <h3 data-i18n="result_error">Fehler aufgetreten</h3>
+                        <p id="errorMessage">-</p>
+                    </div>
+                </div>
+
+                <!-- Gallery Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-images"></i>
+                        </div>
+                        <h2 class="card-title" data-i18n="gallery_title">Erstellte Poster</h2>
+                    </div>
+                    
+                    <div class="gallery-grid" id="galleryGrid">
+                        <div class="gallery-empty" data-i18n="gallery_loading">Lade Poster...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Panel -->
+            <div class="preview-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <h2 class="card-title" data-i18n="preview_title">Vorschau</h2>
+                    </div>
+                    
+                    <div class="preview-container" id="previewContainer">
+                        <div class="preview-placeholder" id="previewPlaceholder">
+                            <i class="fas fa-map"></i>
+                            <p data-i18n="preview_placeholder">Wähle eine Adresse</p>
+                        </div>
+                        <div class="preview-poster" id="previewPoster">
+                            <div class="preview-gradient-top"></div>
+                            <div class="preview-gradient-bottom"></div>
+                            <div class="preview-text">
+                                <div class="preview-city" id="previewCity">B E R L I N</div>
+                                <div class="preview-country" id="previewCountry">DEUTSCHLAND</div>
+                                <div class="preview-coords" id="previewCoords">52.5200° N / 13.4050° E</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ==================== i18n Translations ====================
+        const translations = {
+            de: {
+                search_title: 'Adresse suchen',
+                search_placeholder: 'Stadt, Adresse oder Ort eingeben...',
+                settings_title: 'Einstellungen',
+                city_label: 'Stadtname',
+                city_placeholder: 'z.B. Berlin',
+                country_label: 'Land',
+                country_placeholder: 'z.B. Deutschland',
+                radius_label: 'Kartenradius',
+                size_label: 'Postergröße',
+                format_label: 'Ausgabeformat',
+                format_png: 'PNG (Hochauflösend, 300 DPI)',
+                format_svg: 'SVG (Vektorgrafik)',
+                format_pdf: 'PDF (Druckfertig)',
+                buildings_label: 'Gebäude anzeigen',
+                buildings_desc: 'Gebäudeumrisse auf der Karte',
+                theme_title: 'Design-Theme',
+                generate_btn: 'Poster erstellen',
+                progress_title: 'Wird erstellt...',
+                step_streets: 'Straßen',
+                step_water: 'Gewässer',
+                step_parks: 'Parks',
+                step_buildings: 'Gebäude',
+                step_render: 'Rendern',
+                step_save: 'Speichern',
+                progress_starting: 'Starte...',
+                result_success: 'Poster erfolgreich erstellt!',
+                result_error: 'Fehler aufgetreten',
+                download_btn: 'Herunterladen',
+                gallery_title: 'Erstellte Poster',
+                gallery_loading: 'Lade Poster...',
+                gallery_empty: 'Noch keine Poster erstellt',
+                preview_title: 'Vorschau',
+                preview_placeholder: 'Wähle eine Adresse'
+            },
+            en: {
+                search_title: 'Search Address',
+                search_placeholder: 'Enter city, address or place...',
+                settings_title: 'Settings',
+                city_label: 'City Name',
+                city_placeholder: 'e.g. London',
+                country_label: 'Country',
+                country_placeholder: 'e.g. United Kingdom',
+                radius_label: 'Map Radius',
+                size_label: 'Poster Size',
+                format_label: 'Output Format',
+                format_png: 'PNG (High Resolution, 300 DPI)',
+                format_svg: 'SVG (Vector Graphics)',
+                format_pdf: 'PDF (Print Ready)',
+                buildings_label: 'Show Buildings',
+                buildings_desc: 'Building outlines on the map',
+                theme_title: 'Design Theme',
+                generate_btn: 'Create Poster',
+                progress_title: 'Creating...',
+                step_streets: 'Streets',
+                step_water: 'Water',
+                step_parks: 'Parks',
+                step_buildings: 'Buildings',
+                step_render: 'Render',
+                step_save: 'Save',
+                progress_starting: 'Starting...',
+                result_success: 'Poster created successfully!',
+                result_error: 'Error occurred',
+                download_btn: 'Download',
+                gallery_title: 'Created Posters',
+                gallery_loading: 'Loading posters...',
+                gallery_empty: 'No posters created yet',
+                preview_title: 'Preview',
+                preview_placeholder: 'Select an address'
+            },
+            fr: {
+                search_title: 'Rechercher une adresse',
+                search_placeholder: 'Entrez ville, adresse ou lieu...',
+                settings_title: 'Paramètres',
+                city_label: 'Nom de la ville',
+                city_placeholder: 'ex. Paris',
+                country_label: 'Pays',
+                country_placeholder: 'ex. France',
+                radius_label: 'Rayon de la carte',
+                size_label: 'Taille du poster',
+                format_label: 'Format de sortie',
+                format_png: 'PNG (Haute résolution, 300 DPI)',
+                format_svg: 'SVG (Graphique vectoriel)',
+                format_pdf: 'PDF (Prêt à imprimer)',
+                buildings_label: 'Afficher les bâtiments',
+                buildings_desc: 'Contours des bâtiments sur la carte',
+                theme_title: 'Thème de design',
+                generate_btn: 'Créer le poster',
+                progress_title: 'Création en cours...',
+                step_streets: 'Rues',
+                step_water: 'Eau',
+                step_parks: 'Parcs',
+                step_buildings: 'Bâtiments',
+                step_render: 'Rendu',
+                step_save: 'Sauver',
+                progress_starting: 'Démarrage...',
+                result_success: 'Poster créé avec succès!',
+                result_error: 'Une erreur est survenue',
+                download_btn: 'Télécharger',
+                gallery_title: 'Posters créés',
+                gallery_loading: 'Chargement des posters...',
+                gallery_empty: 'Aucun poster créé',
+                preview_title: 'Aperçu',
+                preview_placeholder: 'Sélectionnez une adresse'
+            },
+            es: {
+                search_title: 'Buscar dirección',
+                search_placeholder: 'Ingresa ciudad, dirección o lugar...',
+                settings_title: 'Configuración',
+                city_label: 'Nombre de la ciudad',
+                city_placeholder: 'ej. Madrid',
+                country_label: 'País',
+                country_placeholder: 'ej. España',
+                radius_label: 'Radio del mapa',
+                size_label: 'Tamaño del póster',
+                format_label: 'Formato de salida',
+                format_png: 'PNG (Alta resolución, 300 DPI)',
+                format_svg: 'SVG (Gráfico vectorial)',
+                format_pdf: 'PDF (Listo para imprimir)',
+                buildings_label: 'Mostrar edificios',
+                buildings_desc: 'Contornos de edificios en el mapa',
+                theme_title: 'Tema de diseño',
+                generate_btn: 'Crear póster',
+                progress_title: 'Creando...',
+                step_streets: 'Calles',
+                step_water: 'Agua',
+                step_parks: 'Parques',
+                step_buildings: 'Edificios',
+                step_render: 'Renderizar',
+                step_save: 'Guardar',
+                progress_starting: 'Iniciando...',
+                result_success: '¡Póster creado con éxito!',
+                result_error: 'Ocurrió un error',
+                download_btn: 'Descargar',
+                gallery_title: 'Pósters creados',
+                gallery_loading: 'Cargando pósters...',
+                gallery_empty: 'Ningún póster creado',
+                preview_title: 'Vista previa',
+                preview_placeholder: 'Selecciona una dirección'
+            },
+            it: {
+                search_title: 'Cerca indirizzo',
+                search_placeholder: 'Inserisci città, indirizzo o luogo...',
+                settings_title: 'Impostazioni',
+                city_label: 'Nome città',
+                city_placeholder: 'es. Roma',
+                country_label: 'Paese',
+                country_placeholder: 'es. Italia',
+                radius_label: 'Raggio mappa',
+                size_label: 'Dimensione poster',
+                format_label: 'Formato output',
+                format_png: 'PNG (Alta risoluzione, 300 DPI)',
+                format_svg: 'SVG (Grafica vettoriale)',
+                format_pdf: 'PDF (Pronto per la stampa)',
+                buildings_label: 'Mostra edifici',
+                buildings_desc: 'Contorni degli edifici sulla mappa',
+                theme_title: 'Tema design',
+                generate_btn: 'Crea poster',
+                progress_title: 'Creazione in corso...',
+                step_streets: 'Strade',
+                step_water: 'Acqua',
+                step_parks: 'Parchi',
+                step_buildings: 'Edifici',
+                step_render: 'Rendering',
+                step_save: 'Salva',
+                progress_starting: 'Avvio...',
+                result_success: 'Poster creato con successo!',
+                result_error: 'Si è verificato un errore',
+                download_btn: 'Scarica',
+                gallery_title: 'Poster creati',
+                gallery_loading: 'Caricamento poster...',
+                gallery_empty: 'Nessun poster creato',
+                preview_title: 'Anteprima',
+                preview_placeholder: 'Seleziona un indirizzo'
+            },
+            pt: {
+                search_title: 'Pesquisar endereço',
+                search_placeholder: 'Digite cidade, endereço ou local...',
+                settings_title: 'Configurações',
+                city_label: 'Nome da cidade',
+                city_placeholder: 'ex. Lisboa',
+                country_label: 'País',
+                country_placeholder: 'ex. Portugal',
+                radius_label: 'Raio do mapa',
+                size_label: 'Tamanho do pôster',
+                format_label: 'Formato de saída',
+                format_png: 'PNG (Alta resolução, 300 DPI)',
+                format_svg: 'SVG (Gráfico vetorial)',
+                format_pdf: 'PDF (Pronto para impressão)',
+                buildings_label: 'Mostrar edifícios',
+                buildings_desc: 'Contornos de edifícios no mapa',
+                theme_title: 'Tema de design',
+                generate_btn: 'Criar pôster',
+                progress_title: 'Criando...',
+                step_streets: 'Ruas',
+                step_water: 'Água',
+                step_parks: 'Parques',
+                step_buildings: 'Edifícios',
+                step_render: 'Renderizar',
+                step_save: 'Salvar',
+                progress_starting: 'Iniciando...',
+                result_success: 'Pôster criado com sucesso!',
+                result_error: 'Ocorreu um erro',
+                download_btn: 'Baixar',
+                gallery_title: 'Pôsters criados',
+                gallery_loading: 'Carregando pôsters...',
+                gallery_empty: 'Nenhum pôster criado',
+                preview_title: 'Pré-visualização',
+                preview_placeholder: 'Selecione um endereço'
+            },
+            nl: {
+                search_title: 'Adres zoeken',
+                search_placeholder: 'Voer stad, adres of plaats in...',
+                settings_title: 'Instellingen',
+                city_label: 'Stadsnaam',
+                city_placeholder: 'bijv. Amsterdam',
+                country_label: 'Land',
+                country_placeholder: 'bijv. Nederland',
+                radius_label: 'Kaartstraal',
+                size_label: 'Postergrootte',
+                format_label: 'Uitvoerformaat',
+                format_png: 'PNG (Hoge resolutie, 300 DPI)',
+                format_svg: 'SVG (Vectorafbeelding)',
+                format_pdf: 'PDF (Drukklaar)',
+                buildings_label: 'Gebouwen tonen',
+                buildings_desc: 'Gebouwcontouren op de kaart',
+                theme_title: 'Ontwerpthema',
+                generate_btn: 'Poster maken',
+                progress_title: 'Bezig met maken...',
+                step_streets: 'Straten',
+                step_water: 'Water',
+                step_parks: 'Parken',
+                step_buildings: 'Gebouwen',
+                step_render: 'Renderen',
+                step_save: 'Opslaan',
+                progress_starting: 'Starten...',
+                result_success: 'Poster succesvol gemaakt!',
+                result_error: 'Er is een fout opgetreden',
+                download_btn: 'Downloaden',
+                gallery_title: 'Gemaakte posters',
+                gallery_loading: 'Posters laden...',
+                gallery_empty: 'Nog geen posters gemaakt',
+                preview_title: 'Voorbeeld',
+                preview_placeholder: 'Selecteer een adres'
+            },
+            pl: {
+                search_title: 'Szukaj adresu',
+                search_placeholder: 'Wpisz miasto, adres lub miejsce...',
+                settings_title: 'Ustawienia',
+                city_label: 'Nazwa miasta',
+                city_placeholder: 'np. Warszawa',
+                country_label: 'Kraj',
+                country_placeholder: 'np. Polska',
+                radius_label: 'Promień mapy',
+                size_label: 'Rozmiar plakatu',
+                format_label: 'Format wyjściowy',
+                format_png: 'PNG (Wysoka rozdzielczość, 300 DPI)',
+                format_svg: 'SVG (Grafika wektorowa)',
+                format_pdf: 'PDF (Gotowy do druku)',
+                buildings_label: 'Pokaż budynki',
+                buildings_desc: 'Kontury budynków na mapie',
+                theme_title: 'Motyw projektu',
+                generate_btn: 'Utwórz plakat',
+                progress_title: 'Tworzenie...',
+                step_streets: 'Ulice',
+                step_water: 'Woda',
+                step_parks: 'Parki',
+                step_buildings: 'Budynki',
+                step_render: 'Renderowanie',
+                step_save: 'Zapisz',
+                progress_starting: 'Uruchamianie...',
+                result_success: 'Plakat utworzony pomyślnie!',
+                result_error: 'Wystąpił błąd',
+                download_btn: 'Pobierz',
+                gallery_title: 'Utworzone plakaty',
+                gallery_loading: 'Ładowanie plakatów...',
+                gallery_empty: 'Brak utworzonych plakatów',
+                preview_title: 'Podgląd',
+                preview_placeholder: 'Wybierz adres'
+            },
+            ja: {
+                search_title: '住所を検索',
+                search_placeholder: '都市、住所、場所を入力...',
+                settings_title: '設定',
+                city_label: '都市名',
+                city_placeholder: '例：東京',
+                country_label: '国',
+                country_placeholder: '例：日本',
+                radius_label: '地図の半径',
+                size_label: 'ポスターサイズ',
+                format_label: '出力形式',
+                format_png: 'PNG（高解像度、300 DPI）',
+                format_svg: 'SVG（ベクター画像）',
+                format_pdf: 'PDF（印刷用）',
+                buildings_label: '建物を表示',
+                buildings_desc: '地図上の建物の輪郭',
+                theme_title: 'デザインテーマ',
+                generate_btn: 'ポスターを作成',
+                progress_title: '作成中...',
+                step_streets: '道路',
+                step_water: '水域',
+                step_parks: '公園',
+                step_buildings: '建物',
+                step_render: 'レンダリング',
+                step_save: '保存',
+                progress_starting: '開始中...',
+                result_success: 'ポスターが正常に作成されました！',
+                result_error: 'エラーが発生しました',
+                download_btn: 'ダウンロード',
+                gallery_title: '作成したポスター',
+                gallery_loading: 'ポスターを読み込み中...',
+                gallery_empty: 'ポスターはまだありません',
+                preview_title: 'プレビュー',
+                preview_placeholder: '住所を選択してください'
+            },
+            zh: {
+                search_title: '搜索地址',
+                search_placeholder: '输入城市、地址或地点...',
+                settings_title: '设置',
+                city_label: '城市名称',
+                city_placeholder: '例如：北京',
+                country_label: '国家',
+                country_placeholder: '例如：中国',
+                radius_label: '地图半径',
+                size_label: '海报尺寸',
+                format_label: '输出格式',
+                format_png: 'PNG（高分辨率，300 DPI）',
+                format_svg: 'SVG（矢量图）',
+                format_pdf: 'PDF（可打印）',
+                buildings_label: '显示建筑',
+                buildings_desc: '地图上的建筑轮廓',
+                theme_title: '设计主题',
+                generate_btn: '创建海报',
+                progress_title: '创建中...',
+                step_streets: '街道',
+                step_water: '水域',
+                step_parks: '公园',
+                step_buildings: '建筑',
+                step_render: '渲染',
+                step_save: '保存',
+                progress_starting: '启动中...',
+                result_success: '海报创建成功！',
+                result_error: '发生错误',
+                download_btn: '下载',
+                gallery_title: '已创建的海报',
+                gallery_loading: '正在加载海报...',
+                gallery_empty: '尚未创建海报',
+                preview_title: '预览',
+                preview_placeholder: '请选择地址'
+            },
+            ko: {
+                search_title: '주소 검색',
+                search_placeholder: '도시, 주소 또는 장소 입력...',
+                settings_title: '설정',
+                city_label: '도시 이름',
+                city_placeholder: '예: 서울',
+                country_label: '국가',
+                country_placeholder: '예: 대한민국',
+                radius_label: '지도 반경',
+                size_label: '포스터 크기',
+                format_label: '출력 형식',
+                format_png: 'PNG (고해상도, 300 DPI)',
+                format_svg: 'SVG (벡터 그래픽)',
+                format_pdf: 'PDF (인쇄용)',
+                buildings_label: '건물 표시',
+                buildings_desc: '지도에 건물 윤곽선',
+                theme_title: '디자인 테마',
+                generate_btn: '포스터 만들기',
+                progress_title: '생성 중...',
+                step_streets: '도로',
+                step_water: '수역',
+                step_parks: '공원',
+                step_buildings: '건물',
+                step_render: '렌더링',
+                step_save: '저장',
+                progress_starting: '시작 중...',
+                result_success: '포스터가 성공적으로 생성되었습니다!',
+                result_error: '오류가 발생했습니다',
+                download_btn: '다운로드',
+                gallery_title: '생성된 포스터',
+                gallery_loading: '포스터 로딩 중...',
+                gallery_empty: '아직 생성된 포스터가 없습니다',
+                preview_title: '미리보기',
+                preview_placeholder: '주소를 선택하세요'
+            },
+            ru: {
+                search_title: 'Поиск адреса',
+                search_placeholder: 'Введите город, адрес или место...',
+                settings_title: 'Настройки',
+                city_label: 'Название города',
+                city_placeholder: 'напр. Москва',
+                country_label: 'Страна',
+                country_placeholder: 'напр. Россия',
+                radius_label: 'Радиус карты',
+                size_label: 'Размер постера',
+                format_label: 'Формат вывода',
+                format_png: 'PNG (Высокое разрешение, 300 DPI)',
+                format_svg: 'SVG (Векторная графика)',
+                format_pdf: 'PDF (Готов к печати)',
+                buildings_label: 'Показать здания',
+                buildings_desc: 'Контуры зданий на карте',
+                theme_title: 'Тема дизайна',
+                generate_btn: 'Создать постер',
+                progress_title: 'Создание...',
+                step_streets: 'Улицы',
+                step_water: 'Вода',
+                step_parks: 'Парки',
+                step_buildings: 'Здания',
+                step_render: 'Рендеринг',
+                step_save: 'Сохранение',
+                progress_starting: 'Запуск...',
+                result_success: 'Постер успешно создан!',
+                result_error: 'Произошла ошибка',
+                download_btn: 'Скачать',
+                gallery_title: 'Созданные постеры',
+                gallery_loading: 'Загрузка постеров...',
+                gallery_empty: 'Постеры еще не созданы',
+                preview_title: 'Предпросмотр',
+                preview_placeholder: 'Выберите адрес'
+            }
+        };
+
+        let currentLang = localStorage.getItem('lang') || 'de';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            
+            const t = translations[lang];
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+            
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+            
+            const option = document.querySelector(`.lang-option[data-lang="${lang}"]`);
+            if (option) {
+                document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                document.getElementById('currentFlag').textContent = option.dataset.flag;
+                document.getElementById('currentLang').textContent = option.querySelector('span:last-child').textContent;
+            }
+        }
+
+        document.querySelectorAll('.lang-option').forEach(option => {
+            option.addEventListener('click', () => {
+                setLanguage(option.dataset.lang);
+            });
+        });
+
+        setLanguage(currentLang);
+
+        // ==================== Theme Toggle ====================
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            setTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
+        setTheme(localStorage.getItem('theme') || 'light');
+
+        // ==================== App State ====================
+        let selectedLocation = null;
+        let selectedTheme = 'feature_based';
+        let currentJobId = null;
+        let eventSource = null;
+
+        // ==================== Search ====================
+        const searchInput = document.getElementById('searchInput');
+        const searchLoader = document.getElementById('searchLoader');
+        const searchResults = document.getElementById('searchResults');
+        const selectedLocationDiv = document.getElementById('selectedLocation');
+        const generateBtn = document.getElementById('generateBtn');
+
+        let searchTimeout = null;
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            if (searchTimeout) clearTimeout(searchTimeout);
+            
+            if (query.length < 3) {
+                searchResults.classList.remove('active');
+                return;
+            }
+            
+            searchLoader.classList.add('active');
+            
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                    const results = await response.json();
+                    
+                    if (results.length > 0) {
+                        searchResults.innerHTML = results.map(r => `
+                            <div class="search-result-item" 
+                                 data-lat="${r.lat}" 
+                                 data-lon="${r.lon}"
+                                 data-city="${r.city || ''}"
+                                 data-country="${r.country || ''}"
+                                 data-address="${r.display_name}">
+                                <div class="search-result-main">${r.city || r.display_name.split(',')[0]}</div>
+                                <div class="search-result-sub">${r.display_name}</div>
+                            </div>
+                        `).join('');
+                        searchResults.classList.add('active');
+                    } else {
+                        searchResults.innerHTML = '<div class="search-result-item"><div class="search-result-main">No results</div></div>';
+                        searchResults.classList.add('active');
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                } finally {
+                    searchLoader.classList.remove('active');
+                }
+            }, 300);
+        });
+
+        searchResults.addEventListener('click', (e) => {
+            const item = e.target.closest('.search-result-item');
+            if (!item || !item.dataset.lat) return;
+            
+            selectedLocation = {
+                lat: parseFloat(item.dataset.lat),
+                lon: parseFloat(item.dataset.lon),
+                city: item.dataset.city,
+                country: item.dataset.country,
+                address: item.dataset.address
+            };
+            
+            document.getElementById('selectedCity').textContent = selectedLocation.city || selectedLocation.address.split(',')[0];
+            document.getElementById('selectedAddress').textContent = selectedLocation.address;
+            document.getElementById('selectedCoords').textContent = `${selectedLocation.lat.toFixed(4)}° / ${selectedLocation.lon.toFixed(4)}°`;
+            selectedLocationDiv.classList.add('active');
+            
+            document.getElementById('cityName').value = selectedLocation.city || selectedLocation.address.split(',')[0];
+            document.getElementById('countryName').value = selectedLocation.country || '';
+            
+            updatePreview();
+            generateBtn.disabled = false;
+            searchResults.classList.remove('active');
+            searchInput.value = selectedLocation.city || selectedLocation.address.split(',')[0];
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-wrapper')) {
+                searchResults.classList.remove('active');
+            }
+        });
+
+        // ==================== Theme Selection ====================
+        document.getElementById('themeGrid').addEventListener('click', (e) => {
+            const item = e.target.closest('.theme-item');
+            if (!item) return;
+            
+            document.querySelectorAll('.theme-item').forEach(el => el.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedTheme = item.dataset.theme;
+            updatePreview();
+        });
+
+        // ==================== Preview ====================
+        function updatePreview() {
+            if (!selectedLocation) return;
+            
+            const themeItem = document.querySelector(`.theme-item[data-theme="${selectedTheme}"]`);
+            const bgColor = themeItem?.dataset.bg || '#ffffff';
+            const textColor = themeItem?.dataset.text || '#000000';
+            
+            const cityName = document.getElementById('cityName').value || selectedLocation.city || 'CITY';
+            const countryName = document.getElementById('countryName').value || selectedLocation.country || '';
+            
+            const spacedCity = cityName.toUpperCase().split('').join(' ');
+            
+            const lat = selectedLocation.lat;
+            const lon = selectedLocation.lon;
+            const coords = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'} / ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'W'}`;
+            
+            const previewContainer = document.getElementById('previewContainer');
+            const previewPoster = document.getElementById('previewPoster');
+            
+            previewContainer.style.background = bgColor;
+            previewPoster.style.color = textColor;
+            document.querySelector('.preview-gradient-top').style.background = `linear-gradient(to bottom, ${bgColor}, transparent)`;
+            document.querySelector('.preview-gradient-bottom').style.background = `linear-gradient(to top, ${bgColor}, transparent)`;
+            
+            document.getElementById('previewCity').textContent = spacedCity;
+            document.getElementById('previewCountry').textContent = countryName.toUpperCase();
+            document.getElementById('previewCoords').textContent = coords;
+            
+            document.getElementById('previewPlaceholder').style.display = 'none';
+            previewPoster.classList.add('active');
+        }
+
+        ['cityName', 'countryName'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePreview);
+        });
+
+        // ==================== Radius Slider ====================
+        const distanceSlider = document.getElementById('distance');
+        const distanceValue = document.getElementById('distanceValue');
+
+        distanceSlider.addEventListener('input', () => {
+            const value = parseInt(distanceSlider.value);
+            if (value >= 1000) {
+                distanceValue.textContent = (value / 1000) + ' km';
+            } else {
+                distanceValue.textContent = value + ' m';
+            }
+        });
+
+        // ==================== Generate ====================
+        generateBtn.addEventListener('click', async () => {
+            if (!selectedLocation) return;
+            
+            const params = {
+                city: document.getElementById('cityName').value || selectedLocation.city,
+                country: document.getElementById('countryName').value || selectedLocation.country,
+                lat: selectedLocation.lat,
+                lon: selectedLocation.lon,
+                distance: parseInt(document.getElementById('distance').value) || 10000,
+                theme: selectedTheme,
+                format: document.getElementById('outputFormat').value,
+                size: document.getElementById('posterSize').value,
+                buildings: document.getElementById('includeBuildings').checked
+            };
+            
+            generateBtn.disabled = true;
+            document.getElementById('progressCard').classList.add('active');
+            document.getElementById('resultCard').classList.remove('active');
+            document.querySelectorAll('.progress-step').forEach(el => {
+                el.classList.remove('active', 'completed');
+            });
+            document.getElementById('progressBar').style.width = '0%';
+            
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(params)
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+                
+                currentJobId = data.job_id;
+                
+                if (eventSource) eventSource.close();
+                eventSource = new EventSource(`/api/progress/${currentJobId}`);
+                
+                eventSource.onmessage = (event) => {
+                    const update = JSON.parse(event.data);
+                    
+                    if (update.keepalive) return;
+                    
+                    if (update.step === 'error') {
+                        showError(update.message);
+                        eventSource.close();
+                        return;
+                    }
+                    
+                    if (update.step === 'complete') {
+                        showSuccess(update.filename, update.download_url);
+                        eventSource.close();
+                        loadGallery();
+                        return;
+                    }
+                    
+                    document.getElementById('progressBar').style.width = `${update.progress}%`;
+                    document.getElementById('progressMessage').textContent = update.message;
+                    
+                    const stepEl = document.querySelector(`.progress-step[data-step="${update.step}"]`);
+                    if (stepEl) {
+                        document.querySelectorAll('.progress-step').forEach(el => {
+                            if (el !== stepEl && !el.classList.contains('completed')) {
+                                const stepOrder = ['fetch_streets', 'fetch_water', 'fetch_parks', 'fetch_buildings', 'render', 'save'];
+                                const currentIdx = stepOrder.indexOf(update.step);
+                                const elIdx = stepOrder.indexOf(el.dataset.step);
+                                if (elIdx < currentIdx) {
+                                    el.classList.remove('active');
+                                    el.classList.add('completed');
+                                }
+                            }
+                        });
+                        stepEl.classList.add('active');
+                    }
+                };
+                
+                eventSource.onerror = () => {
+                    showError('Connection lost');
+                    eventSource.close();
+                };
+                
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+
+        function showError(message) {
+            document.getElementById('progressCard').classList.remove('active');
+            document.getElementById('resultCard').classList.add('active');
+            document.getElementById('resultSuccess').style.display = 'none';
+            document.getElementById('resultError').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+            generateBtn.disabled = false;
+        }
+
+        function showSuccess(filename, downloadUrl) {
+            document.getElementById('progressCard').classList.remove('active');
+            document.getElementById('resultCard').classList.add('active');
+            document.getElementById('resultSuccess').style.display = 'block';
+            document.getElementById('resultError').style.display = 'none';
+            document.getElementById('resultFilename').textContent = filename;
+            document.getElementById('downloadBtn').href = downloadUrl;
+            generateBtn.disabled = false;
+        }
+
+        // ==================== Gallery ====================
+        async function loadGallery() {
+            try {
+                const response = await fetch('/api/posters');
+                const posters = await response.json();
+                
+                const galleryGrid = document.getElementById('galleryGrid');
+                const t = translations[currentLang];
+                
+                if (posters.length === 0) {
+                    galleryGrid.innerHTML = `<div class="gallery-empty">${t.gallery_empty}</div>`;
+                    return;
+                }
+                
+                galleryGrid.innerHTML = posters.slice(0, 20).map(p => {
+                    const ext = p.filename.split('.').pop().toUpperCase();
+                    const size = (p.size / 1024 / 1024).toFixed(1);
+                    const nameParts = p.filename.replace(/\.[^.]+$/, '').split('_');
+                    const name = nameParts[0] || 'Poster';
+                    const theme = nameParts[1] ? nameParts[1].replace(/-/g, ' ') : '';
+                    const date = p.created ? new Date(p.created).toLocaleDateString() : '';
+                    
+                    // Format theme name nicely (capitalize words)
+                    const themeName = theme.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    
+                    // Create preview based on file type
+                    let previewHtml;
+                    if (ext === 'PDF') {
+                        previewHtml = `
+                            <div class="gallery-preview-pdf">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF</span>
+                            </div>
+                        `;
+                    } else {
+                        previewHtml = `<img src="${p.preview_url}" class="gallery-preview" alt="${name}" loading="lazy">`;
+                    }
+                    
+                    return `
+                        <div class="gallery-item">
+                            ${previewHtml}
+                            <div class="gallery-info">
+                                <div class="gallery-name" title="${p.filename}">${name}</div>
+                                ${themeName ? `<div class="gallery-theme"><i class="fas fa-palette"></i> ${themeName}</div>` : ''}
+                                <div class="gallery-meta">
+                                    <span>${size} MB</span>
+                                    <span class="gallery-format">${ext}</span>
+                                </div>
+                            </div>
+                            <a href="${p.download_url}" class="gallery-download">
+                                <i class="fas fa-download"></i> ${t.download_btn}
+                            </a>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Gallery error:', error);
+            }
+        }
+
+        loadGallery();
+    </script>
+</body>
+</html>
