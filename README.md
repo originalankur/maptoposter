@@ -342,6 +342,59 @@ The web UI exposes the following REST API endpoints:
 }
 ```
 
+## Docker Deployment
+
+### Quick Start with Docker
+
+```bash
+# Build and run
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+### Deploy on Coolify
+
+1. **Create new service** in Coolify
+2. **Select "Docker Compose"** as deployment method
+3. **Connect your Git repository** or upload files
+4. **Configure**:
+   - Port: `5000`
+   - Health check path: `/`
+5. **Deploy**
+
+#### Coolify Environment Variables (optional)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `FLASK_ENV` | Environment mode | `production` |
+| `CACHE_DIR` | Cache directory | `/app/cache` |
+
+#### Persistent Storage
+
+The docker-compose configuration automatically creates volumes for:
+- `posters_data` - Generated poster files
+- `cache_data` - OSM data cache for faster subsequent requests
+
+### Manual Docker Build
+
+```bash
+# Build image
+docker build -t maptoposter .
+
+# Run container
+docker run -d \
+  --name maptoposter \
+  -p 5000:5000 \
+  -v maptoposter_posters:/app/posters \
+  -v maptoposter_cache:/app/cache \
+  maptoposter
+```
+
 ## License
 
 MIT License

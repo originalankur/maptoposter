@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  maptoposter:
+    build: .
+    container_name: maptoposter
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persist generated posters
+      - posters_data:/app/posters
+      # Persist cache for faster subsequent requests
+      - cache_data:/app/cache
+    environment:
+      - FLASK_ENV=production
+      - CACHE_DIR=/app/cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  posters_data:
+  cache_data:

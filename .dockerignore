@@ -1,0 +1,40 @@
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+
+# Ignore virtual environments
+venv/
+env/
+.venv/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore git
+.git/
+.gitignore
+
+# Ignore local cache (will be created fresh in container)
+cache/
+
+# Ignore generated posters (will be mounted as volume)
+posters/*.png
+posters/*.svg
+posters/*.pdf
+posters/old/
+
+# Ignore docs
+*.md
+LICENSE
+
+# Ignore test files
+tests/
+test_*.py
