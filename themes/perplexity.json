@@ -1,0 +1,11 @@
+{
+    "name": "Perplexity",
+    "description": "Crisp teals and deep grays inspired by the Perplexity AI aesthetic.",
+    "bg": "#131415",
+    "road": "#202224",
+    "water": "#005a5a",
+    "parks": "#003a3a",
+    "text": "#e0e0e0",
+    "accent": "#00a99d",
+    "gradient_color": "#131415"
+}
