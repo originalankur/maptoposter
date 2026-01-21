@@ -19,6 +19,7 @@ from hashlib import md5
 from typing import cast
 from geopandas import GeoDataFrame
 import pickle
+import re
 
 class CacheError(Exception):
     """Raised when a cache operation fails."""
@@ -379,7 +380,7 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
         print(f"OSMnx error while fetching features: {e}")
         return None
 
-def create_poster(city, country, point, dist, output_file, output_format):
+def create_poster(city, country, point, dist, output_file, output_format, preserve_numbers=False):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -473,7 +474,12 @@ def create_poster(city, country, point, dist, output_file, output_format):
         font_sub = FontProperties(family='monospace', weight='normal', size=22)
         font_coords = FontProperties(family='monospace', size=14)
     
-    spaced_city = "  ".join(list(city.upper()))
+    if preserve_numbers:
+        city_letters_only = city.strip()
+    else:
+        city_letters_only =  re.sub(r"\d+", "", city).strip()
+
+    spaced_city = "  ".join(list(city_letters_only.upper()))
     
     # Dynamically adjust font size based on city name length to prevent truncation
     base_font_size = 60
@@ -634,6 +640,7 @@ Examples:
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--preserve-numbers', action='store_true', help='Keep numbers in city name and print them on the poster')
     
     args = parser.parse_args()
     
@@ -671,7 +678,7 @@ Examples:
     try:
         coords = get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme, args.format)
-        create_poster(args.city, args.country, coords, args.distance, output_file, args.format)
+        create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.preserve_numbers)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
