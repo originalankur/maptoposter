@@ -1,0 +1,25 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.19.0",
+  "devDependencies": {
+    "vitepress": "2.0.0-alpha.15",
+    "vitepress-plugin-lightbox": "^1.0.3"
+  },
+  "dependencies": {
+    "medium-zoom": "^1.1.0",
+    "vitepress-component-medium-zoom": "^1.1.1",
+    "vue-masonry-css": "^1.0.0"
+  }
+}
