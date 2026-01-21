@@ -1,6 +1,7 @@
 cache/
 env/
 .env/
+
 venv/
 __pycache__/
 *.pyc
@@ -8,3 +9,7 @@ __pycache__/
 .vscode/
 .idea/
 *.log
+
+.venv/
+.DS_Store
+
