@@ -218,7 +218,7 @@ def get_coordinates(city, country):
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file, output_format, fast_mode=False):
+def create_poster(city, country, point, dist, output_file, output_format, fast_mode=False, dpi=300, title=None, subtitle=None, tagline=None):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -299,8 +299,6 @@ def create_poster(city, country, point, dist, output_file, output_format, fast_m
         font_sub = FontProperties(family='monospace', weight='normal', size=22)
         font_coords = FontProperties(family='monospace', size=14)
     
-    spaced_city = "  ".join(list(city.upper()))
-    
     # Dynamically adjust font size based on city name length to prevent truncation
     base_font_size = 60
     city_char_count = len(city)
@@ -317,16 +315,24 @@ def create_poster(city, country, point, dist, output_file, output_format, fast_m
         font_main_adjusted = FontProperties(family='monospace', weight='bold', size=adjusted_font_size)
 
     # --- BOTTOM TEXT ---
-    ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
+    display_title = title if title else city
+    display_subtitle = subtitle if subtitle else country
+    
+    spaced_title = "  ".join(list(display_title.upper()))
+    
+    ax.text(0.5, 0.14, spaced_title, transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_main_adjusted, zorder=11)
     
-    ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
+    ax.text(0.5, 0.10, display_subtitle, transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
     
     lat, lon = point
-    coords = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
-    if lon < 0:
-        coords = coords.replace("E", "W")
+    if tagline:
+        coords = tagline
+    else:
+        coords = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
+        if lon < 0:
+            coords = coords.replace("E", "W")
     
     ax.text(0.5, 0.07, coords, transform=ax.transAxes,
             color=THEME['text'], alpha=0.7, ha='center', fontproperties=font_coords, zorder=11)
@@ -352,7 +358,7 @@ def create_poster(city, country, point, dist, output_file, output_format, fast_m
 
     # DPI matters mainly for raster formats
     if fmt == "png":
-        save_kwargs["dpi"] = 300
+        save_kwargs["dpi"] = dpi
 
     plt.savefig(output_file, format=fmt, **save_kwargs)
 
@@ -460,6 +466,11 @@ Examples:
     parser.add_argument('--distance', '-d', type=int, default=12000, help='Map radius in meters (default: 12000)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--dpi', type=int, default=300, help='DPI for PNG output (default: 300)')
+    parser.add_argument('--output', '-o', type=str, help='Specific output filename (optional)')
+    parser.add_argument('--title', type=str, help='Custom title text (default: City name)')
+    parser.add_argument('--subtitle', type=str, help='Custom subtitle text (default: Country name)')
+    parser.add_argument('--tagline', type=str, help='Custom tagline text (default: Coordinates)')
     parser.add_argument('--fast', action='store_true', help='Fast mode: fetches only driving roads (faster but less detailed)')
     
     args = parser.parse_args()
@@ -497,8 +508,11 @@ Examples:
     # Get coordinates and generate poster
     try:
         coords = get_coordinates(args.city, args.country)
-        output_file = generate_output_filename(args.city, args.theme, args.format)
-        create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.fast)
+        if args.output:
+            output_file = args.output
+        else:
+            output_file = generate_output_filename(args.city, args.theme, args.format)
+        create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.fast, args.dpi, args.title, args.subtitle, args.tagline)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")

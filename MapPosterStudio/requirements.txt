@@ -1,0 +1,7 @@
+PySide6
+matplotlib
+osmnx
+geopy
+tqdm
+numpy
+requests
