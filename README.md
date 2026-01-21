@@ -44,6 +44,9 @@ python create_map_poster.py --city <city> --country <country> [options]
 | `--format` | `-f` | Output format (`png`, `svg`, `pdf`) | png |
 | `--distance` | `-d` | Map radius in meters | 29000 |
 | `--list-themes` | | List all available themes | |
+| **OPTIONAL:** `--name` | | Override display name (city shown on poster) | |
+| **OPTIONAL:** `--country-label` | | Override display country (country shown on poster) | |
+| **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
 
 ### Examples
 
@@ -81,6 +84,9 @@ python create_map_poster.py -c "Tokyo" -C "Japan" -t japanese_ink -f pdf      # 
 
 # List available themes
 python create_map_poster.py --list-themes
+
+# Generate posters for every theme
+python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 ```
 
 ### Distance Guide
