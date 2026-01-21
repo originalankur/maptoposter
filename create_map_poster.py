@@ -385,7 +385,7 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
         # 1. Fetch Street Network
         pbar.set_description("Downloading street network")
-        compensated_dist = dist * (max(height, width) / min(height, width)) # To compensate for viewport crop
+        compensated_dist = dist * (max(height, width) / min(height, width))/4 # To compensate for viewport crop
         G = fetch_graph(point, compensated_dist)
         if G is None:
             raise RuntimeError("Failed to retrieve street network data.")
