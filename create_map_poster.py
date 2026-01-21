@@ -554,14 +554,16 @@ def create_poster(city, country, point, dist, output_file, output_format, countr
         font_sub = FontProperties(family='monospace', weight='normal', size=22)
         font_coords = FontProperties(family='monospace', size=14)
     
-    spaced_city = "  ".join(list(city.upper()))
+    # Use name_label if provided (e.g., airport code), otherwise use city name
+    display_name = name_label if name_label is not None else city
+    spaced_city = "  ".join(list(display_name.upper()))
     
-    # Dynamically adjust font size based on city name length to prevent truncation
+    # Dynamically adjust font size based on display name length to prevent truncation
     base_font_size = 60
-    city_char_count = len(city)
-    if city_char_count > 10:
+    name_char_count = len(display_name)
+    if name_char_count > 10:
         # Scale down font size for longer names
-        scale_factor = 10 / city_char_count
+        scale_factor = 10 / name_char_count
         adjusted_font_size = max(base_font_size * scale_factor, 24)  # Minimum size of 24
     else:
         adjusted_font_size = base_font_size
@@ -619,46 +621,33 @@ def create_poster(city, country, point, dist, output_file, output_format, countr
 def print_examples():
     """Print usage examples."""
     print("""
-City Map Poster Generator
-=========================
+Airport Map Poster Generator
+============================
 
 Usage:
   python create_map_poster.py --city <city> --country <country> [options]
 
 Examples:
-  # Iconic grid patterns
-  python create_map_poster.py -c "New York" -C "USA" -t noir -d 12000           # Manhattan grid
+  # Airport posters (use --name to display airport code)
+  python create_map_poster.py -c "New York" -C "USA" -n "JFK" -t noir -d 12000      # JFK Airport
+  python create_map_poster.py -c "Los Angeles" -C "USA" -n "LAX" -t sunset -d 10000 # LAX Airport
+  python create_map_poster.py -c "London" -C "UK" -n "LHR" -t blueprint -d 15000    # Heathrow
+  python create_map_poster.py -c "Paris" -C "France" -n "CDG" -t pastel_dream -d 12000 # Charles de Gaulle
+  python create_map_poster.py -c "Tokyo" -C "Japan" -n "NRT" -t japanese_ink -d 15000  # Narita
+  python create_map_poster.py -c "Dubai" -C "UAE" -n "DXB" -t midnight_blue -d 15000   # Dubai International
+
+  # City posters (without --name, displays city name)
   python create_map_poster.py -c "Barcelona" -C "Spain" -t warm_beige -d 8000   # Eixample district grid
-  
-  # Waterfront & canals
   python create_map_poster.py -c "Venice" -C "Italy" -t blueprint -d 4000       # Canal network
   python create_map_poster.py -c "Amsterdam" -C "Netherlands" -t ocean -d 6000  # Concentric canals
-  python create_map_poster.py -c "Dubai" -C "UAE" -t midnight_blue -d 15000     # Palm & coastline
-  
-  # Radial patterns
-  python create_map_poster.py -c "Paris" -C "France" -t pastel_dream -d 10000   # Haussmann boulevards
-  python create_map_poster.py -c "Moscow" -C "Russia" -t noir -d 12000          # Ring roads
-  
-  # Organic old cities
-  python create_map_poster.py -c "Tokyo" -C "Japan" -t japanese_ink -d 15000    # Dense organic streets
-  python create_map_poster.py -c "Marrakech" -C "Morocco" -t terracotta -d 5000 # Medina maze
-  python create_map_poster.py -c "Rome" -C "Italy" -t warm_beige -d 8000        # Ancient street layout
-  
-  # Coastal cities
-  python create_map_poster.py -c "San Francisco" -C "USA" -t sunset -d 10000    # Peninsula grid
-  python create_map_poster.py -c "Sydney" -C "Australia" -t ocean -d 12000      # Harbor city
-  python create_map_poster.py -c "Mumbai" -C "India" -t contrast_zones -d 18000 # Coastal peninsula
-  
-  # River cities
-  python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
-  python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
-  
+
   # List themes
   python create_map_poster.py --list-themes
 
 Options:
-  --city, -c        City name (required)
-  --country, -C     Country name (required)
+  --city, -c        City name (required, used for geocoding)
+  --country, -C     Country name (required, used for geocoding)
+  --name, -n        Name displayed on poster (e.g., airport code like JFK, LAX)
   --country-label   Override country text displayed on poster
   --theme, -t       Theme name (default: feature_based)
   --all-themes      Generate posters for all themes
@@ -701,12 +690,13 @@ def list_themes():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate beautiful map posters for any city",
+        description="Generate beautiful map posters for airports and cities",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python create_map_poster.py --city "New York" --country "USA"
-  python create_map_poster.py --city Tokyo --country Japan --theme midnight_blue
+  python create_map_poster.py --city "New York" --country "USA" --name "JFK"
+  python create_map_poster.py --city "Los Angeles" --country "USA" --name "LAX" --theme sunset
+  python create_map_poster.py --city Tokyo --country Japan --name "NRT" --theme midnight_blue
   python create_map_poster.py --city Paris --country France --theme noir --distance 15000
   python create_map_poster.py --list-themes
         """
@@ -714,6 +704,7 @@ Examples:
     
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
+    parser.add_argument('--name', '-n', type=str, help='Override name displayed on poster (e.g., airport code like JFK, LAX)')
     parser.add_argument('--country-label', dest='country_label', type=str, help='Override country text displayed on poster')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--all-themes', '--All-themes', dest='all_themes', action='store_true', help='Generate posters for all themes')
@@ -754,7 +745,7 @@ Examples:
         themes_to_generate = [args.theme]
     
     print("=" * 50)
-    print("City Map Poster Generator")
+    print("Airport Map Poster Generator")
     print("=" * 50)
     
     # Get coordinates and generate poster
@@ -763,7 +754,7 @@ Examples:
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
             output_file = generate_output_filename(args.city, theme_name, args.format)
-            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, country_label=args.country_label)
+            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, country_label=args.country_label, name_label=args.name)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
