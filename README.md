@@ -22,6 +22,8 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 ## Installation
 
+Python 3.10 or later is required (3.8 and 3.9 are now end-of-life).
+
 ```bash
 pip install -r requirements.txt
 ```

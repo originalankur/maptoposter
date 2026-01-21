@@ -1,3 +1,10 @@
+import os
+from pathlib import Path
+
+MPLCONFIG_DIR = Path(".mplconfig")
+os.environ.setdefault("MPLCONFIGDIR", str(MPLCONFIG_DIR.resolve()))
+MPLCONFIG_DIR.mkdir(exist_ok=True)
+
 from matplotlib.figure import Figure
 from networkx import MultiDiGraph
 import osmnx as ox
@@ -9,14 +16,12 @@ from geopy.geocoders import Nominatim
 from tqdm import tqdm
 import time
 import json
-import os
 import sys
 from datetime import datetime
 import argparse
 import asyncio
-from pathlib import Path
 from hashlib import md5
-from typing import Optional, Dict, Tuple, cast
+from typing import Dict, Tuple, cast
 from geopandas import GeoDataFrame
 import pickle
 
@@ -37,7 +42,7 @@ def cache_file(key: str) -> str:
     encoded = md5(key.encode()).hexdigest()
     return f"{encoded}.pkl"
 
-def cache_get(name: str) -> Optional[dict]:
+def cache_get(name: str) -> dict | None:
     path = CACHE_DIR / cache_file(name)
     if path.exists():
         with path.open("rb") as f:
@@ -340,7 +345,7 @@ def get_crop_limits(G: MultiDiGraph, fig: Figure) -> Tuple[Tuple[float, float], 
     
     return crop_xlim, crop_ylim
 
-def fetch_graph(point, dist) -> Optional[MultiDiGraph]:
+def fetch_graph(point, dist) -> MultiDiGraph | None:
     lat, lon = point
     graph = f"graph_{lat}_{lon}_{dist}"
     cached = cache_get(graph)
@@ -361,7 +366,7 @@ def fetch_graph(point, dist) -> Optional[MultiDiGraph]:
         print(f"OSMnx error while fetching graph: {e}")
         return None
 
-def fetch_features(point, dist, tags, name) -> Optional[GeoDataFrame]:
+def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
     lat, lon = point
     tag_str = "_".join(tags.keys())
     features = f"{name}_{lat}_{lon}_{dist}_{tag_str}"
