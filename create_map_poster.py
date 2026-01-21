@@ -701,6 +701,7 @@ Examples:
         
         # Only generate single poster if not all_themes
         if not args.all_themes:
+             THEME = load_theme(args.theme)
              create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.fast, args.dpi, args.title, args.subtitle, args.tagline, args.country_label)
         
         # Generate all themes if requested
