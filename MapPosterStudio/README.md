@@ -1,58 +1,39 @@
 # MapPoster Studio
 
-A premium GUI for generating aesthetic map posters.
-
-## Requirements
-
-- Python 3.8+
-- Internet connection (for fetching map data)
-
-## Setup
-
-1. **Create a virtual environment:**
-   ```powershell
-   python -m venv venv
-   ```
-
-2. **Activate the environment:**
-   ```powershell
-   venv\Scripts\activate
-   ```
-
-3. **Install dependencies:**
-   ```powershell
-   pip install -r requirements.txt
-   ```
-
-## Running the App
-
-Run the application from the `MapPosterStudio` directory:
-
-```powershell
-cd MapPosterStudio
-python app.py
-```
+A premium desktop GUI for the City Map Poster Generator.
 
 ## Features
 
-- **Interactive Preview:** Quickly check how your map looks before exporting.
-- **Customizable:** Adjust city, theme, distance, and text.
-- **High Res Export:** Export posters up to 600 DPI.
-- **Themes:** Supports all themes available in the `themes/` directory.
+- **Real-time Configuration:** Adjust city, country, theme, and distance with a modern interface.
+- **Split Layout:** Dedicated sidebar for settings and a large scrollable area for poster previews.
+- **Zoom Controls:** Precise inspection of generated posters.
+- **Dark Theme:** Professional "Fusion" dark mode interface.
+- **Async Processing:** Posters are generated in the background to keep the UI responsive.
+- **Advanced Text:** Customize Title, Subtitle, and Tagline.
 
-## Building an Executable (.exe)
+## Installation
 
-To bundle the application as a standalone executable using PyInstaller:
-
-1. Install PyInstaller:
-   ```powershell
-   pip install pyinstaller
+1. Navigate to the `MapPosterStudio` directory:
+   ```bash
+   cd MapPosterStudio
+   ```
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
    ```
 
-2. Run the build command (from the `MapPosterStudio` directory):
+## Usage
 
-   ```powershell
-   pyinstaller --noconfirm --onedir --windowed --name "MapPoster Studio" --add-data "poster_engine;poster_engine" --add-data "ui;ui" --icon "assets/icon.png" app.py
-   ```
+Run the application:
+```bash
+python app.py
+```
 
-   *Note: You may need to manually copy the `themes`, `fonts`, and `create_map_poster.py` to the output `dist/MapPoster Studio` directory or adjust the spec file to include them, as the external script is outside the main module package.*
+## Requirements
+
+- Python 3.10+
+- PySide6
+- Matplotlib
+- OSMnx
+- Geopy
+- Pillow
