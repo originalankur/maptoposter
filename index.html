@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MapToPoster - Create Beautiful Map Posters</title>
+
+    <!-- MapLibre GL JS -->
+    <link href="https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.css" rel="stylesheet">
+    <script src="https://unpkg.com/maplibre-gl@4.1.0/dist/maplibre-gl.js"></script>
+
+    <!-- html-to-image for exports -->
+    <script src="https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #dbeafe;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-radius: 8px;
+            --sidebar-width: 360px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+        }
+
+        .app-container { display: flex; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            height: 100%;
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+        .tagline { font-size: 13px; color: var(--text-tertiary); }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 24px;
+        }
+
+        .control-section { margin-bottom: 24px; }
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+            margin-bottom: 10px;
+        }
+
+        /* Search */
+        .search-container { display: flex; gap: 8px; }
+        .search-input {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            outline: none;
+        }
+        .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .search-btn {
+            padding: 10px 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        .search-btn:hover { background: var(--primary-hover); }
+
+        /* Location Info */
+        .location-info {
+            margin-top: 16px;
+            padding: 14px;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+        }
+        .location-info.hidden { display: none; }
+        .location-detail { margin-bottom: 10px; }
+        .location-detail:last-child { margin-bottom: 0; }
+        .location-detail label {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+        .text-input {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            outline: none;
+        }
+        .text-input:focus { border-color: var(--primary); }
+        .coords-display {
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Theme Grid */
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .theme-card {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.15s;
+            position: relative;
+        }
+        .theme-card:hover { transform: scale(1.05); }
+        .theme-card.selected { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .theme-card::after {
+            content: attr(data-name);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 3px;
+            font-size: 8px;
+            text-align: center;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            text-transform: uppercase;
+        }
+
+        /* Export Buttons */
+        .export-buttons { display: flex; flex-direction: column; gap: 10px; }
+        .export-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .export-btn span { font-size: 14px; font-weight: 600; }
+        .export-btn small { font-size: 11px; opacity: 0.7; }
+        .export-btn.primary { background: var(--primary); color: white; }
+        .export-btn.primary:hover:not(:disabled) { background: var(--primary-hover); }
+        .export-btn.secondary { background: var(--bg-tertiary); border: 1px solid var(--border-color); }
+
+        .sidebar-footer {
+            padding: 12px 24px;
+            border-top: 1px solid var(--border-color);
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        .sidebar-footer a { color: var(--primary); text-decoration: none; }
+
+        /* Main Content */
+        .main-content { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #1a1a2e; }
+
+        /* Poster Container */
+        .poster-container {
+            width: 420px;
+            height: 560px;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .maplibregl-ctrl-attrib { display: none !important; }
+        .maplibregl-ctrl-logo { display: none !important; }
+
+        /* Poster Overlay */
+        .poster-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 40px 20px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .poster-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .poster-gradient-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .city-name {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 700;
+            font-size: 36px;
+            letter-spacing: 12px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .country-name {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
+            font-size: 14px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .divider {
+            width: 80px;
+            height: 1px;
+            margin-bottom: 8px;
+        }
+
+        .coordinates {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 400;
+            font-size: 10px;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+
+        .attribution {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 7px;
+            opacity: 0.5;
+            z-index: 10;
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .loading-overlay.hidden { display: none; }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bg-tertiary);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-container { flex-direction: column; }
+            .sidebar { width: 100%; min-width: 100%; max-height: 45vh; }
+            .main-content { min-height: 55vh; }
+            .poster-container { width: 280px; height: 373px; }
+            .city-name { font-size: 24px; letter-spacing: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">MapToPoster</h1>
+                <p class="tagline">Create beautiful map posters</p>
+            </div>
+
+            <div class="sidebar-content">
+                <section class="control-section">
+                    <h2 class="section-title">Location</h2>
+                    <div class="search-container">
+                        <input type="text" id="search-input" class="search-input" placeholder="Search for a city...">
+                        <button id="search-btn" class="search-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div id="location-info" class="location-info hidden">
+                        <div class="location-detail">
+                            <label>City Name</label>
+                            <input type="text" id="city-name" class="text-input" placeholder="City">
+                        </div>
+                        <div class="location-detail">
+                            <label>Country</label>
+                            <input type="text" id="country-name" class="text-input" placeholder="Country">
+                        </div>
+                        <div class="location-detail">
+                            <label>Coordinates</label>
+                            <div class="coords-display">
+                                <span id="coords-lat">--</span>, <span id="coords-lon">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="control-section">
+                    <h2 class="section-title">Theme</h2>
+                    <div id="theme-grid" class="theme-grid"></div>
+                </section>
+
+                <section class="control-section">
+                    <h2 class="section-title">Export</h2>
+                    <div class="export-buttons">
+                        <button id="export-png" class="export-btn primary" disabled>
+                            <span>Download PNG</span>
+                            <small>High Resolution Image</small>
+                        </button>
+                        <button id="export-svg" class="export-btn secondary" disabled>
+                            <span>Download SVG</span>
+                            <small>Vector Format</small>
+                        </button>
+                    </div>
+                </section>
+            </div>
+
+            <div class="sidebar-footer">
+                <p>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a></p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="poster-container" id="poster">
+                <div id="map"></div>
+                <div class="poster-gradient-top" id="gradient-top"></div>
+                <div class="poster-gradient" id="gradient-bottom"></div>
+                <div class="poster-overlay" id="overlay">
+                    <div class="city-name" id="poster-city">CITY</div>
+                    <div class="country-name" id="poster-country">COUNTRY</div>
+                    <div class="divider" id="poster-divider"></div>
+                    <div class="coordinates" id="poster-coords">0.0000° N / 0.0000° E</div>
+                </div>
+                <div class="attribution" id="poster-attr">© OpenStreetMap</div>
+            </div>
+
+            <div id="loading-overlay" class="loading-overlay hidden">
+                <div class="spinner"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Themes
+        const themes = {
+            noir: {
+                name: "Noir",
+                bg: "#000000",
+                text: "#FFFFFF",
+                water: "#0A0A0A",
+                parks: "#111111",
+                roads: { motorway: "#FFFFFF", primary: "#E0E0E0", secondary: "#B0B0B0", tertiary: "#808080", residential: "#505050" }
+            },
+            midnight_blue: {
+                name: "Midnight Blue",
+                bg: "#0A1628",
+                text: "#D4AF37",
+                water: "#061020",
+                parks: "#0F2235",
+                roads: { motorway: "#D4AF37", primary: "#C9A227", secondary: "#A8893A", tertiary: "#8B7355", residential: "#6B5B4F" }
+            },
+            sunset: {
+                name: "Sunset",
+                bg: "#FDF5F0",
+                text: "#8B4513",
+                water: "#E8D5C4",
+                parks: "#F5E6D3",
+                roads: { motorway: "#C45C3E", primary: "#D4714E", secondary: "#B8860B", tertiary: "#CD853F", residential: "#DEB887" }
+            },
+            blueprint: {
+                name: "Blueprint",
+                bg: "#1B3A5F",
+                text: "#FFFFFF",
+                water: "#152F4E",
+                parks: "#1F4470",
+                roads: { motorway: "#FFFFFF", primary: "#E8E8E8", secondary: "#C0C0C0", tertiary: "#A0A0A0", residential: "#6B8CAE" }
+            },
+            japanese_ink: {
+                name: "Japanese Ink",
+                bg: "#F5F5F0",
+                text: "#2C2C2C",
+                water: "#E8E8E0",
+                parks: "#EAEAE2",
+                roads: { motorway: "#2C2C2C", primary: "#404040", secondary: "#606060", tertiary: "#808080", residential: "#A0A0A0" }
+            },
+            ocean: {
+                name: "Ocean",
+                bg: "#F0F8FA",
+                text: "#1A5F7A",
+                water: "#B8D4E3",
+                parks: "#C5E8D5",
+                roads: { motorway: "#1A5F7A", primary: "#2980B9", secondary: "#5DADE2", tertiary: "#85C1E9", residential: "#AED6F1" }
+            },
+            forest: {
+                name: "Forest",
+                bg: "#1A2F1A",
+                text: "#90EE90",
+                water: "#0F1F0F",
+                parks: "#2D4A2D",
+                roads: { motorway: "#90EE90", primary: "#7CCD7C", secondary: "#6B8E6B", tertiary: "#4A6B4A", residential: "#3D5C3D" }
+            },
+            warm_beige: {
+                name: "Warm Beige",
+                bg: "#F5F0E8",
+                text: "#4A4035",
+                water: "#E8DFD0",
+                parks: "#EBE5D8",
+                roads: { motorway: "#4A4035", primary: "#5C5045", secondary: "#7A6E5D", tertiary: "#9A8E7D", residential: "#C5B8A5" }
+            },
+            neon_cyberpunk: {
+                name: "Cyberpunk",
+                bg: "#0D0D1A",
+                text: "#FF00FF",
+                water: "#0A0A15",
+                parks: "#1A0A2E",
+                roads: { motorway: "#FF00FF", primary: "#00FFFF", secondary: "#FF6EC7", tertiary: "#7B68EE", residential: "#4A4A6A" }
+            }
+        };
+
+        // State
+        let map = null;
+        let selectedTheme = 'noir';
+        let location = null;
+
+        // DOM Elements
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const locationInfo = document.getElementById('location-info');
+        const cityNameInput = document.getElementById('city-name');
+        const countryNameInput = document.getElementById('country-name');
+        const coordsLat = document.getElementById('coords-lat');
+        const coordsLon = document.getElementById('coords-lon');
+        const themeGrid = document.getElementById('theme-grid');
+        const exportPng = document.getElementById('export-png');
+        const exportSvg = document.getElementById('export-svg');
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        const posterCity = document.getElementById('poster-city');
+        const posterCountry = document.getElementById('poster-country');
+        const posterCoords = document.getElementById('poster-coords');
+        const posterDivider = document.getElementById('poster-divider');
+        const posterAttr = document.getElementById('poster-attr');
+        const gradientTop = document.getElementById('gradient-top');
+        const gradientBottom = document.getElementById('gradient-bottom');
+        const overlay = document.getElementById('overlay');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            renderThemes();
+            bindEvents();
+            applyTheme(selectedTheme);
+        });
+
+        function initMap() {
+            map = new maplibregl.Map({
+                container: 'map',
+                style: createMapStyle(themes[selectedTheme]),
+                center: [0, 30],
+                zoom: 1,
+                attributionControl: false,
+                preserveDrawingBuffer: true
+            });
+
+            map.on('click', (e) => {
+                reverseGeocode(e.lngLat.lat, e.lngLat.lng);
+            });
+        }
+
+        function createMapStyle(theme) {
+            return {
+                version: 8,
+                sources: {
+                    'osm': {
+                        type: 'vector',
+                        url: 'https://tiles.stadiamaps.com/data/openmaptiles.json'
+                    }
+                },
+                layers: [
+                    {
+                        id: 'background',
+                        type: 'background',
+                        paint: { 'background-color': theme.bg }
+                    },
+                    {
+                        id: 'water',
+                        type: 'fill',
+                        source: 'osm',
+                        'source-layer': 'water',
+                        paint: { 'fill-color': theme.water }
+                    },
+                    {
+                        id: 'landuse-park',
+                        type: 'fill',
+                        source: 'osm',
+                        'source-layer': 'landuse',
+                        filter: ['in', 'class', 'park', 'grass'],
+                        paint: { 'fill-color': theme.parks }
+                    },
+                    {
+                        id: 'road-residential',
+                        type: 'line',
+                        source: 'osm',
+                        'source-layer': 'transportation',
+                        filter: ['in', 'class', 'minor', 'service'],
+                        paint: {
+                            'line-color': theme.roads.residential,
+                            'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 14, 2]
+                        }
+                    },
+                    {
+                        id: 'road-tertiary',
+                        type: 'line',
+                        source: 'osm',
+                        'source-layer': 'transportation',
+                        filter: ['==', 'class', 'tertiary'],
+                        paint: {
+                            'line-color': theme.roads.tertiary,
+                            'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.8, 14, 3]
+                        }
+                    },
+                    {
+                        id: 'road-secondary',
+                        type: 'line',
+                        source: 'osm',
+                        'source-layer': 'transportation',
+                        filter: ['==', 'class', 'secondary'],
+                        paint: {
+                            'line-color': theme.roads.secondary,
+                            'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 14, 4]
+                        }
+                    },
+                    {
+                        id: 'road-primary',
+                        type: 'line',
+                        source: 'osm',
+                        'source-layer': 'transportation',
+                        filter: ['==', 'class', 'primary'],
+                        paint: {
+                            'line-color': theme.roads.primary,
+                            'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.2, 14, 5]
+                        }
+                    },
+                    {
+                        id: 'road-motorway',
+                        type: 'line',
+                        source: 'osm',
+                        'source-layer': 'transportation',
+                        filter: ['in', 'class', 'motorway', 'trunk'],
+                        paint: {
+                            'line-color': theme.roads.motorway,
+                            'line-width': ['interpolate', ['linear'], ['zoom'], 8, 1, 14, 6]
+                        }
+                    }
+                ]
+            };
+        }
+
+        function renderThemes() {
+            themeGrid.innerHTML = '';
+            Object.entries(themes).forEach(([id, theme]) => {
+                const card = document.createElement('div');
+                card.className = 'theme-card' + (id === selectedTheme ? ' selected' : '');
+                card.style.background = theme.bg;
+                card.setAttribute('data-name', theme.name);
+                card.onclick = () => selectTheme(id);
+                themeGrid.appendChild(card);
+            });
+        }
+
+        function selectTheme(themeId) {
+            selectedTheme = themeId;
+            document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`[data-name="${themes[themeId].name}"]`).classList.add('selected');
+            applyTheme(themeId);
+            map.setStyle(createMapStyle(themes[themeId]));
+        }
+
+        function applyTheme(themeId) {
+            const theme = themes[themeId];
+            posterCity.style.color = theme.text;
+            posterCountry.style.color = theme.text;
+            posterCoords.style.color = theme.text;
+            posterDivider.style.background = theme.text;
+            posterAttr.style.color = theme.text;
+            overlay.style.background = `linear-gradient(to top, ${theme.bg} 0%, ${theme.bg}ee 30%, transparent 100%)`;
+            gradientTop.style.background = `linear-gradient(to bottom, ${theme.bg} 0%, transparent 100%)`;
+            gradientBottom.style.background = `linear-gradient(to top, ${theme.bg} 0%, ${theme.bg}dd 20%, transparent 100%)`;
+        }
+
+        function bindEvents() {
+            searchBtn.onclick = performSearch;
+            searchInput.onkeypress = (e) => { if (e.key === 'Enter') performSearch(); };
+
+            cityNameInput.oninput = () => { posterCity.textContent = cityNameInput.value.toUpperCase() || 'CITY'; };
+            countryNameInput.oninput = () => { posterCountry.textContent = countryNameInput.value.toUpperCase() || 'COUNTRY'; };
+
+            exportPng.onclick = () => exportImage('png');
+            exportSvg.onclick = () => exportImage('svg');
+        }
+
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            loadingOverlay.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=1`, {
+                    headers: { 'User-Agent': 'MapToPoster/1.0' }
+                });
+                const data = await response.json();
+
+                if (data.length > 0) {
+                    const result = data[0];
+                    const city = result.address.city || result.address.town || result.address.village || result.address.municipality || query.split(',')[0];
+                    const country = result.address.country || '';
+
+                    setLocation(parseFloat(result.lat), parseFloat(result.lon), city, country);
+                }
+            } catch (error) {
+                console.error('Search failed:', error);
+            }
+
+            loadingOverlay.classList.add('hidden');
+        }
+
+        async function reverseGeocode(lat, lng) {
+            loadingOverlay.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`, {
+                    headers: { 'User-Agent': 'MapToPoster/1.0' }
+                });
+                const data = await response.json();
+
+                const city = data.address?.city || data.address?.town || data.address?.village || 'Unknown';
+                const country = data.address?.country || '';
+
+                setLocation(lat, lng, city, country);
+            } catch (error) {
+                setLocation(lat, lng, 'Location', '');
+            }
+
+            loadingOverlay.classList.add('hidden');
+        }
+
+        function setLocation(lat, lng, city, country) {
+            location = { lat, lng, city, country };
+
+            locationInfo.classList.remove('hidden');
+            cityNameInput.value = city;
+            countryNameInput.value = country;
+            coordsLat.textContent = lat.toFixed(6);
+            coordsLon.textContent = lng.toFixed(6);
+
+            posterCity.textContent = city.toUpperCase();
+            posterCountry.textContent = country.toUpperCase();
+
+            const latDir = lat >= 0 ? 'N' : 'S';
+            const lngDir = lng >= 0 ? 'E' : 'W';
+            posterCoords.textContent = `${Math.abs(lat).toFixed(4)}° ${latDir} / ${Math.abs(lng).toFixed(4)}° ${lngDir}`;
+
+            map.flyTo({ center: [lng, lat], zoom: 12 });
+
+            exportPng.disabled = false;
+            exportSvg.disabled = false;
+        }
+
+        async function exportImage(format) {
+            loadingOverlay.classList.remove('hidden');
+
+            const poster = document.getElementById('poster');
+            const citySlug = (cityNameInput.value || 'map').toLowerCase().replace(/\s+/g, '_');
+            const filename = `${citySlug}_${selectedTheme}_${Date.now()}`;
+
+            try {
+                // Wait for map to finish rendering
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                if (format === 'png') {
+                    const dataUrl = await htmlToImage.toPng(poster, {
+                        pixelRatio: 3,
+                        quality: 1
+                    });
+                    downloadFile(dataUrl, `${filename}.png`);
+                } else {
+                    const dataUrl = await htmlToImage.toSvg(poster);
+                    downloadFile(dataUrl, `${filename}.svg`);
+                }
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            }
+
+            loadingOverlay.classList.add('hidden');
+        }
+
+        function downloadFile(dataUrl, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = dataUrl;
+            link.click();
+        }
+    </script>
+</body>
+</html>

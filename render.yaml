@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: maptoposter
-    runtime: docker
-    plan: free
-    healthCheckPath: /api/themes

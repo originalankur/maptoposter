@@ -1,5 +1,4 @@
 certifi==2026.1.4
-flask==3.1.0
 charset-normalizer==3.4.4
 contourpy==1.3.3
 cycler==0.12.1
@@ -28,4 +27,3 @@ six==1.17.0
 tqdm==4.67.1
 tzdata==2025.3
 urllib3==2.6.3
-gunicorn==23.0.0
