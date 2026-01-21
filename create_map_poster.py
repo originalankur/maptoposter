@@ -600,7 +600,7 @@ Distance guide:
 
 Available themes can be found in the 'themes/' directory.
 Generated posters are saved to 'posters/' directory.
-")
+""")
 
 def list_themes():
     """List all available themes with descriptions."""
