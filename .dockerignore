@@ -1,0 +1,9 @@
+# Exclude from Docker build context
+posters/
+cache/
+old/
+*.pyc
+__pycache__/
+.git/
+.gitignore
+.dockerignore

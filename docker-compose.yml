@@ -1,0 +1,8 @@
+services:
+  maptoposter:
+    build: .
+    # Mounts entire project so code changes reflect immediately
+    volumes:
+      - .:/app
+    # Keep container running
+    command: sleep infinity

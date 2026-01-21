@@ -7,7 +7,6 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 ## Examples
 
-
 | Country      | City           | Theme           | Poster |
 |:------------:|:--------------:|:---------------:|:------:|
 | USA          | San Francisco  | sunset          | <img src="posters/san_francisco_sunset_20260118_144726.png" width="250"> |
@@ -25,6 +24,16 @@ Generate beautiful, minimalist map posters for any city in the world.
 ```bash
 pip install -r requirements.txt
 ```
+
+### Docker
+
+Run `docker compose up -d` to build and start the container.
+
+Enter the container shell with `docker compose exec maptoposter bash` to run python commands.
+
+Stop the container with `docker compose down`.
+
+Note: If requirements.txt changes, you'll need to rebuild the docker image with `docker compose build`.
 
 ## Usage
 
