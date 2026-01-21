@@ -419,6 +419,11 @@
             background: var(--bg-tertiary);
         }
 
+        .search-result-item.focused {
+            background: var(--bg-tertiary);
+            outline: 2px solid var(--primary);
+        }
+
         .search-result-main {
             font-weight: 600;
             margin-bottom: 0.25rem;
@@ -1256,57 +1261,57 @@
             <div class="header-actions">
                 <!-- Language Selector -->
                 <div class="lang-selector">
-                    <button class="lang-btn" id="langBtn">
+                    <button class="lang-btn" id="langBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="Select language">
                         <span class="lang-flag" id="currentFlag">🇩🇪</span>
                         <span id="currentLang">Deutsch</span>
                         <i class="fas fa-chevron-down" style="font-size: 0.75rem;"></i>
                     </button>
-                    <div class="lang-dropdown" id="langDropdown">
-                        <div class="lang-option active" data-lang="de" data-flag="🇩🇪">
+                    <div class="lang-dropdown" id="langDropdown" role="listbox">
+                        <div class="lang-option active" data-lang="de" data-flag="🇩🇪" role="option">
                             <span class="lang-flag">🇩🇪</span>
                             <span>Deutsch</span>
                         </div>
-                        <div class="lang-option" data-lang="en" data-flag="🇬🇧">
+                        <div class="lang-option" data-lang="en" data-flag="🇬🇧" role="option">
                             <span class="lang-flag">🇬🇧</span>
                             <span>English</span>
                         </div>
-                        <div class="lang-option" data-lang="fr" data-flag="🇫🇷">
+                        <div class="lang-option" data-lang="fr" data-flag="🇫🇷" role="option">
                             <span class="lang-flag">🇫🇷</span>
                             <span>Français</span>
                         </div>
-                        <div class="lang-option" data-lang="es" data-flag="🇪🇸">
+                        <div class="lang-option" data-lang="es" data-flag="🇪🇸" role="option">
                             <span class="lang-flag">🇪🇸</span>
                             <span>Español</span>
                         </div>
-                        <div class="lang-option" data-lang="it" data-flag="🇮🇹">
+                        <div class="lang-option" data-lang="it" data-flag="🇮🇹" role="option">
                             <span class="lang-flag">🇮🇹</span>
                             <span>Italiano</span>
                         </div>
-                        <div class="lang-option" data-lang="pt" data-flag="🇵🇹">
+                        <div class="lang-option" data-lang="pt" data-flag="🇵🇹" role="option">
                             <span class="lang-flag">🇵🇹</span>
                             <span>Português</span>
                         </div>
-                        <div class="lang-option" data-lang="nl" data-flag="🇳🇱">
+                        <div class="lang-option" data-lang="nl" data-flag="🇳🇱" role="option">
                             <span class="lang-flag">🇳🇱</span>
                             <span>Nederlands</span>
                         </div>
-                        <div class="lang-option" data-lang="pl" data-flag="🇵🇱">
+                        <div class="lang-option" data-lang="pl" data-flag="🇵🇱" role="option">
                             <span class="lang-flag">🇵🇱</span>
                             <span>Polski</span>
                         </div>
-                        <div class="lang-option" data-lang="ja" data-flag="🇯🇵">
+                        <div class="lang-option" data-lang="ja" data-flag="🇯🇵" role="option">
                             <span class="lang-flag">🇯🇵</span>
                             <span>日本語</span>
                         </div>
-                        <div class="lang-option" data-lang="zh" data-flag="🇨🇳">
+                        <div class="lang-option" data-lang="zh" data-flag="🇨🇳" role="option">
                             <span class="lang-flag">🇨🇳</span>
                             <span>中文</span>
                         </div>
-                        <div class="lang-option" data-lang="ko" data-flag="🇰🇷">
+                        <div class="lang-option" data-lang="ko" data-flag="🇰🇷" role="option">
                             <span class="lang-flag">🇰🇷</span>
                             <span>한국어</span>
                         </div>
-                        <div class="lang-option" data-lang="ru" data-flag="🇷🇺">
+                        <div class="lang-option" data-lang="ru" data-flag="🇷🇺" role="option">
                             <span class="lang-flag">🇷🇺</span>
                             <span>Русский</span>
                         </div>
@@ -1314,7 +1319,7 @@
                 </div>
 
                 <!-- Theme Toggle -->
-                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
                     <i class="fas fa-moon" id="themeIcon"></i>
                 </button>
             </div>
@@ -1336,11 +1341,12 @@
                         <div class="search-input-container">
                             <input type="text" class="search-input" id="searchInput" 
                                    data-i18n-placeholder="search_placeholder" 
-                                   placeholder="Stadt, Adresse oder Ort eingeben..." autocomplete="off">
+                                placeholder="Stadt, Adresse oder Ort eingeben..." autocomplete="off"
+                                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="searchResults">
                             <i class="fas fa-location-dot search-icon"></i>
                             <div class="search-loader" id="searchLoader"></div>
                         </div>
-                        <div class="search-results" id="searchResults"></div>
+                        <div class="search-results" id="searchResults" role="listbox"></div>
                     </div>
 
                     <div class="selected-location" id="selectedLocation">
@@ -1402,7 +1408,7 @@
                         </div>
                     </div>
 
-                    <div class="toggle-group" onclick="document.getElementById('includeBuildings').click()">
+                    <div class="toggle-group" id="buildingsToggle" role="switch" tabindex="0" aria-pressed="true" aria-checked="true">
                         <div class="toggle-info">
                             <div class="toggle-icon">
                                 <i class="fas fa-building"></i>
@@ -1519,7 +1525,7 @@
                         <div class="card-icon">
                             <i class="fas fa-images"></i>
                         </div>
-                        <h2 class="card-title" data-i18n="gallery_title">Erstellte Poster</h2>
+                        <h2 class="card-title" data-i18n="gallery_title">Beispiel-Poster</h2>
                     </div>
                     
                     <div class="gallery-grid" id="galleryGrid">
@@ -1590,9 +1596,9 @@
                 result_success: 'Poster erfolgreich erstellt!',
                 result_error: 'Fehler aufgetreten',
                 download_btn: 'Herunterladen',
-                gallery_title: 'Erstellte Poster',
-                gallery_loading: 'Lade Poster...',
-                gallery_empty: 'Noch keine Poster erstellt',
+                gallery_title: 'Beispiel-Poster',
+                gallery_loading: 'Lade Beispiele...',
+                gallery_empty: 'Keine Beispiele verfügbar',
                 preview_title: 'Vorschau',
                 preview_placeholder: 'Wähle eine Adresse'
             },
@@ -1625,9 +1631,9 @@
                 result_success: 'Poster created successfully!',
                 result_error: 'Error occurred',
                 download_btn: 'Download',
-                gallery_title: 'Created Posters',
-                gallery_loading: 'Loading posters...',
-                gallery_empty: 'No posters created yet',
+                gallery_title: 'Example Posters',
+                gallery_loading: 'Loading examples...',
+                gallery_empty: 'No examples available',
                 preview_title: 'Preview',
                 preview_placeholder: 'Select an address'
             },
@@ -2018,6 +2024,17 @@
 
         setLanguage(currentLang);
 
+        const langBtn = document.getElementById('langBtn');
+        const langDropdown = document.getElementById('langDropdown');
+        if (langBtn && langDropdown) {
+            ['mouseenter', 'focus'].forEach(evt => {
+                langBtn.addEventListener(evt, () => langBtn.setAttribute('aria-expanded', 'true'));
+            });
+            ['mouseleave', 'blur'].forEach(evt => {
+                langBtn.addEventListener(evt, () => langBtn.setAttribute('aria-expanded', 'false'));
+            });
+        }
+
         // ==================== Theme Toggle ====================
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
@@ -2040,6 +2057,16 @@
         let selectedTheme = 'feature_based';
         let currentJobId = null;
         let eventSource = null;
+        let eventSourceRetries = 0;
+        const MAX_EVENTSOURCE_RETRIES = 2;
+        const COLOR_PATTERN = /^(#[0-9a-fA-F]{3,8}|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(0|1|0?\.\d+)\s*\))$/;
+
+        function sanitizeColor(value, fallback) {
+            if (typeof value === 'string' && COLOR_PATTERN.test(value.trim())) {
+                return value.trim();
+            }
+            return fallback;
+        }
 
         // ==================== Search ====================
         const searchInput = document.getElementById('searchInput');
@@ -2049,6 +2076,95 @@
         const generateBtn = document.getElementById('generateBtn');
 
         let searchTimeout = null;
+        let searchHighlightIndex = -1;
+
+        function renderSearchResults(results) {
+            searchResults.innerHTML = '';
+            searchHighlightIndex = -1;
+
+            if (!results || results.length === 0) {
+                const item = document.createElement('div');
+                item.classList.add('search-result-item');
+                item.setAttribute('role', 'option');
+                const main = document.createElement('div');
+                main.classList.add('search-result-main');
+                main.textContent = 'No results';
+                item.appendChild(main);
+                searchResults.appendChild(item);
+                searchResults.classList.add('active');
+                searchInput.setAttribute('aria-expanded', 'true');
+                return;
+            }
+
+            results.forEach((r) => {
+                const item = document.createElement('div');
+                item.classList.add('search-result-item');
+                item.setAttribute('role', 'option');
+                item.tabIndex = -1;
+                item.dataset.lat = r.lat != null ? String(r.lat) : '';
+                item.dataset.lon = r.lon != null ? String(r.lon) : '';
+                item.dataset.city = r.city || '';
+                item.dataset.country = r.country || '';
+                item.dataset.address = r.display_name || '';
+
+                const main = document.createElement('div');
+                main.classList.add('search-result-main');
+                main.textContent = r.city || (r.display_name ? r.display_name.split(',')[0] : '');
+
+                const sub = document.createElement('div');
+                sub.classList.add('search-result-sub');
+                sub.textContent = r.display_name || '';
+
+                item.appendChild(main);
+                item.appendChild(sub);
+                searchResults.appendChild(item);
+            });
+
+            searchResults.classList.add('active');
+            searchInput.setAttribute('aria-expanded', 'true');
+        }
+
+        function highlightResult(index) {
+            const items = Array.from(searchResults.querySelectorAll('.search-result-item'));
+            items.forEach(el => {
+                el.classList.remove('focused');
+                el.setAttribute('aria-selected', 'false');
+            });
+            if (index >= 0 && items[index]) {
+                items[index].classList.add('focused');
+                items[index].setAttribute('aria-selected', 'true');
+                items[index].focus();
+                searchHighlightIndex = index;
+            } else {
+                searchHighlightIndex = -1;
+            }
+        }
+
+        function selectSearchResult(item) {
+            if (!item || !item.dataset.lat) return;
+
+            selectedLocation = {
+                lat: parseFloat(item.dataset.lat),
+                lon: parseFloat(item.dataset.lon),
+                city: item.dataset.city,
+                country: item.dataset.country,
+                address: item.dataset.address
+            };
+
+            document.getElementById('selectedCity').textContent = selectedLocation.city || selectedLocation.address.split(',')[0];
+            document.getElementById('selectedAddress').textContent = selectedLocation.address;
+            document.getElementById('selectedCoords').textContent = `${selectedLocation.lat.toFixed(4)}° / ${selectedLocation.lon.toFixed(4)}°`;
+            selectedLocationDiv.classList.add('active');
+
+            document.getElementById('cityName').value = selectedLocation.city || selectedLocation.address.split(',')[0];
+            document.getElementById('countryName').value = selectedLocation.country || '';
+
+            updatePreview();
+            generateBtn.disabled = false;
+            searchResults.classList.remove('active');
+            searchInput.setAttribute('aria-expanded', 'false');
+            searchInput.value = selectedLocation.city || selectedLocation.address.split(',')[0];
+        }
 
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.trim();
@@ -2056,6 +2172,7 @@
             
             if (query.length < 3) {
                 searchResults.classList.remove('active');
+                searchInput.setAttribute('aria-expanded', 'false');
                 return;
             }
             
@@ -2065,24 +2182,7 @@
                 try {
                     const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
                     const results = await response.json();
-                    
-                    if (results.length > 0) {
-                        searchResults.innerHTML = results.map(r => `
-                            <div class="search-result-item" 
-                                 data-lat="${r.lat}" 
-                                 data-lon="${r.lon}"
-                                 data-city="${r.city || ''}"
-                                 data-country="${r.country || ''}"
-                                 data-address="${r.display_name}">
-                                <div class="search-result-main">${r.city || r.display_name.split(',')[0]}</div>
-                                <div class="search-result-sub">${r.display_name}</div>
-                            </div>
-                        `).join('');
-                        searchResults.classList.add('active');
-                    } else {
-                        searchResults.innerHTML = '<div class="search-result-item"><div class="search-result-main">No results</div></div>';
-                        searchResults.classList.add('active');
-                    }
+                    renderSearchResults(Array.isArray(results) ? results : []);
                 } catch (error) {
                     console.error('Search error:', error);
                 } finally {
@@ -2091,56 +2191,91 @@
             }, 300);
         });
 
+        searchInput.addEventListener('keydown', (e) => {
+            const items = Array.from(searchResults.querySelectorAll('.search-result-item'));
+            if (e.key === 'ArrowDown') {
+                if (!searchResults.classList.contains('active')) return;
+                e.preventDefault();
+                const nextIndex = Math.min(searchHighlightIndex + 1, items.length - 1);
+                highlightResult(nextIndex);
+            } else if (e.key === 'ArrowUp') {
+                if (!searchResults.classList.contains('active')) return;
+                e.preventDefault();
+                const prevIndex = Math.max(searchHighlightIndex - 1, 0);
+                highlightResult(prevIndex);
+            } else if (e.key === 'Enter' && searchHighlightIndex >= 0) {
+                e.preventDefault();
+                selectSearchResult(items[searchHighlightIndex]);
+            } else if (e.key === 'Escape') {
+                searchResults.classList.remove('active');
+                searchInput.setAttribute('aria-expanded', 'false');
+            }
+        });
+
         searchResults.addEventListener('click', (e) => {
             const item = e.target.closest('.search-result-item');
-            if (!item || !item.dataset.lat) return;
-            
-            selectedLocation = {
-                lat: parseFloat(item.dataset.lat),
-                lon: parseFloat(item.dataset.lon),
-                city: item.dataset.city,
-                country: item.dataset.country,
-                address: item.dataset.address
-            };
-            
-            document.getElementById('selectedCity').textContent = selectedLocation.city || selectedLocation.address.split(',')[0];
-            document.getElementById('selectedAddress').textContent = selectedLocation.address;
-            document.getElementById('selectedCoords').textContent = `${selectedLocation.lat.toFixed(4)}° / ${selectedLocation.lon.toFixed(4)}°`;
-            selectedLocationDiv.classList.add('active');
-            
-            document.getElementById('cityName').value = selectedLocation.city || selectedLocation.address.split(',')[0];
-            document.getElementById('countryName').value = selectedLocation.country || '';
-            
-            updatePreview();
-            generateBtn.disabled = false;
-            searchResults.classList.remove('active');
-            searchInput.value = selectedLocation.city || selectedLocation.address.split(',')[0];
+            selectSearchResult(item);
         });
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.search-wrapper')) {
                 searchResults.classList.remove('active');
+                searchInput.setAttribute('aria-expanded', 'false');
             }
         });
 
         // ==================== Theme Selection ====================
-        document.getElementById('themeGrid').addEventListener('click', (e) => {
-            const item = e.target.closest('.theme-item');
+        const themeGrid = document.getElementById('themeGrid');
+
+        function selectThemeItem(item) {
             if (!item) return;
-            
-            document.querySelectorAll('.theme-item').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.theme-item').forEach(el => {
+                el.classList.remove('selected');
+                el.setAttribute('aria-pressed', 'false');
+            });
             item.classList.add('selected');
+            item.setAttribute('aria-pressed', 'true');
             selectedTheme = item.dataset.theme;
             updatePreview();
-        });
+        }
+
+        if (themeGrid) {
+            themeGrid.querySelectorAll('.theme-item').forEach(item => {
+                if (!item.hasAttribute('tabindex')) {
+                    item.setAttribute('tabindex', '0');
+                }
+                if (!item.hasAttribute('role')) {
+                    item.setAttribute('role', 'button');
+                }
+                item.setAttribute(
+                    'aria-pressed',
+                    item.classList.contains('selected') ? 'true' : 'false'
+                );
+            });
+
+            themeGrid.addEventListener('click', (e) => {
+                const item = e.target.closest('.theme-item');
+                if (!item) return;
+                selectThemeItem(item);
+            });
+
+            themeGrid.addEventListener('keydown', (e) => {
+                const item = e.target.closest('.theme-item');
+                if (!item) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectThemeItem(item);
+                }
+            });
+        }
 
         // ==================== Preview ====================
         function updatePreview() {
             if (!selectedLocation) return;
             
             const themeItem = document.querySelector(`.theme-item[data-theme="${selectedTheme}"]`);
-            const bgColor = themeItem?.dataset.bg || '#ffffff';
-            const textColor = themeItem?.dataset.text || '#000000';
+            const bgColor = sanitizeColor(themeItem?.dataset.bg || '', '#ffffff');
+            const textColor = sanitizeColor(themeItem?.dataset.text || '', '#000000');
             
             const cityName = document.getElementById('cityName').value || selectedLocation.city || 'CITY';
             const countryName = document.getElementById('countryName').value || selectedLocation.country || '';
@@ -2184,6 +2319,39 @@
             }
         });
 
+        // ==================== Buildings Toggle Accessibility ====================
+        const buildingsToggle = document.getElementById('buildingsToggle');
+        const buildingsCheckbox = document.getElementById('includeBuildings');
+
+        function syncBuildingsAria() {
+            if (!buildingsToggle) return;
+            const checked = buildingsCheckbox.checked;
+            buildingsToggle.setAttribute('aria-pressed', checked ? 'true' : 'false');
+            buildingsToggle.setAttribute('aria-checked', checked ? 'true' : 'false');
+        }
+
+        function toggleBuildings() {
+            buildingsCheckbox.checked = !buildingsCheckbox.checked;
+            syncBuildingsAria();
+        }
+
+        if (buildingsToggle) {
+            buildingsToggle.addEventListener('click', (e) => {
+                if (e.target.closest('input')) return;
+                toggleBuildings();
+            });
+
+            buildingsToggle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleBuildings();
+                }
+            });
+
+            buildingsCheckbox.addEventListener('change', syncBuildingsAria);
+            syncBuildingsAria();
+        }
+
         // ==================== Generate ====================
         generateBtn.addEventListener('click', async () => {
             if (!selectedLocation) return;
@@ -2222,52 +2390,66 @@
                 }
                 
                 currentJobId = data.job_id;
-                
-                if (eventSource) eventSource.close();
-                eventSource = new EventSource(`/api/progress/${currentJobId}`);
-                
-                eventSource.onmessage = (event) => {
-                    const update = JSON.parse(event.data);
-                    
-                    if (update.keepalive) return;
-                    
-                    if (update.step === 'error') {
-                        showError(update.message);
-                        eventSource.close();
-                        return;
-                    }
-                    
-                    if (update.step === 'complete') {
-                        showSuccess(update.filename, update.download_url);
-                        eventSource.close();
-                        loadGallery();
-                        return;
-                    }
-                    
-                    document.getElementById('progressBar').style.width = `${update.progress}%`;
-                    document.getElementById('progressMessage').textContent = update.message;
-                    
-                    const stepEl = document.querySelector(`.progress-step[data-step="${update.step}"]`);
-                    if (stepEl) {
-                        document.querySelectorAll('.progress-step').forEach(el => {
-                            if (el !== stepEl && !el.classList.contains('completed')) {
-                                const stepOrder = ['fetch_streets', 'fetch_water', 'fetch_parks', 'fetch_buildings', 'render', 'save'];
-                                const currentIdx = stepOrder.indexOf(update.step);
-                                const elIdx = stepOrder.indexOf(el.dataset.step);
-                                if (elIdx < currentIdx) {
-                                    el.classList.remove('active');
-                                    el.classList.add('completed');
+                eventSourceRetries = 0;
+
+                const attachEventSource = (jobId) => {
+                    if (eventSource) eventSource.close();
+                    eventSource = new EventSource(`/api/progress/${jobId}`);
+
+                    eventSource.onmessage = (event) => {
+                        const update = JSON.parse(event.data);
+                        
+                        if (update.keepalive) return;
+                        
+                        if (update.step === 'error') {
+                            showError(update.message);
+                            eventSource.close();
+                            return;
+                        }
+                        
+                        if (update.step === 'complete') {
+                            showSuccess(update.filename, update.download_url);
+                            eventSource.close();
+                            // Don't reload gallery - new posters are temp only
+                            return;
+                        }
+                        
+                        document.getElementById('progressBar').style.width = `${update.progress}%`;
+                        document.getElementById('progressMessage').textContent = update.message;
+                        
+                        const stepEl = document.querySelector(`.progress-step[data-step="${update.step}"]`);
+                        if (stepEl) {
+                            document.querySelectorAll('.progress-step').forEach(el => {
+                                if (el !== stepEl && !el.classList.contains('completed')) {
+                                    const stepOrder = ['fetch_streets', 'fetch_water', 'fetch_parks', 'fetch_buildings', 'render', 'save'];
+                                    const currentIdx = stepOrder.indexOf(update.step);
+                                    const elIdx = stepOrder.indexOf(el.dataset.step);
+                                    if (elIdx < currentIdx) {
+                                        el.classList.remove('active');
+                                        el.classList.add('completed');
+                                    }
                                 }
-                            }
-                        });
-                        stepEl.classList.add('active');
-                    }
+                            });
+                            stepEl.classList.add('active');
+                        }
+                    };
+
+                    eventSource.onerror = () => {
+                        eventSource.close();
+                        if (eventSourceRetries < MAX_EVENTSOURCE_RETRIES) {
+                            eventSourceRetries += 1;
+                            setTimeout(() => attachEventSource(jobId), 1000 * eventSourceRetries);
+                            return;
+                        }
+                        if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
+                            showError('Your internet connection was lost while generating the poster. Please check your connection and try again.');
+                        } else {
+                            showError('The connection to the server was interrupted while generating the poster. Please try again. If the problem persists, the poster may still finish in the background.');
+                        }
+                    };
                 };
-                
-                eventSource.onerror = () => {
-                    showError('Connection lost');
-                    eventSource.close();
-                };
+
+                attachEventSource(currentJobId);
                 
             } catch (error) {
                 showError(error.message);
@@ -2307,47 +2489,89 @@
                     return;
                 }
                 
-                galleryGrid.innerHTML = posters.slice(0, 20).map(p => {
+                galleryGrid.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+
+                posters.slice(0, 20).forEach(p => {
                     const ext = p.filename.split('.').pop().toUpperCase();
                     const size = (p.size / 1024 / 1024).toFixed(1);
                     const nameParts = p.filename.replace(/\.[^.]+$/, '').split('_');
                     const name = nameParts[0] || 'Poster';
                     const theme = nameParts[1] ? nameParts[1].replace(/-/g, ' ') : '';
-                    const date = p.created ? new Date(p.created).toLocaleDateString() : '';
-                    
-                    // Format theme name nicely (capitalize words)
+
                     const themeName = theme.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                    
-                    // Create preview based on file type
-                    let previewHtml;
+
+                    const item = document.createElement('div');
+                    item.classList.add('gallery-item');
+
+                    let previewEl;
                     if (ext === 'PDF') {
-                        previewHtml = `
-                            <div class="gallery-preview-pdf">
-                                <i class="fas fa-file-pdf"></i>
-                                <span>PDF</span>
-                            </div>
-                        `;
+                        previewEl = document.createElement('div');
+                        previewEl.classList.add('gallery-preview-pdf');
+                        const icon = document.createElement('i');
+                        icon.classList.add('fas', 'fa-file-pdf');
+                        const label = document.createElement('span');
+                        label.textContent = 'PDF';
+                        previewEl.appendChild(icon);
+                        previewEl.appendChild(label);
                     } else {
-                        previewHtml = `<img src="${p.preview_url}" class="gallery-preview" alt="${name}" loading="lazy">`;
+                        previewEl = document.createElement('img');
+                        previewEl.classList.add('gallery-preview');
+                        previewEl.setAttribute('loading', 'lazy');
+                        previewEl.src = p.preview_url;
+                        previewEl.alt = name;
                     }
-                    
-                    return `
-                        <div class="gallery-item">
-                            ${previewHtml}
-                            <div class="gallery-info">
-                                <div class="gallery-name" title="${p.filename}">${name}</div>
-                                ${themeName ? `<div class="gallery-theme"><i class="fas fa-palette"></i> ${themeName}</div>` : ''}
-                                <div class="gallery-meta">
-                                    <span>${size} MB</span>
-                                    <span class="gallery-format">${ext}</span>
-                                </div>
-                            </div>
-                            <a href="${p.download_url}" class="gallery-download">
-                                <i class="fas fa-download"></i> ${t.download_btn}
-                            </a>
-                        </div>
-                    `;
-                }).join('');
+
+                    const info = document.createElement('div');
+                    info.classList.add('gallery-info');
+
+                    const titleEl = document.createElement('div');
+                    titleEl.classList.add('gallery-name');
+                    titleEl.textContent = name;
+                    titleEl.title = p.filename;
+                    info.appendChild(titleEl);
+
+                    if (themeName) {
+                        const themeEl = document.createElement('div');
+                        themeEl.classList.add('gallery-theme');
+                        const paletteIcon = document.createElement('i');
+                        paletteIcon.classList.add('fas', 'fa-palette');
+                        themeEl.appendChild(paletteIcon);
+                        const themeText = document.createTextNode(` ${themeName}`);
+                        themeEl.appendChild(themeText);
+                        info.appendChild(themeEl);
+                    }
+
+                    const meta = document.createElement('div');
+                    meta.classList.add('gallery-meta');
+
+                    const sizeEl = document.createElement('span');
+                    sizeEl.textContent = `${size} MB`;
+                    const formatEl = document.createElement('span');
+                    formatEl.classList.add('gallery-format');
+                    formatEl.textContent = ext;
+                    meta.appendChild(sizeEl);
+                    meta.appendChild(formatEl);
+
+                    info.appendChild(meta);
+
+                    const download = document.createElement('a');
+                    download.href = p.download_url;
+                    download.classList.add('gallery-download');
+                    const dlIcon = document.createElement('i');
+                    dlIcon.classList.add('fas', 'fa-download');
+                    const dlText = document.createTextNode(` ${t.download_btn}`);
+                    download.appendChild(dlIcon);
+                    download.appendChild(dlText);
+
+                    item.appendChild(previewEl);
+                    item.appendChild(info);
+                    item.appendChild(download);
+
+                    fragment.appendChild(item);
+                });
+
+                galleryGrid.appendChild(fragment);
                 
             } catch (error) {
                 console.error('Gallery error:', error);

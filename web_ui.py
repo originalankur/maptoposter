@@ -21,18 +21,31 @@ import numpy as np
 from geopy.geocoders import Nominatim
 import json
 import os
+import re
 import time
 import threading
 import queue
+import tempfile
+import shutil
+import logging
 from datetime import datetime
 from pathlib import Path
 from hashlib import md5
 import pickle
-from typing import Optional, Generator
+from typing import Generator
 import uuid
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
 app = Flask(__name__)
-CORS(app)
+
+# Restrict CORS via environment variable instead of allowing all
+ALLOWED_ORIGINS = os.environ.get(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5000,http://127.0.0.1:5000,http://localhost:3000,http://127.0.0.1:3000",
+)
+ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS.split(",") if origin.strip()]
+CORS(app, origins=ALLOWED_ORIGINS)
 
 # ==================== Configuration ====================
 CACHE_DIR_PATH = os.environ.get("CACHE_DIR", "cache")
@@ -41,13 +54,108 @@ CACHE_DIR.mkdir(exist_ok=True)
 
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
-POSTERS_DIR = "posters"
+POSTERS_DIR = "posters"  # For example posters only
+TEMP_DIR = Path(tempfile.gettempdir()) / "maptoposter_temp"
+MAX_DISTANCE_METERS = 50_000
+THEME_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+NOMINATIM_USER_AGENT = os.environ.get(
+    "NOMINATIM_USER_AGENT",
+    "maptoposter_web (contact: contact@example.com)",
+)
 
-# Create posters directory if it doesn't exist
+# Create directories
 Path(POSTERS_DIR).mkdir(exist_ok=True)
+TEMP_DIR.mkdir(exist_ok=True)
+POSTERS_PATH = Path(POSTERS_DIR).resolve()
 
-# Store for progress updates (job_id -> queue)
-progress_queues: dict[str, queue.Queue] = {}
+# Note: cache uses pickle. Keep cache directory non-writable by untrusted users.
+
+# Rate limiting for external API calls (Nominatim and OSM data)
+REQUEST_LOCK = threading.Lock()
+LAST_REQUEST_TIME = 0.0
+MIN_REQUEST_INTERVAL = float(os.environ.get("REQUEST_MIN_INTERVAL", "1.0"))
+
+
+def wait_for_rate_limit(min_interval: float = MIN_REQUEST_INTERVAL) -> None:
+    """Enforce a simple per-process rate limit for external requests."""
+    global LAST_REQUEST_TIME
+    with REQUEST_LOCK:
+        now = time.monotonic()
+        delta = now - LAST_REQUEST_TIME
+        if delta < min_interval:
+            time.sleep(min_interval - delta)
+        LAST_REQUEST_TIME = time.monotonic()
+
+
+class ProgressStore:
+    """Thread-safe progress queue store with stale cleanup."""
+
+    def __init__(self, ttl_seconds: int = 900):
+        self._lock = threading.RLock()
+        self._data: dict[str, dict[str, object]] = {}
+        self._ttl = ttl_seconds
+
+    def create(self, job_id: str) -> queue.Queue:
+        with self._lock:
+            q: queue.Queue = queue.Queue()
+            self._data[job_id] = {"queue": q, "updated": time.time()}
+            return q
+
+    def put(self, job_id: str, payload: dict) -> None:
+        with self._lock:
+            entry = self._data.get(job_id)
+            if not entry:
+                return
+            queue_obj: queue.Queue = entry["queue"]  # type: ignore[assignment]
+            queue_obj.put(payload)
+            entry["updated"] = time.time()
+
+    def get_queue(self, job_id: str) -> queue.Queue | None:
+        with self._lock:
+            entry = self._data.get(job_id)
+            if entry:
+                entry["updated"] = time.time()
+                return entry["queue"]  # type: ignore[return-value]
+            return None
+
+    def delete(self, job_id: str) -> None:
+        with self._lock:
+            self._data.pop(job_id, None)
+
+    def touch(self, job_id: str) -> None:
+        with self._lock:
+            if job_id in self._data:
+                self._data[job_id]["updated"] = time.time()
+
+    def cleanup(self) -> list[str]:
+        now = time.time()
+        removed: list[str] = []
+        with self._lock:
+            for job_id, entry in list(self._data.items()):
+                if now - entry.get("updated", 0) > self._ttl:
+                    removed.append(job_id)
+                    self._data.pop(job_id, None)
+        return removed
+
+
+progress_store = ProgressStore()
+
+
+def _start_progress_cleanup_thread() -> None:
+    def _cleanup_loop():
+        while True:
+            time.sleep(300)
+            removed = progress_store.cleanup()
+            if removed:
+                logging.debug("Cleaned stale jobs: %s", ",".join(removed))
+
+    threading.Thread(target=_cleanup_loop, daemon=True).start()
+
+
+_start_progress_cleanup_thread()
+
+# Store for temporary downloads (job_id -> filepath)
+temp_downloads: dict[str, str] = {}
 
 # Poster size presets (width x height in inches)
 POSTER_SIZES = {
@@ -78,7 +186,7 @@ def cache_set(name: str, obj) -> None:
         with path.open("wb") as f:
             pickle.dump(obj, f)
     except Exception as e:
-        print(f"Cache error: {e}")
+        logging.warning("Cache error: %s", e)
 
 # ==================== Font Functions ====================
 def load_fonts():
@@ -107,6 +215,9 @@ def get_available_themes():
     return themes
 
 def load_theme(theme_name="feature_based"):
+    if not THEME_NAME_PATTERN.match(theme_name):
+        raise ValueError("Invalid theme name")
+
     theme_file = os.path.join(THEMES_DIR, f"{theme_name}.json")
     if not os.path.exists(theme_file):
         return {
@@ -144,35 +255,45 @@ def get_themes_with_details():
         })
     return themes
 
+
+def safe_path(base_dir: Path, filename: str) -> Path | None:
+    """Prevent path traversal outside base_dir."""
+    base_resolved = base_dir.resolve()
+    try:
+        candidate = (base_resolved / filename).resolve()
+        candidate.relative_to(base_resolved)
+    except Exception:
+        return None
+    return candidate
+
 # ==================== Progress Updates ====================
-def send_progress(job_id: str, step: str, progress: int, message: str):
+def send_progress(job_id: str, step: str, progress: int, message: str) -> None:
     """Send progress update to client."""
-    if job_id in progress_queues:
-        progress_queues[job_id].put({
-            'step': step,
-            'progress': progress,
-            'message': message
-        })
+    progress_store.put(job_id, {
+        'step': step,
+        'progress': progress,
+        'message': message
+    })
 
-def send_complete(job_id: str, filename: str, download_url: str):
+
+def send_complete(job_id: str, filename: str, download_url: str) -> None:
     """Send completion message to client."""
-    if job_id in progress_queues:
-        progress_queues[job_id].put({
-            'step': 'complete',
-            'progress': 100,
-            'message': 'Poster erfolgreich erstellt!',
-            'filename': filename,
-            'download_url': download_url
-        })
+    progress_store.put(job_id, {
+        'step': 'complete',
+        'progress': 100,
+        'message': 'Poster successfully created!',
+        'filename': filename,
+        'download_url': download_url
+    })
 
-def send_error(job_id: str, error_message: str):
+
+def send_error(job_id: str, error_message: str) -> None:
     """Send error message to client."""
-    if job_id in progress_queues:
-        progress_queues[job_id].put({
-            'step': 'error',
-            'progress': 0,
-            'message': error_message
-        })
+    progress_store.put(job_id, {
+        'step': 'error',
+        'progress': 0,
+        'message': error_message
+    })
 
 # ==================== Map Generation Functions ====================
 def get_edge_colors_by_type(G, theme):
@@ -286,16 +407,16 @@ def fetch_graph(point, dist, job_id):
     graph_key = f"graph_{lat}_{lon}_{dist}"
     cached = cache_get(graph_key)
     if cached is not None:
-        send_progress(job_id, 'fetch_streets', 20, 'Straßennetz aus Cache geladen')
+        send_progress(job_id, 'fetch_streets', 20, 'Street network loaded from cache')
         return cached
 
     try:
+        wait_for_rate_limit()
         G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
-        time.sleep(0.5)
         cache_set(graph_key, G)
         return G
     except Exception as e:
-        print(f"Error fetching graph: {e}")
+        logging.error("Error fetching graph: %s", e)
         return None
 
 def fetch_features(point, dist, tags, name, job_id, progress_step, progress_value, progress_msg):
@@ -308,12 +429,12 @@ def fetch_features(point, dist, tags, name, job_id, progress_step, progress_valu
         return cached
 
     try:
+        wait_for_rate_limit()
         data = ox.features_from_point(point, tags=tags, dist=dist)
-        time.sleep(0.3)
         cache_set(features_key, data)
         return data
     except Exception as e:
-        print(f"Error fetching {name}: {e}")
+        logging.error("Error fetching %s: %s", name, e)
         return None
 
 def generate_poster(job_id: str, params: dict):
@@ -336,34 +457,34 @@ def generate_poster(job_id: str, params: dict):
         fig_size = POSTER_SIZES.get(poster_size, (12, 16))
         
         # Step 1: Fetch Street Network (0-20%)
-        send_progress(job_id, 'fetch_streets', 5, 'Lade Straßennetz...')
+        send_progress(job_id, 'fetch_streets', 5, 'Loading street network...')
         G = fetch_graph(point, dist, job_id)
         if G is None:
-            send_error(job_id, 'Straßennetz konnte nicht geladen werden')
+            send_error(job_id, 'Street network could not be loaded')
             return
-        send_progress(job_id, 'fetch_streets', 20, 'Straßennetz geladen')
+        send_progress(job_id, 'fetch_streets', 20, 'Street network loaded')
         
         # Step 2: Fetch Water Features (20-35%)
-        send_progress(job_id, 'fetch_water', 25, 'Lade Gewässer...')
+        send_progress(job_id, 'fetch_water', 25, 'Loading water features...')
         water = fetch_features(point, dist, {'natural': 'water', 'waterway': 'riverbank'}, 'water',
-                              job_id, 'fetch_water', 35, 'Gewässer geladen')
+                      job_id, 'fetch_water', 35, 'Water features loaded')
         
         # Step 3: Fetch Parks (35-50%)
-        send_progress(job_id, 'fetch_parks', 40, 'Lade Parks...')
+        send_progress(job_id, 'fetch_parks', 40, 'Loading parks...')
         parks = fetch_features(point, dist, {'leisure': 'park', 'landuse': 'grass'}, 'parks',
-                              job_id, 'fetch_parks', 50, 'Parks geladen')
+                      job_id, 'fetch_parks', 50, 'Parks loaded')
         
         # Step 4: Fetch Buildings if enabled (50-65%)
         buildings = None
         if include_buildings:
-            send_progress(job_id, 'fetch_buildings', 55, 'Lade Gebäude...')
+            send_progress(job_id, 'fetch_buildings', 55, 'Loading buildings...')
             buildings = fetch_features(point, dist, {'building': True}, 'buildings',
-                                       job_id, 'fetch_buildings', 65, 'Gebäude geladen')
+                                       job_id, 'fetch_buildings', 65, 'Buildings loaded')
         else:
-            send_progress(job_id, 'fetch_buildings', 65, 'Gebäude übersprungen')
+            send_progress(job_id, 'fetch_buildings', 65, 'Buildings skipped')
         
         # Step 5: Render Map (65-90%)
-        send_progress(job_id, 'render', 70, 'Erstelle Karte...')
+        send_progress(job_id, 'render', 70, 'Rendering map...')
         
         fig, ax = plt.subplots(figsize=fig_size, facecolor=theme['bg'])
         ax.set_facecolor(theme['bg'])
@@ -372,7 +493,7 @@ def generate_poster(job_id: str, params: dict):
         # Project graph
         G_proj = ox.project_graph(G)
         
-        send_progress(job_id, 'render', 75, 'Zeichne Layer...')
+        send_progress(job_id, 'render', 75, 'Drawing layers...')
         
         # Plot water
         if water is not None and not water.empty:
@@ -394,7 +515,7 @@ def generate_poster(job_id: str, params: dict):
                     parks_polys = parks_polys.to_crs(G_proj.graph['crs'])
                 parks_polys.plot(ax=ax, facecolor=theme['parks'], edgecolor='none', zorder=2)
         
-        send_progress(job_id, 'render', 80, 'Zeichne Gebäude...')
+        send_progress(job_id, 'render', 80, 'Drawing buildings...')
         
         # Plot buildings
         if include_buildings and buildings is not None and not buildings.empty:
@@ -407,7 +528,7 @@ def generate_poster(job_id: str, params: dict):
                 building_color = theme.get('buildings', '#E0E0E0')
                 building_polys.plot(ax=ax, facecolor=building_color, edgecolor='none', zorder=3, alpha=0.7)
         
-        send_progress(job_id, 'render', 85, 'Zeichne Straßen...')
+        send_progress(job_id, 'render', 85, 'Drawing streets...')
         
         # Plot roads
         edge_colors = get_edge_colors_by_type(G_proj, theme)
@@ -429,16 +550,14 @@ def generate_poster(job_id: str, params: dict):
         create_gradient_fade(ax, theme['gradient_color'], location='bottom', zorder=10)
         create_gradient_fade(ax, theme['gradient_color'], location='top', zorder=10)
         
-        send_progress(job_id, 'render', 90, 'Füge Text hinzu...')
+        send_progress(job_id, 'render', 90, 'Adding typography...')
         
         # Typography
         if FONTS:
-            font_main = FontProperties(fname=FONTS['bold'], size=60)
             font_sub = FontProperties(fname=FONTS['light'], size=22)
             font_coords = FontProperties(fname=FONTS['regular'], size=14)
             font_attr = FontProperties(fname=FONTS['light'], size=8)
         else:
-            font_main = FontProperties(family='monospace', weight='bold', size=60)
             font_sub = FontProperties(family='monospace', weight='normal', size=22)
             font_coords = FontProperties(family='monospace', size=14)
             font_attr = FontProperties(family='monospace', size=8)
@@ -465,9 +584,9 @@ def generate_poster(job_id: str, params: dict):
             ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
                     color=theme['text'], ha='center', fontproperties=font_sub, zorder=11)
         
-        coords_text = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
-        if lon < 0:
-            coords_text = coords_text.replace("E", "W")
+        lat_hemisphere = "N" if lat >= 0 else "S"
+        lon_hemisphere = "E" if lon >= 0 else "W"
+        coords_text = f"{abs(lat):.4f}° {lat_hemisphere} / {abs(lon):.4f}° {lon_hemisphere}"
         
         ax.text(0.5, 0.07, coords_text, transform=ax.transAxes,
                 color=theme['text'], alpha=0.7, ha='center', fontproperties=font_coords, zorder=11)
@@ -479,13 +598,13 @@ def generate_poster(job_id: str, params: dict):
                 color=theme['text'], alpha=0.5, ha='right', va='bottom', 
                 fontproperties=font_attr, zorder=11)
         
-        # Step 6: Save (90-100%)
-        send_progress(job_id, 'save', 95, 'Speichere Poster...')
+        # Step 6: Save to temp directory (90-100%)
+        send_progress(job_id, 'save', 95, 'Preparing download...')
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         city_slug = city.lower().replace(' ', '_').replace(',', '')
         filename = f"{city_slug}_{theme_name}_{timestamp}.{output_format}"
-        output_path = os.path.join(POSTERS_DIR, filename)
+        output_path = str(TEMP_DIR / filename)
         
         save_kwargs = dict(facecolor=theme["bg"], bbox_inches="tight", pad_inches=0.05)
         if output_format == "png":
@@ -494,13 +613,16 @@ def generate_poster(job_id: str, params: dict):
         plt.savefig(output_path, format=output_format, **save_kwargs)
         plt.close()
         
-        download_url = url_for('download_poster', filename=filename, _external=False)
+        # Store temp path for download
+        temp_downloads[job_id] = output_path
+        
+        download_url = url_for('download_temp', job_id=job_id, _external=False)
         send_complete(job_id, filename, download_url)
         
     except Exception as e:
         import traceback
         traceback.print_exc()
-        send_error(job_id, f'Fehler: {str(e)}')
+        send_error(job_id, f'Error: {str(e)}')
 
 # ==================== Routes ====================
 @app.route('/')
@@ -516,7 +638,8 @@ def search_address():
         return jsonify([])
     
     try:
-        geolocator = Nominatim(user_agent="maptoposter_web", timeout=10)
+        wait_for_rate_limit()
+        geolocator = Nominatim(user_agent=NOMINATIM_USER_AGENT, timeout=10)
         locations = geolocator.geocode(query, exactly_one=False, limit=5, addressdetails=True)
         
         results = []
@@ -536,7 +659,8 @@ def search_address():
         
         return jsonify(results)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+                logging.error("Search error: %s", e)
+                return jsonify({'error': 'Search failed'}), 500
 
 @app.route('/api/themes')
 def get_themes():
@@ -546,32 +670,60 @@ def get_themes():
 @app.route('/api/generate', methods=['POST'])
 def generate():
     """Start poster generation."""
-    data = request.json
-    
-    if not data.get('lat') or not data.get('lon'):
-        return jsonify({'error': 'Koordinaten fehlen'}), 400
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({'error': 'Invalid JSON payload'}), 400
+
     if not data.get('city'):
-        return jsonify({'error': 'Stadtname fehlt'}), 400
-    
+        return jsonify({'error': 'City name is required'}), 400
+
+    try:
+        lat_raw = data.get('lat')
+        lon_raw = data.get('lon')
+        lat = float(lat_raw)
+        lon = float(lon_raw)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid coordinates'}), 400
+
+    if not (-90.0 <= lat <= 90.0) or not (-180.0 <= lon <= 180.0):
+        return jsonify({'error': 'Coordinates out of range'}), 400
+
+    distance_raw = data.get('distance', 10000)
+    try:
+        distance_val = float(distance_raw)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid distance'}), 400
+    distance_val = max(1000, min(distance_val, MAX_DISTANCE_METERS))
+
+    theme_name = data.get('theme', 'feature_based')
+    if not THEME_NAME_PATTERN.match(str(theme_name)):
+        return jsonify({'error': 'Invalid theme name'}), 400
+
+    data.update({
+        'lat': lat,
+        'lon': lon,
+        'distance': distance_val,
+        'theme': theme_name,
+    })
+
     job_id = str(uuid.uuid4())
-    progress_queues[job_id] = queue.Queue()
-    
+    progress_store.create(job_id)
+
     # Start generation in background thread
-    thread = threading.Thread(target=generate_poster, args=(job_id, data))
-    thread.daemon = True
+    thread = threading.Thread(target=generate_poster, args=(job_id, data), daemon=False)
     thread.start()
-    
+
     return jsonify({'job_id': job_id})
 
 @app.route('/api/progress/<job_id>')
 def progress(job_id: str):
     """Stream progress updates via Server-Sent Events."""
     def generate_events() -> Generator[str, None, None]:
-        if job_id not in progress_queues:
-            yield f"data: {json.dumps({'error': 'Job nicht gefunden'})}\n\n"
+        q = progress_store.get_queue(job_id)
+        if q is None:
+            yield f"data: {json.dumps({'error': 'Job not found'})}\n\n"
             return
-        
-        q = progress_queues[job_id]
+
         while True:
             try:
                 update = q.get(timeout=60)
@@ -579,35 +731,66 @@ def progress(job_id: str):
                 
                 if update.get('step') in ['complete', 'error']:
                     # Clean up queue after completion
-                    del progress_queues[job_id]
+                    progress_store.delete(job_id)
                     break
             except queue.Empty:
                 # Send keepalive
+                progress_store.touch(job_id)
                 yield f"data: {json.dumps({'keepalive': True})}\n\n"
     
     return Response(generate_events(), mimetype='text/event-stream')
 
+@app.route('/download/temp/<job_id>')
+def download_temp(job_id):
+    """Download newly generated poster from temp directory."""
+    if job_id not in temp_downloads:
+        return "Download nicht gefunden oder abgelaufen", 404
+    
+    filepath = temp_downloads[job_id]
+    if not os.path.exists(filepath):
+        return "Datei nicht gefunden", 404
+    
+    filename = os.path.basename(filepath)
+    
+    # Send file and schedule cleanup
+    response = send_file(filepath, as_attachment=True, download_name=filename)
+    
+    # Clean up after a delay (keep for 1 hour for multiple downloads)
+    def cleanup_later():
+        time.sleep(3600)  # 1 hour
+        try:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            if job_id in temp_downloads:
+                del temp_downloads[job_id]
+        except:
+            pass
+    
+    cleanup_thread = threading.Thread(target=cleanup_later, daemon=True)
+    cleanup_thread.start()
+    
+    return response
+
 @app.route('/download/<filename>')
 def download_poster(filename):
-    """Download generated poster."""
-    filepath = os.path.join(POSTERS_DIR, filename)
-    if os.path.exists(filepath):
-        return send_file(filepath, as_attachment=True)
-    return "Datei nicht gefunden", 404
+    """Download example poster from posters directory."""
+    safe_file = safe_path(POSTERS_PATH, filename)
+    if safe_file and safe_file.exists():
+        return send_file(str(safe_file), as_attachment=True)
+    return "Invalid filename", 400
 
 @app.route('/preview/<filename>')
 def preview_poster(filename):
     """Preview poster image (for gallery thumbnails)."""
-    filepath = os.path.join(POSTERS_DIR, filename)
-    if os.path.exists(filepath):
-        # Serve the file inline (not as download)
+    safe_file = safe_path(POSTERS_PATH, filename)
+    if safe_file and safe_file.exists():
         mimetype = 'image/png'
         if filename.endswith('.svg'):
             mimetype = 'image/svg+xml'
         elif filename.endswith('.pdf'):
             mimetype = 'application/pdf'
-        return send_file(filepath, mimetype=mimetype)
-    return "Datei nicht gefunden", 404
+        return send_file(str(safe_file), mimetype=mimetype)
+    return "Invalid filename", 400
 
 @app.route('/api/posters')
 def list_posters():
@@ -631,5 +814,7 @@ if __name__ == '__main__':
     print("=" * 50)
     print("Map Poster Web UI")
     print("=" * 50)
-    print("Starting server at http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
+    debug_env = os.getenv("FLASK_DEBUG", "false").lower()
+    debug_mode = debug_env in ("1", "true", "yes", "on", "debug")
+    print(f"Starting server at http://localhost:5000 (debug={debug_mode})")
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000, threaded=True)

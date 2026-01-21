@@ -49,4 +49,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
 # Run with gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "300", "web_ui:app"]
+# Workers: 2-4 per CPU core
+# Threads: 4 per worker for I/O-bound tasks (network requests to OSM)
+# Timeout: 300s for large map generation
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--threads", "4", "--timeout", "300", "--worker-class", "gthread", "web_ui:app"]
