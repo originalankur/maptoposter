@@ -13,6 +13,7 @@ import os
 import sys
 from datetime import datetime
 import argparse
+import pickle
 import asyncio
 from pathlib import Path
 from hashlib import md5
@@ -57,6 +58,39 @@ def cache_set(name: str, obj) -> None:
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
+
+CACHE_DIR = ".cache"
+
+class CacheError(Exception):
+    pass
+
+
+def _cache_path(key: str) -> str:
+    safe = key.replace(os.sep, "_")
+    return os.path.join(CACHE_DIR, f"{safe}.pkl")
+
+
+def cache_get(key: str):
+    try:
+        path = _cache_path(key)
+        if not os.path.exists(path):
+            return None
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    except Exception as e:
+        raise CacheError(f"Cache read failed: {e}")
+
+
+def cache_set(key: str, value):
+    try:
+        if not os.path.exists(CACHE_DIR):
+            os.makedirs(CACHE_DIR)
+        path = _cache_path(key)
+        with open(path, "wb") as f:
+            pickle.dump(value, f, protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception as e:
+        raise CacheError(f"Cache write failed: {e}")
+
 
 def load_fonts():
     """
@@ -249,13 +283,16 @@ def get_coordinates(city, country):
         return cached
 
     print("Looking up coordinates...")
-    geolocator = Nominatim(user_agent="city_map_poster", timeout=10) # type: ignore
+    geolocator = Nominatim(user_agent="city_map_poster", timeout=10)
     
     # Add a small delay to respect Nominatim's usage policy
     time.sleep(1)
     
-    location = geolocator.geocode(f"{city}, {country}")
-    
+    try:
+        location = geolocator.geocode(f"{city}, {country}")
+    except Exception as e:
+        raise ValueError(f"Geocoding failed for {city}, {country}: {e}")
+
     # If geocode returned a coroutine in some environments, run it to get the result.
     if asyncio.iscoroutine(location):
         try:
@@ -379,7 +416,51 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
         print(f"OSMnx error while fetching features: {e}")
         return None
 
-def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16):
+
+def fetch_graph(point, dist):
+    lat, lon = point
+    graph_key = f"graph_{lat}_{lon}_{dist}"
+    cached = cache_get(graph_key)
+    if cached is not None:
+        print("✓ Using cached street network")
+        return cached
+
+    try:
+        G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
+        time.sleep(0.5)
+        try:
+            cache_set(graph_key, G)
+        except CacheError as e:
+            print(e)
+        return G
+    except Exception as e:
+        print(f"OSMnx error while fetching graph: {e}")
+        return None
+
+
+def fetch_features(point, dist, tags, name):
+    lat, lon = point
+    tag_str = "_".join(sorted(tags.keys()))
+    features_key = f"{name}_{lat}_{lon}_{dist}_{tag_str}"
+    cached = cache_get(features_key)
+    if cached is not None:
+        print(f"✓ Using cached {name}")
+        return cached
+
+    try:
+        data = ox.features_from_point(point, tags=tags, dist=dist)
+        time.sleep(0.3)
+        try:
+            cache_set(features_key, data)
+        except CacheError as e:
+            print(e)
+        return data
+    except Exception as e:
+        print(f"OSMnx error while fetching features: {e}")
+        return None
+
+
+def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, country_label=None, name_label=None):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -394,12 +475,12 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
         
         # 2. Fetch Water Features
         pbar.set_description("Downloading water features")
-        water = fetch_features(point, compensated_dist, {'natural': 'water', 'waterway': 'riverbank'}, 'water')
+        water = fetch_features(point, compensated_dist, tags={'natural': 'water', 'waterway': 'riverbank'}, name='water')
         pbar.update(1)
         
         # 3. Fetch Parks
         pbar.set_description("Downloading parks/green spaces")
-        parks = fetch_features(point, compensated_dist, {'leisure': 'park', 'landuse': 'grass'}, 'parks')
+        parks = fetch_features(point, compensated_dist, tags={'leisure': 'park', 'landuse': 'grass'}, name='parks')
         pbar.update(1)
     
     print("✓ All data retrieved successfully!")
@@ -495,7 +576,8 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_main_adjusted, zorder=11)
     
-    ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
+    country_text = country_label if country_label is not None else country
+    ax.text(0.5, 0.10, country_text.upper(), transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
     
     lat, lon = point
@@ -578,7 +660,9 @@ Examples:
 Options:
   --city, -c        City name (required)
   --country, -C     Country name (required)
+  --country-label   Override country text displayed on poster
   --theme, -t       Theme name (default: feature_based)
+  --all-themes      Generate posters for all themes
   --distance, -d    Map radius in meters (default: 29000)
   --list-themes     List all available themes
 
@@ -631,7 +715,9 @@ Examples:
     
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
+    parser.add_argument('--country-label', dest='country_label', type=str, help='Override country text displayed on poster')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
+    parser.add_argument('--all-themes', '--All-themes', dest='all_themes', action='store_true', help='Generate posters for all themes')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--width', '-W', type=float, default=12, help='Image width in inches (default: 12)')
     parser.add_argument('--height', '-H', type=float, default=16, help='Image height in inches (default: 16)')
@@ -656,25 +742,32 @@ Examples:
         print_examples()
         sys.exit(1)
     
-    # Validate theme exists
     available_themes = get_available_themes()
-    if args.theme not in available_themes:
-        print(f"Error: Theme '{args.theme}' not found.")
-        print(f"Available themes: {', '.join(available_themes)}")
-        sys.exit(1)
+    if not available_themes:
+        print("No themes found in 'themes/' directory.")
+        os.sys.exit(1)
+
+    if args.all_themes:
+        themes_to_generate = available_themes
+    else:
+        if args.theme not in available_themes:
+            print(f"Error: Theme '{args.theme}' not found.")
+            print(f"Available themes: {', '.join(available_themes)}")
+            os.sys.exit(1)
+        themes_to_generate = [args.theme]
     
     print("=" * 50)
     print("City Map Poster Generator")
     print("=" * 50)
     
-    # Load theme
-    THEME = load_theme(args.theme)
-    
     # Get coordinates and generate poster
     try:
         coords = get_coordinates(args.city, args.country)
-        output_file = generate_output_filename(args.city, args.theme, args.format)
-        create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.width, args.height)
+        for theme_name in themes_to_generate:
+            THEME = load_theme(theme_name)
+            output_file = generate_output_filename(args.city, theme_name, args.format)
+            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.width, args.height, country_label=args.country_label)
+            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, country_label=args.country_label)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")

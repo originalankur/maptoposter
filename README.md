@@ -38,9 +38,14 @@ python create_map_poster.py --city <city> --country <country> [options]
 |--------|-------|-------------|---------|
 | `--city` | `-c` | City name | required |
 | `--country` | `-C` | Country name | required |
-| `--theme` | `-t` | Theme name | feature_based |
-| `--distance` | `-d` | Map radius in meters | 29000 |
-| `--list-themes` | | List all available themes | |
+| **OPTIONAL:** `--latitude` | | Latitude (overrides geocoded latitude) | |
+| **OPTIONAL:** `--longitude` | | Longitude (overrides geocoded longitude) | |
+| **OPTIONAL:** `--name` | | Override display name (city display on poster) | |
+| **OPTIONAL:** `--country-label` | | Override display country (country display on poster) | |
+| **OPTIONAL:** `--theme` | `-t` | Theme name | feature_based |
+| **OPTIONAL:** `--distance` | `-d` | Map radius in meters | 29000 |
+| **OPTIONAL:** `--list-themes` | | List all available themes | |
+| **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
 
 ### Examples
 
@@ -74,6 +79,13 @@ python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000 
 
 # List available themes
 python create_map_poster.py --list-themes
+
+# Use explicit coordinates instead of geocoding
+python create_map_poster.py --latitude 48.8566 --longitude 2.3522 --name "Paris Center" -t sunset -d 10000
+
+
+# Generate posters for every theme
+python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 ```
 
 ### Distance Guide
