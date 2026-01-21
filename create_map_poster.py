@@ -633,8 +633,8 @@ Examples:
     parser.add_argument('--country', '-C', type=str, help='Country name')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
-    parser.add_argument('--width', '-w', type=float, default=12, help='Image width in inches (default: 12)')
-    parser.add_argument('--height', '-h', type=float, default=16, help='Image height in inches (default: 16)')
+    parser.add_argument('--width', '-W', type=float, default=12, help='Image width in inches (default: 12)')
+    parser.add_argument('--height', '-H', type=float, default=16, help='Image height in inches (default: 16)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
     
