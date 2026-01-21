@@ -1,0 +1,155 @@
+[
+  {
+    "src": "/marrakech_terracotta_20260118_143253.png",
+    "title": "Marrakech",
+    "author": "Map2Poster",
+    "continent": "africa",
+    "country": "Morocco",
+    "distance": "5000",
+    "theme": "terracotta"
+  },
+  {
+    "src": "https://cdn.tosh1ki.de/assets/images/20260120142756.png",
+    "title": "Tokyo",
+    "author": "Map2Poster",
+    "continent": "asia",
+    "country": "Japan",
+    "distance": "15000",
+    "theme": "japanese_ink"
+  },
+  {
+    "src": "/mumbai_contrast_zones_20260118_145843.png",
+    "title": "Mumbai",
+    "author": "Map2Poster",
+    "continent": "asia",
+    "country": "India",
+    "distance": "18000",
+    "theme": "contrast_zones"
+  },
+  {
+    "src": "/singapore_neon_cyberpunk_20260118_153328.png",
+    "title": "Singapore",
+    "author": "Map2Poster",
+    "continent": "asia",
+    "country": "Singapore",
+    "distance": "12000",
+    "theme": "neon_cyberpunk"
+  },
+  {
+    "src": "/dubai_midnight_blue_20260118_140807.png",
+    "title": "Dubai",
+    "author": "Map2Poster",
+    "continent": "asia",
+    "country": "UAE",
+    "distance": "15000",
+    "theme": "midnight_blue"
+  },
+  {
+    "src": "/barcelona_warm_beige_20260118_140048.png",
+    "title": "Barcelona",
+    "author": "Map2Poster",
+    "continent": "europe",
+    "country": "Spain",
+    "distance": "8000",
+    "theme": "warm_beige"
+  },
+  {
+    "src": "/venice_blueprint_20260118_140505.png",
+    "title": "Venice",
+    "author": "Map2Poster",
+    "continent": "europe",
+    "country": "Italy",
+    "distance": "4000",
+    "theme": "blueprint"
+  },
+  {
+    "src": "/rome_warm_beige_20260118_143425.png",
+    "title": "Rome",
+    "author": "Map2Poster",
+    "continent": "europe",
+    "country": "Italy",
+    "distance": "8000",
+    "theme": "warm_beige"
+  },
+  {
+    "src": "/paris_pastel_dream_20260118_141126.png",
+    "title": "Paris",
+    "author": "Map2Poster",
+    "continent": "europe",
+    "country": "France",
+    "distance": "10000",
+    "theme": "pastel_dream"
+  },
+  {
+    "src": "/london_noir_20260118_150259.png",
+    "title": "London",
+    "author": "Map2Poster",
+    "continent": "europe",
+    "country": "UK",
+    "distance": "15000",
+    "theme": "noir"
+  },
+  {
+    "src": "/budapest_copper_patina_20260118_151213.png",
+    "title": "Budapest",
+    "author": "Map2Poster",
+    "continent": "europe",
+    "country": "Hungary",
+    "distance": "8000",
+    "theme": "copper_patina"
+  },
+  {
+    "src": "/moscow_noir_20260118_141923.png",
+    "title": "Moscow",
+    "author": "Map2Poster",
+    "continent": "europe",
+    "country": "Russia",
+    "distance": "12000",
+    "theme": "noir"
+  },
+  {
+    "src": "/amsterdam_ocean_20260118_140624.png",
+    "title": "Amsterdam",
+    "author": "Map2Poster",
+    "continent": "europe",
+    "country": "Netherlands",
+    "distance": "6000",
+    "theme": "ocean"
+  },
+  {
+    "src": "/new_york_noir_20260118_135113.png",
+    "title": "New York",
+    "author": "Map2Poster",
+    "continent": "north america",
+    "country": "USA",
+    "distance": "12000",
+    "theme": "noir"
+  },
+  {
+    "src": "/san_francisco_sunset_20260118_144726.png",
+    "title": "San Francisco",
+    "author": "Map2Poster",
+    "continent": "north america",
+    "country": "USA",
+    "distance": "10000",
+    "theme": "sunset"
+  },
+  {
+    "src": "/melbourne_forest_20260118_153446.png",
+    "title": "Melbourne",
+    "author": "Map2Poster",
+    "continent": "oceania",
+    "country": "Australia",
+    "distance": "12000",
+    "theme": "forest"
+  },
+  {
+    "src": "/sydney_ocean_20260118_145507.png",
+    "title": "Sydney",
+    "author": "Map2Poster",
+    "continent": "oceania",
+    "country": "Australia",
+    "distance": "12000",
+    "theme": "ocean"
+  }
+]
