@@ -554,11 +554,12 @@ def create_poster(city, country, point, dist, output_file, output_format, countr
         font_sub = FontProperties(family='monospace', weight='normal', size=22)
         font_coords = FontProperties(family='monospace', size=14)
     
-    spaced_city = "  ".join(list(city.upper()))
-    
-    # Dynamically adjust font size based on city name length to prevent truncation
+    display_name = name_label if name_label is not None else city
+    spaced_city = "  ".join(list(display_name.upper()))
+
+    # Dynamically adjust font size based on display name length to prevent truncation
     base_font_size = 60
-    city_char_count = len(city)
+    city_char_count = len(display_name)
     if city_char_count > 10:
         # Scale down font size for longer names
         scale_factor = 10 / city_char_count
@@ -715,6 +716,7 @@ Examples:
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
     parser.add_argument('--country-label', dest='country_label', type=str, help='Override country text displayed on poster')
+    parser.add_argument('--name', dest='name', type=str, help='Override city text displayed on poster')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--all-themes', '--All-themes', dest='all_themes', action='store_true', help='Generate posters for all themes')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
@@ -763,7 +765,7 @@ Examples:
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
             output_file = generate_output_filename(args.city, theme_name, args.format)
-            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, country_label=args.country_label)
+            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, country_label=args.country_label, name_label=args.name)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
