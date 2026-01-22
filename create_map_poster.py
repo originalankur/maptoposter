@@ -186,8 +186,10 @@ def get_edge_widths_by_type(G):
             width = 0.8
         elif highway in ['tertiary', 'tertiary_link']:
             width = 0.6
-        else:
+        elif highway in ['residential', 'living_street']:
             width = 0.4
+        else:
+            width = 0.0 # originally was 0.4
         
         edge_widths.append(width)
     
@@ -252,9 +254,9 @@ def create_poster(city, country, point, dist, output_file):
     # 3. Plot Layers
     # Layer 1: Polygons
     if water is not None and not water.empty:
-        water.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=1)
+        water.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=0)
     if parks is not None and not parks.empty:
-        parks.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=2)
+        parks.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=0.5)
     
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
