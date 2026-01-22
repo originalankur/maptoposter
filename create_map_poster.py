@@ -484,7 +484,7 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
         font_coords = FontProperties(family='monospace', size=BASE_COORDS * scale_factor)
         font_attr = FontProperties(family='monospace', size=BASE_ATTR * scale_factor)
     
-    spaced_city = "  ".join(list(city.upper()))
+    spaced_city = "  ".join(list((name_label if name_label is not None else city).upper()))
     
     # Dynamically adjust font size based on city name length to prevent truncation
     # We use the already scaled "main" font size as the starting point.
@@ -646,6 +646,7 @@ Examples:
     
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
+    parser.add_argument('--name', dest='name_label', type=str, help='Override display name (city display on poster)')
     parser.add_argument('--country-label', dest='country_label', type=str, help='Override country text displayed on poster')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--all-themes', '--All-themes', dest='all_themes', action='store_true', help='Generate posters for all themes')
@@ -697,7 +698,18 @@ Examples:
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
             output_file = generate_output_filename(args.city, theme_name, args.format)
-            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.width, args.height, country_label=args.country_label)
+            create_poster(
+                args.city,
+                args.country,
+                coords,
+                args.distance,
+                output_file,
+                args.format,
+                args.width,
+                args.height,
+                country_label=args.country_label,
+                name_label=args.name_label,
+            )
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
