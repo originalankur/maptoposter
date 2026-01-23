@@ -132,11 +132,17 @@ def create_gradient_fade(ax, color, location='bottom', zorder=10):
     ax.imshow(gradient, extent=[xlim[0], xlim[1], y_bottom, y_top], 
               aspect='auto', cmap=custom_cmap, zorder=zorder, origin='lower')
 
-MOTORWAY_TYPES = {'motorway', 'motorway_link'}
-PRIMARY_TYPES = {'trunk', 'trunk_link', 'primary', 'primary_link'}
-SECONDARY_TYPES = {'secondary', 'secondary_link'}
-TERTIARY_TYPES = {'tertiary', 'tertiary_link'}
-RESIDENTIAL_TYPES = {'residential', 'living_street', 'unclassified', 'service', 'footway'}
+# MOTORWAY_TYPES = {'motorway', 'motorway_link'}
+# PRIMARY_TYPES = {'trunk', 'trunk_link', 'primary', 'primary_link'}
+# SECONDARY_TYPES = {'secondary', 'secondary_link'}
+# TERTIARY_TYPES = {'tertiary', 'tertiary_link'}
+# RESIDENTIAL_TYPES = {'residential', 'living_street', 'unclassified', 'service', 'footway'}
+
+MOTORWAY_TYPES = {'motorway', 'trunk', 'primary', 'secondary', 'tertiary'}
+PRIMARY_TYPES = {'motorway_link', 'secondary_link', 'tertiary_link', 'trunk_link', 'primary_link'}
+SECONDARY_TYPES = {'living_street', 'residential', 'service', 'footway', 'unclassified'}
+TERTIARY_TYPES = {'', ''}
+RESIDENTIAL_TYPES = {'', '', '', '', ''}
 
 def get_edge_styles_by_type(G):
     """
@@ -158,21 +164,27 @@ def get_edge_styles_by_type(G):
         if highway in MOTORWAY_TYPES:
             color = THEME['road_motorway']
             width = 0.55
+            alpha = 0.8
         elif highway in PRIMARY_TYPES:
             color = THEME['road_primary']
-            width = 0.55
+            width = 0.25
+            alpha = 0.45
         elif highway in SECONDARY_TYPES:
             color = THEME['road_secondary']
-            width = 0.3
+            width = 0.25
+            alpha = 0.4
         elif highway in TERTIARY_TYPES:
             color = THEME['road_tertiary']
-            width = 0.3
+            width = 0.5
+            alpha = 0.55
         elif highway in RESIDENTIAL_TYPES:
             color = THEME['road_residential']
             width = 0.25
+            alpha = 0.3
         else:
             color = THEME['road_default']
             width = 0.25
+            alpha = 0.2
 
         edge_colors.append(color)
         edge_widths.append(width)
@@ -249,14 +261,14 @@ def create_poster(city, country, point, dist, output_file):
         water_polygons = water[water.geometry.type.isin(['Polygon', 'MultiPolygon'])]
         if not water_polygons.empty:
             water_polygons.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=1)
-    # if parks is not None and not parks.empty:
-    #     parks_polygons = parks[parks.geometry.type.isin(['Polygon', 'MultiPolygon'])]
-    #     if not parks_polygons.empty:
-    #         parks_polygons.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=2)
+    if parks is not None and not parks.empty:
+        parks_polygons = parks[parks.geometry.type.isin(['Polygon', 'MultiPolygon'])]
+        if not parks_polygons.empty:
+            parks_polygons.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=2)
     
     # Layer 1.5: Railroads
     if railroads is not None and not railroads.empty:
-        railroads.plot(ax=ax, color=THEME['railroad'], linewidth=0.3, linetype='longdash', zorder=3)
+        railroads.plot(ax=ax, color=THEME['railroad'], linewidth=0.3, linestyle='--', alpha=0.3, zorder=3)
 
 
     # Layer 2: Roads with hierarchy coloring
