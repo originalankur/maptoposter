@@ -1,5 +1,6 @@
 import osmnx as ox
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 from matplotlib.font_manager import FontProperties
 import matplotlib.colors as mcolors
 import numpy as np
@@ -282,6 +283,9 @@ def create_poster(city, country, point, dist, output_file):
         edge_linewidth=edge_widths,
         show=False, close=False
     )
+    for collection in ax.collections:
+        if isinstance(collection, LineCollection):
+            collection.set_zorder(3)
     
     # Layer 3: Gradients (Top and Bottom)
     create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
