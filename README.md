@@ -20,6 +20,7 @@ Generate beautiful, minimalist map posters for any city in the world.
 | Australia    | Melbourne      | forest          | <img src="posters/melbourne_forest_20260118_153446.png" width="250"> |
 | UAE          | Dubai          | midnight_blue   | <img src="posters/dubai_midnight_blue_20260118_140807.png" width="250"> |
 | India        | Hyderabad      | noir_lakes (enhanced) | <img src="posters/hyderabad_noir_lakes_enhanced_20260124_105857.png" width="250"> |
+| USA          | Seattle        | emerald         | <img src="posters/seattle_emerald_20260124_162244.png" width="250"> |
 
 ## Installation
 
@@ -121,6 +122,7 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 | `warm_beige` | Vintage sepia tones |
 | `pastel_dream` | Soft muted pastels |
 | `japanese_ink` | Minimalist ink wash style |
+| `emerald`      | Lush dark green aesthetic |
 | `forest` | Deep greens and sage |
 | `ocean` | Blues and teals for coastal cities |
 | `terracotta` | Mediterranean warmth |
