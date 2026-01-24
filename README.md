@@ -28,20 +28,45 @@ pip install -r requirements.txt
 
 ## Usage
 
+### GUI (Recommended)
+
+Launch the graphical interface for an easy, visual workflow:
+
+```bash
+python gui.py
+```
+
+The GUI provides:
+- Form inputs for all parameters (city, country, theme, distance, size)
+- Optional latitude/longitude coordinates (skip geocoding)
+- Optional display name overrides for poster labels
+- Theme selection with refresh button
+- Generate single theme or all themes at once
+- Real-time status updates during generation
+- Button to open the posters folder
+- DPI-aware scaling for high-resolution displays
+
+### Command Line
+
 ```bash
 python create_map_poster.py --city <city> --country <country> [options]
+# OR with coordinates:
+python create_map_poster.py --lat <latitude> --lon <longitude> [options]
 ```
 
 ### Options
 
 | Option | Short | Description | Default |
 |--------|-------|-------------|---------|
-| `--city` | `-c` | City name | required |
-| `--country` | `-C` | Country name | required |
+| `--city` | `-c` | City name (required unless using --lat/--lon) | |
+| `--country` | `-C` | Country name (required unless using --lat/--lon) | |
+| `--lat` | | Latitude (use with --lon to skip geocoding) | |
+| `--lon` | | Longitude (use with --lat to skip geocoding) | |
 | **OPTIONAL:** `--name` | | Override display name (city display on poster) | |
 | **OPTIONAL:** `--country-label` | | Override display country (country display on poster) | |
 | **OPTIONAL:** `--theme` | `-t` | Theme name | feature_based |
 | **OPTIONAL:** `--distance` | `-d` | Map radius in meters | 29000 |
+| **OPTIONAL:** `--format` | `-f` | Output format (png, svg, pdf) | png |
 | **OPTIONAL:** `--list-themes` | | List all available themes | |
 | **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
 | **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 |
@@ -94,6 +119,10 @@ python create_map_poster.py --list-themes
 
 # Generate posters for every theme
 python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
+
+# Using custom coordinates (skips geocoding)
+python create_map_poster.py --lat 35.6762 --lon 139.6503 -t midnight_blue -d 15000
+python create_map_poster.py --lat 40.7128 --lon -74.0060 -c "NYC" -C "USA" -t noir
 ```
 
 ### Distance Guide
@@ -161,12 +190,24 @@ Create a JSON file in `themes/` directory:
 
 ```
 map_poster/
-├── create_map_poster.py          # Main script
+├── create_map_poster.py  # CLI script
+├── gui.py                # Tkinter GUI application
 ├── themes/               # Theme JSON files
 ├── fonts/                # Roboto font files
 ├── posters/              # Generated posters
+├── .cache/               # Cached geocoding & map data
 └── README.md
 ```
+
+## Features
+
+- **Dual Interface**: Command-line tool and GUI for different workflows
+- **Custom Coordinates**: Use exact lat/lon to skip geocoding
+- **17 Built-in Themes**: From minimalist to cyberpunk aesthetics
+- **Smart Caching**: Coordinates and map data cached to speed up regeneration
+- **Flexible Output**: PNG, SVG, or PDF formats with configurable DPI
+- **High-DPI Support**: GUI scales automatically for retina/4K displays
+- **Batch Generation**: Create all theme variations in one command
 
 ## Hacker's Guide
 
