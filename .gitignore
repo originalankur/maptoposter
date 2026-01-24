@@ -3,3 +3,7 @@ env/
 .env/
 .venv/
 .DS_Store
+posters/*.png
+posters/*.svg
+posters/*.pdf
+.cache/
