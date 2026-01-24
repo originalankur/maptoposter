@@ -15,13 +15,17 @@ class MapPosterGUI:
     def __init__(self, master: tk.Tk) -> None:
         self.master = master
         master.title("City Map Poster Generator")
-        master.geometry("520x540")
+        self.ui_scale = self._detect_scaling()
+        master.tk.call("tk", "scaling", self.ui_scale)
+        master.geometry(f"{int(520 * self.ui_scale)}x{int(560 * self.ui_scale)}")
         master.resizable(False, False)
 
         self.city_var = tk.StringVar()
         self.country_var = tk.StringVar()
         self.country_label_var = tk.StringVar()
         self.name_label_var = tk.StringVar()
+        self.lat_var = tk.StringVar()
+        self.lon_var = tk.StringVar()
         self.distance_var = tk.StringVar(value="29000")
         self.width_var = tk.StringVar(value="12")
         self.height_var = tk.StringVar(value="16")
@@ -34,14 +38,22 @@ class MapPosterGUI:
         self._build_ui()
         self._refresh_themes()
 
-    def _build_ui(self) -> None:
-        pad = {"padx": 10, "pady": 6}
+    def _detect_scaling(self) -> float:
+        """Infer a reasonable Tk scaling factor from system DPI."""
+        try:
+            pixels_per_inch = self.master.winfo_fpixels("1i")
+            return max(0.8, min(pixels_per_inch / 72.0, 2.0))
+        except Exception:
+            return 1.0
 
-        header = tk.Label(self.master, text="City Map Poster Generator", font=("Segoe UI", 14, "bold"))
-        header.pack(pady=(12, 2))
+    def _build_ui(self) -> None:
+        pad = {"padx": int(10 * self.ui_scale), "pady": int(6 * self.ui_scale)}
+
+        header = tk.Label(self.master, text="City Map Poster Generator", font=("Segoe UI", int(14 * self.ui_scale), "bold"))
+        header.pack(pady=(int(12 * self.ui_scale), int(2 * self.ui_scale)))
 
         form = tk.Frame(self.master)
-        form.pack(fill="x", padx=12)
+        form.pack(fill="x", padx=int(12 * self.ui_scale))
 
         # Row 1: city / country
         row1 = tk.Frame(form)
@@ -68,6 +80,14 @@ class MapPosterGUI:
         ttk.Button(row3, text="Refresh", command=self._refresh_themes).grid(row=0, column=2, **pad)
         tk.Checkbutton(row3, text="Generate all themes", variable=self.all_themes_var).grid(row=0, column=3, sticky="w", **pad)
 
+        # Row 3.5: custom coordinates
+        row35 = tk.Frame(form)
+        row35.pack(fill="x")
+        tk.Label(row35, text="Latitude (optional):").grid(row=0, column=0, sticky="w", **pad)
+        tk.Entry(row35, textvariable=self.lat_var, width=22).grid(row=0, column=1, **pad)
+        tk.Label(row35, text="Longitude (optional):").grid(row=0, column=2, sticky="w", **pad)
+        tk.Entry(row35, textvariable=self.lon_var, width=22).grid(row=0, column=3, **pad)
+
         # Row 4: distance / format
         row4 = tk.Frame(form)
         row4.pack(fill="x")
@@ -86,16 +106,27 @@ class MapPosterGUI:
 
         # Buttons
         actions = tk.Frame(self.master)
-        actions.pack(fill="x", pady=12)
+        actions.pack(fill="x", pady=int(12 * self.ui_scale))
         self.generate_btn = ttk.Button(actions, text="Generate poster", command=self._start_generation)
-        self.generate_btn.pack(side="left", padx=12)
+        self.generate_btn.pack(side="left", padx=int(12 * self.ui_scale))
         ttk.Button(actions, text="Open posters folder", command=self._open_posters_folder).pack(side="left")
 
         # Status
         self.status_text = tk.StringVar(value="Ready")
         status_frame = tk.Frame(self.master)
-        status_frame.pack(fill="both", expand=True, padx=12, pady=12)
-        tk.Label(status_frame, textvariable=self.status_text, anchor="w", justify="left", bg="#f5f5f5", relief="groove", bd=1, padx=8, pady=8, wraplength=480).pack(fill="both", expand=True)
+        status_frame.pack(fill="both", expand=True, padx=int(12 * self.ui_scale), pady=int(12 * self.ui_scale))
+        tk.Label(
+            status_frame,
+            textvariable=self.status_text,
+            anchor="w",
+            justify="left",
+            bg="#f5f5f5",
+            relief="groove",
+            bd=1,
+            padx=int(8 * self.ui_scale),
+            pady=int(8 * self.ui_scale),
+            wraplength=int(480 * self.ui_scale),
+        ).pack(fill="both", expand=True)
 
     def _refresh_themes(self) -> None:
         try:
@@ -142,6 +173,20 @@ class MapPosterGUI:
             messagebox.showerror("Invalid format", "Format must be png, svg, or pdf.")
             return
 
+        # Optional manual coordinates
+        lat_str = self.lat_var.get().strip()
+        lon_str = self.lon_var.get().strip()
+        if (lat_str and not lon_str) or (lon_str and not lat_str):
+            messagebox.showerror("Invalid coordinates", "Provide both latitude and longitude or leave both empty.")
+            return
+        coords = None
+        if lat_str and lon_str:
+            try:
+                coords = (float(lat_str), float(lon_str))
+            except ValueError:
+                messagebox.showerror("Invalid coordinates", "Latitude and longitude must be numbers.")
+                return
+
         themes = self.available_themes if self.all_themes_var.get() else [self.theme_var.get()]
         if not themes:
             messagebox.showwarning("No theme selected", "Select at least one theme.")
@@ -152,7 +197,7 @@ class MapPosterGUI:
 
         thread = threading.Thread(
             target=self._run_generation,
-            args=(city, country, distance, width, height, fmt, themes, self.country_label_var.get().strip() or None, self.name_label_var.get().strip() or None),
+            args=(city, country, distance, width, height, fmt, themes, self.country_label_var.get().strip() or None, self.name_label_var.get().strip() or None, coords),
             daemon=True,
         )
         thread.start()
@@ -168,10 +213,15 @@ class MapPosterGUI:
         themes: list[str],
         country_label: str | None,
         name_label: str | None,
+        coords_override: tuple[float, float] | None,
     ) -> None:
         try:
-            self._set_status("Geocoding...")
-            coords = cmp.get_coordinates(city, country)
+            if coords_override is not None:
+                coords = coords_override
+                self._set_status("Using provided coordinates...")
+            else:
+                self._set_status("Geocoding...")
+                coords = cmp.get_coordinates(city, country)
 
             for idx, theme_name in enumerate(themes, start=1):
                 self._set_status(f"Generating {idx}/{len(themes)}: {theme_name}")

@@ -654,6 +654,8 @@ Examples:
     parser.add_argument('--height', '-H', type=float, default=16, help='Image height in inches (default: 16)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--lat', type=float, help='Optional latitude to skip geocoding')
+    parser.add_argument('--lon', type=float, help='Optional longitude to skip geocoding')
     
     args = parser.parse_args()
     
@@ -673,6 +675,10 @@ Examples:
         print_examples()
         sys.exit(1)
     
+    if (args.lat is None) ^ (args.lon is None):
+        print("Error: Provide both --lat and --lon or neither.")
+        sys.exit(1)
+
     available_themes = get_available_themes()
     if not available_themes:
         print("No themes found in 'themes/' directory.")
@@ -693,7 +699,7 @@ Examples:
     
     # Get coordinates and generate poster
     try:
-        coords = get_coordinates(args.city, args.country)
+        coords = (args.lat, args.lon) if args.lat is not None and args.lon is not None else get_coordinates(args.city, args.country)
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
             output_file = generate_output_filename(args.city, theme_name, args.format)
