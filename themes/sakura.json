@@ -1,0 +1,15 @@
+{
+    "name": "Sakura",
+    "description": "Soft pink tones inspired by cherry blossoms",
+    "bg": "#FFF5F8",
+    "text": "#592E38",
+    "gradient_color": "#FFF5F8",
+    "water": "#EBE3F0",
+    "parks": "#FCE4EC",
+    "road_motorway": "#880E4F",
+    "road_primary": "#AD1457",
+    "road_secondary": "#C2185B",
+    "road_tertiary": "#D81B60",
+    "road_residential": "#F48FB1",
+    "road_default": "#D81B60"
+}
