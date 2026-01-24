@@ -156,23 +156,7 @@ class MapPosterGUI:
     def _start_generation(self) -> None:
         city = self.city_var.get().strip()
         country = self.country_var.get().strip()
-        if not city or not country:
-            messagebox.showwarning("Missing data", "City and country are required.")
-            return
-
-        try:
-            distance = int(float(self.distance_var.get()))
-            width = float(self.width_var.get())
-            height = float(self.height_var.get())
-        except ValueError:
-            messagebox.showerror("Invalid input", "Distance, width, and height must be numbers.")
-            return
-
-        fmt = self.format_var.get()
-        if fmt not in {"png", "svg", "pdf"}:
-            messagebox.showerror("Invalid format", "Format must be png, svg, or pdf.")
-            return
-
+        
         # Optional manual coordinates
         lat_str = self.lat_var.get().strip()
         lon_str = self.lon_var.get().strip()
@@ -186,6 +170,30 @@ class MapPosterGUI:
             except ValueError:
                 messagebox.showerror("Invalid coordinates", "Latitude and longitude must be numbers.")
                 return
+        
+        # Require city/country only if coordinates not provided
+        if coords is None and (not city or not country):
+            messagebox.showwarning("Missing data", "Either provide city and country, or latitude and longitude.")
+            return
+        
+        # Use coordinates as fallback display name
+        if not city and coords:
+            city = f"{coords[0]:.4f}_{coords[1]:.4f}"
+        if not country and coords:
+            country = "Custom Location"
+
+        try:
+            distance = int(float(self.distance_var.get()))
+            width = float(self.width_var.get())
+            height = float(self.height_var.get())
+        except ValueError:
+            messagebox.showerror("Invalid input", "Distance, width, and height must be numbers.")
+            return
+
+        fmt = self.format_var.get()
+        if fmt not in {"png", "svg", "pdf"}:
+            messagebox.showerror("Invalid format", "Format must be png, svg, or pdf.")
+            return
 
         themes = self.available_themes if self.all_themes_var.get() else [self.theme_var.get()]
         if not themes:

@@ -669,9 +669,15 @@ Examples:
         list_themes()
         sys.exit(0)
     
-    # Validate required arguments
-    if not args.city or not args.country:
-        print("Error: --city and --country are required.\n")
+    # Validate required arguments: need either city/country or lat/lon
+    if args.lat is not None and args.lon is not None:
+        # Coordinates provided - city/country optional
+        if not args.city:
+            args.city = f"{args.lat:.4f}_{args.lon:.4f}"
+        if not args.country:
+            args.country = "Custom Location"
+    elif not args.city or not args.country:
+        print("Error: Either provide --city and --country, or --lat and --lon.\n")
         print_examples()
         sys.exit(1)
     
