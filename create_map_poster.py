@@ -35,10 +35,6 @@ THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
 
-CACHE_DIR = ".cache"
-
-class CacheError(Exception):
-    pass
 
 
 def _cache_path(key: str) -> str:

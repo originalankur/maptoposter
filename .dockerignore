@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+.git
+.gitignore
+.env
+venv
+posters/*
+cache/*
+.cache
+.DS_Store

@@ -1,0 +1,11 @@
+services:
+  map-poster:
+    build: .
+    image: city-map-poster
+    volumes:
+      - ./posters:/app/posters
+      - ./cache:/app/cache
+      - ./themes:/app/themes
+      - ./fonts:/app/fonts
+    environment:
+      - CACHE_DIR=/app/cache

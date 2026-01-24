@@ -27,6 +27,25 @@ Generate beautiful, minimalist map posters for any city in the world.
 pip install -r requirements.txt
 ```
 
+## Running with Docker
+
+You can run the application without installing Python by using Docker.
+
+1.  **Build the image:**
+    ```bash
+    docker compose build
+    ```
+
+2.  **Run the generator:**
+    ```bash
+    docker compose run --rm map-poster --city "London" --country "UK"
+    ```
+
+    All arguments supported by the script can be passed to the command.
+
+    The generated posters will appear in the `posters/` directory on your host machine.
+    Map data is cached in the `cache/` directory to speed up subsequent runs.
+
 ## Usage
 
 ```bash
