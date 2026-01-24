@@ -19,6 +19,7 @@ Generate beautiful, minimalist map posters for any city in the world.
 | Singapore    | Singapore      | neon_cyberpunk  | <img src="posters/singapore_neon_cyberpunk_20260118_153328.png" width="250"> |
 | Australia    | Melbourne      | forest          | <img src="posters/melbourne_forest_20260118_153446.png" width="250"> |
 | UAE          | Dubai          | midnight_blue   | <img src="posters/dubai_midnight_blue_20260118_140807.png" width="250"> |
+| India        | Hyderabad      | noir_lakes (enhanced) | <img src="posters/hyderabad_noir_lakes_enhanced_20260124_105857.png" width="250"> |
 
 ## Installation
 
@@ -157,11 +158,67 @@ Create a JSON file in `themes/` directory:
 }
 ```
 
+## Enhanced Poster Generator
+
+An enhanced version is available that adds **transport stations** and **landmarks** to your map posters.
+
+### Usage
+
+```bash
+python create_map_poster_enhanced.py --city <city> --country <country> [options]
+```
+
+### Enhanced Options
+
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--city` | `-c` | City name | required |
+| `--country` | `-C` | Country name | required |
+| `--theme` | `-t` | Theme name | noir_lakes |
+| `--distance` | `-d` | Map radius in meters | 42000 |
+| `--width` | `-W` | Image width in inches | 16 |
+| `--height` | `-H` | Image height in inches | 9 |
+| `--no-transport` | | Disable transport station markers | |
+| `--no-landmarks` | | Disable landmark markers | |
+
+### Enhanced Features
+
+- **Transport Stations** (Gold markers): Metro stations, railway stations, bus terminals
+- **Historic Landmarks** (Amber diamonds): Monuments, museums, historic sites
+- **Highlighted Water Bodies**: Lakes and rivers in cyan (with `noir_lakes` theme)
+- **Landscape orientation** by default (16:9 for wallpapers)
+
+### Enhanced Examples
+
+```bash
+# Hyderabad with lakes, metro stations, and landmarks
+python create_map_poster_enhanced.py -c "Hyderabad" -C "India" -t noir_lakes -d 42000
+
+# Tokyo with transport only (no landmarks)
+python create_map_poster_enhanced.py -c "Tokyo" -C "Japan" -t midnight_blue --no-landmarks
+
+# Paris without any markers (just enhanced water visibility)
+python create_map_poster_enhanced.py -c "Paris" -C "France" -t noir_lakes --no-transport --no-landmarks
+```
+
+### Enhanced Theme Properties
+
+The enhanced script supports additional theme properties:
+
+```json
+{
+  "transport_station": "#FFD700",
+  "landmark_historic": "#FFBF00",
+  "landmark_modern": "#FFFFFF"
+}
+```
+
 ## Project Structure
 
 ```
 map_poster/
 ├── create_map_poster.py          # Main script
+├── create_map_poster_enhanced.py # Enhanced script with transport & landmarks
 ├── themes/               # Theme JSON files
 ├── fonts/                # Roboto font files
 ├── posters/              # Generated posters

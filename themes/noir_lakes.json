@@ -1,0 +1,18 @@
+{
+  "name": "Noir Lakes",
+  "description": "Pure black background with highlighted cyan lakes, gold transport stations, and landmark markers - perfect for lake cities like Hyderabad",
+  "bg": "#000000",
+  "text": "#FFFFFF",
+  "gradient_color": "#000000",
+  "water": "#00BFFF",
+  "parks": "#0D3D0D",
+  "road_motorway": "#FFFFFF",
+  "road_primary": "#E0E0E0",
+  "road_secondary": "#B0B0B0",
+  "road_tertiary": "#808080",
+  "road_residential": "#505050",
+  "road_default": "#808080",
+  "transport_station": "#FFD700",
+  "landmark_historic": "#FFBF00",
+  "landmark_modern": "#FFFFFF"
+}
