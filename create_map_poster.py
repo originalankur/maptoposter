@@ -712,7 +712,7 @@ def list_themes():
                 theme_data = json.load(f)
                 display_name = theme_data.get('name', theme_name)
                 description = theme_data.get('description', '')
-        except:
+        except (OSError, json.JSONDecodeError):
             display_name = theme_name
             description = ''
         print(f"  {theme_name}")

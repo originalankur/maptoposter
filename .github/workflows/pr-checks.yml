@@ -50,7 +50,6 @@ jobs:
           flake8 create_map_poster.py --count --select=E9,F63,F7,F82 --show-source --statistics
           # Exit-zero treats all errors as warnings
           flake8 create_map_poster.py --count --statistics --exit-zero --max-line-length=${{ env.MAX_LINE_LENGTH }}
-        continue-on-error: true
 
       - name: Lint with pylint
         run: pylint create_map_poster.py --exit-zero --max-line-length=${{ env.MAX_LINE_LENGTH }}
