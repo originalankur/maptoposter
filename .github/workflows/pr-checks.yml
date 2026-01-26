@@ -1,0 +1,78 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    types: [opened, synchronize, reopened]
+
+env:
+  MAX_LINE_LENGTH: 160
+
+jobs:
+  lint-and-validate:
+    name: Lint and Validate - ${{ matrix.os }} - Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.11', '3.12', '3.13', '3.14']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 pylint mypy
+
+      - name: Validate Python syntax
+        run: python -m py_compile create_map_poster.py
+
+      - name: Test CLI help
+        run: python create_map_poster.py --help
+
+      - name: Test list themes
+        run: python create_map_poster.py --list-themes
+
+      - name: Lint with flake8
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 create_map_poster.py --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings
+          flake8 create_map_poster.py --count --statistics --exit-zero --max-line-length=${{ env.MAX_LINE_LENGTH }}
+        continue-on-error: true
+
+      - name: Lint with pylint
+        run: pylint create_map_poster.py --exit-zero --max-line-length=${{ env.MAX_LINE_LENGTH }}
+        continue-on-error: true
+
+      - name: Type check with mypy
+        run: mypy create_map_poster.py --ignore-missing-imports --no-strict-optional
+        continue-on-error: true
+
+  dependency-check:
+    name: Security and Dependency Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+          cache: 'pip'
+
+      - name: Audit dependencies with pip-audit
+        uses: pypa/gh-action-pip-audit@v1.1.0
