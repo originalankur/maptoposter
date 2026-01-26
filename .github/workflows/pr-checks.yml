@@ -48,7 +48,6 @@ jobs:
         run: |
           # Stop the build if there are Python syntax errors or undefined names
           flake8 create_map_poster.py --count --select=E9,F63,F7,F82 --show-source --statistics
-          # Exit-zero treats all errors as warnings
           flake8 create_map_poster.py --count --statistics --max-line-length=${{ env.MAX_LINE_LENGTH }}
 
       - name: Lint with pylint

@@ -322,7 +322,10 @@ def get_coordinates(city, country):
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # Running event loop in the same thread; raise a clear error.
-                raise RuntimeError("Geocoder returned a coroutine while an event loop is already running. Run this script in a synchronous environment.") from exc
+                raise RuntimeError(
+                    "Geocoder returned a coroutine while an event loop is already running. "
+                    "Run this script in a synchronous environment."
+                ) from exc
             location = loop.run_until_complete(location)
 
     if location:
