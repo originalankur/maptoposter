@@ -47,6 +47,7 @@ python create_map_poster.py --city <city> --country <country> [options]
 | **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
 | **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 |
 | **OPTIONAL:** `--height` | `-H` | Image height in inches | 16 |
+| **OPTIONAL:** `--preview` | `-p` | Fast preview mode (100 DPI, roads only) | |
 
 ### Resolution Guide (300 DPI)
 
@@ -59,6 +60,23 @@ Use these values for `-W` and `-H` to target specific resolutions:
 | **HD Wallpaper** | 1920 x 1080 | 6.4 x 3.6 |
 | **4K Wallpaper** | 3840 x 2160 | 12.8 x 7.2 |
 | **A4 Print** | 2480 x 3508 | 8.3 x 11.7 |
+
+### Preview Mode
+
+Use `--preview` or `-p` for fast iterations:
+
+```bash
+python create_map_poster.py -c "Paris" -C "France" --preview
+```
+
+Differences from full quality:
+
+| Setting | Normal    | Preview             |
+|---------|-----------|---------------------|
+| DPI     | 300       | 100                 |
+| Network | All paths | Drivable roads only |
+
+Preview mode is ideal for quickly testing different cities, themes, or distance values before generating the final high-resolution poster.
 
 ### Examples
 

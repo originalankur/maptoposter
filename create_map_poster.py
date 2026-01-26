@@ -333,16 +333,17 @@ def get_crop_limits(G_proj, center_lat_lon, fig, dist):
     )
 
 
-def fetch_graph(point, dist) -> MultiDiGraph | None:
+def fetch_graph(point, dist, preview=False) -> MultiDiGraph | None:
     lat, lon = point
-    graph = f"graph_{lat}_{lon}_{dist}"
+    network_type = 'drive' if preview else 'all'
+    graph = f"graph_{lat}_{lon}_{dist}_{network_type}"
     cached = cache_get(graph)
     if cached is not None:
         print("✓ Using cached street network")
         return cast(MultiDiGraph, cached)
 
     try:
-        G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all', truncate_by_edge=True)
+        G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type=network_type, truncate_by_edge=True)
         # Rate limit between requests
         time.sleep(0.5)
         try:
@@ -378,15 +379,17 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
 
 
 
-def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, country_label=None, name_label=None):
+def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, country_label=None, name_label=None, preview=False):
     print(f"\nGenerating map for {city}, {country}...")
+    if preview:
+        print("  (Preview mode: lower DPI, roads only)")
     
     # Progress bar for data fetching
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
         # 1. Fetch Street Network
         pbar.set_description("Downloading street network")
         compensated_dist = dist * (max(height, width) / min(height, width))/4 # To compensate for viewport crop
-        G = fetch_graph(point, compensated_dist)
+        G = fetch_graph(point, compensated_dist, preview)
         if G is None:
             raise RuntimeError("Failed to retrieve street network data.")
         pbar.update(1)
@@ -531,7 +534,6 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     ax.text(0.98, 0.02, "© OpenStreetMap contributors", transform=ax.transAxes,
             color=THEME['text'], alpha=0.5, ha='right', va='bottom', 
             fontproperties=font_attr, zorder=11)
-
     # 5. Save
     print(f"Saving to {output_file}...")
 
@@ -540,7 +542,7 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
 
     # DPI matters mainly for raster formats
     if fmt == "png":
-        save_kwargs["dpi"] = 300
+        save_kwargs["dpi"] = 100 if preview else 300
 
     plt.savefig(output_file, format=fmt, **save_kwargs)
 
@@ -654,6 +656,7 @@ Examples:
     parser.add_argument('--height', '-H', type=float, default=16, help='Image height in inches (default: 16)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--preview', '-p', action='store_true', help='Fast preview mode (100 DPI, roads only)')
     
     args = parser.parse_args()
     
@@ -697,7 +700,7 @@ Examples:
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
             output_file = generate_output_filename(args.city, theme_name, args.format)
-            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.width, args.height, country_label=args.country_label)
+            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.width, args.height, country_label=args.country_label, preview=args.preview)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
