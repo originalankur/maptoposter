@@ -58,7 +58,6 @@ jobs:
 
       - name: Type check with mypy
         run: mypy create_map_poster.py --ignore-missing-imports --no-strict-optional
-        continue-on-error: true
 
   dependency-check:
     name: Security and Dependency Check
