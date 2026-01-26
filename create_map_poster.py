@@ -335,7 +335,9 @@ def get_crop_limits(G_proj, center_lat_lon, fig, dist):
 def fetch_graph(point, dist, preview=False) -> MultiDiGraph | None:
     lat, lon = point
     network_type = 'drive' if preview else 'all'
-    graph = f"graph_{lat}_{lon}_{dist}_{network_type}"
+    graph = f"graph_{lat}_{lon}_{dist}"
+    if preview:
+        graph = f"{graph}_preview"
     cached = cache_get(graph)
     if cached is not None:
         print("✓ Using cached street network")
