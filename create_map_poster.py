@@ -29,9 +29,11 @@ from networkx import MultiDiGraph
 from shapely.geometry import Point
 from tqdm import tqdm
 
+
 class CacheError(Exception):
     """Raised when a cache operation fails."""
     pass
+
 
 CACHE_DIR_PATH = os.environ.get("CACHE_DIR", "cache")
 CACHE_DIR = Path(CACHE_DIR_PATH)
@@ -40,6 +42,7 @@ CACHE_DIR.mkdir(exist_ok=True)
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
+
 
 def _cache_path(key: str) -> str:
     """
@@ -53,6 +56,7 @@ def _cache_path(key: str) -> str:
     """
     safe = key.replace(os.sep, "_")
     return os.path.join(CACHE_DIR, f"{safe}.pkl")
+
 
 def cache_get(key: str):
     """
@@ -76,6 +80,7 @@ def cache_get(key: str):
     except Exception as e:
         raise CacheError(f"Cache read failed: {e}") from e
 
+
 def cache_set(key: str, value):
     """
     Store an object in the cache.
@@ -96,6 +101,7 @@ def cache_set(key: str, value):
     except Exception as e:
         raise CacheError(f"Cache write failed: {e}") from e
 
+
 def load_fonts():
     """
     Load Roboto fonts from the fonts directory.
@@ -115,7 +121,9 @@ def load_fonts():
 
     return fonts
 
+
 FONTS = load_fonts()
+
 
 def generate_output_filename(city, theme_name, output_format):
     """
@@ -129,6 +137,7 @@ def generate_output_filename(city, theme_name, output_format):
     ext = output_format.lower()
     filename = f"{city_slug}_{theme_name}_{timestamp}.{ext}"
     return os.path.join(POSTERS_DIR, filename)
+
 
 def get_available_themes():
     """
@@ -144,6 +153,7 @@ def get_available_themes():
             theme_name = file[:-5]  # Remove .json extension
             themes.append(theme_name)
     return themes
+
 
 def load_theme(theme_name="terracotta"):
     """
@@ -177,8 +187,10 @@ def load_theme(theme_name="terracotta"):
             print(f"  {theme['description']}")
         return theme
 
+
 # Load theme (can be changed via command line or input)
 THEME = dict[str, str]()  # Will be loaded later
+
 
 def create_gradient_fade(ax, color, location='bottom', zorder=10):
     """
@@ -214,6 +226,7 @@ def create_gradient_fade(ax, color, location='bottom', zorder=10):
     ax.imshow(gradient, extent=[xlim[0], xlim[1], y_bottom, y_top],
               aspect='auto', cmap=custom_cmap, zorder=zorder, origin='lower')
 
+
 def get_edge_colors_by_type(g):
     """
     Assigns colors to edges based on road type hierarchy.
@@ -247,6 +260,7 @@ def get_edge_colors_by_type(g):
 
     return edge_colors
 
+
 def get_edge_widths_by_type(g):
     """
     Assigns line widths to edges based on road type.
@@ -275,6 +289,7 @@ def get_edge_widths_by_type(g):
         edge_widths.append(width)
 
     return edge_widths
+
 
 def get_coordinates(city, country):
     """
@@ -325,6 +340,7 @@ def get_coordinates(city, country):
         return (location.latitude, location.longitude)
 
     raise ValueError(f"Could not find coordinates for {city}, {country}")
+
 
 def get_crop_limits(g_proj, center_lat_lon, fig, dist):
     """
@@ -396,6 +412,7 @@ def fetch_graph(point, dist) -> MultiDiGraph | None:
         print(f"OSMnx error while fetching graph: {e}")
         return None
 
+
 def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
     """
     Fetch geographic features (water, parks, etc.) from OpenStreetMap.
@@ -433,6 +450,7 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
         print(f"OSMnx error while fetching features: {e}")
         return None
 
+
 def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, country_label=None, name_label=None):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -461,7 +479,7 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
         # 1. Fetch Street Network
         pbar.set_description("Downloading street network")
-        compensated_dist = dist * (max(height, width) / min(height, width))/4 # To compensate for viewport crop
+        compensated_dist = dist * (max(height, width) / min(height, width)) / 4  # To compensate for viewport crop
         g = fetch_graph(point, compensated_dist)
         if g is None:
             raise RuntimeError("Failed to retrieve street network data.")
@@ -677,6 +695,7 @@ Available themes can be found in the 'themes/' directory.
 Generated posters are saved to 'posters/' directory.
 """)
 
+
 def list_themes():
     """List all available themes with descriptions."""
     available_themes = get_available_themes()
@@ -701,6 +720,7 @@ def list_themes():
         if description:
             print(f"    {description}")
         print()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
