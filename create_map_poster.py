@@ -223,13 +223,13 @@ def get_edge_widths_by_type(G):
     Major roads get thicker lines.
     """
     edge_widths = []
-    
+
     for u, v, data in G.edges(data=True):
         highway = data.get('highway', 'unclassified')
-        
+
         if isinstance(highway, list):
             highway = highway[0] if highway else 'unclassified'
-        
+
         # Assign width based on road importance
         if highway in ['motorway', 'motorway_link']:
             width = 1.2
@@ -241,10 +241,137 @@ def get_edge_widths_by_type(G):
             width = 0.6
         else:
             width = 0.4
-        
+
         edge_widths.append(width)
-    
+
     return edge_widths
+
+
+# Road type categories for SVG layer organization
+ROAD_CATEGORIES = {
+    'motorway': {'types': ['motorway', 'motorway_link'], 'width': 1.2, 'label': 'Motorways'},
+    'primary': {'types': ['trunk', 'trunk_link', 'primary', 'primary_link'], 'width': 1.0, 'label': 'Primary Roads'},
+    'secondary': {'types': ['secondary', 'secondary_link'], 'width': 0.8, 'label': 'Secondary Roads'},
+    'tertiary': {'types': ['tertiary', 'tertiary_link'], 'width': 0.6, 'label': 'Tertiary Roads'},
+    'residential': {'types': ['residential', 'living_street', 'unclassified', 'service', 'pedestrian', 'footway', 'path', 'cycleway', 'track'], 'width': 0.4, 'label': 'Residential & Other'}
+}
+
+
+def get_road_category(highway_type):
+    """
+    Returns the road category for a given highway type.
+    """
+    if isinstance(highway_type, list):
+        highway_type = highway_type[0] if highway_type else 'unclassified'
+
+    for category, info in ROAD_CATEGORIES.items():
+        if highway_type in info['types']:
+            return category
+    return 'residential'  # Default category
+
+
+def group_edges_by_category(G):
+    """
+    Groups graph edges by road category for layered SVG output.
+    Returns a dict mapping category names to lists of (u, v, key, data) tuples.
+    """
+    categorized_edges = {cat: [] for cat in ROAD_CATEGORIES.keys()}
+
+    for u, v, key, data in G.edges(keys=True, data=True):
+        highway = data.get('highway', 'unclassified')
+        category = get_road_category(highway)
+        categorized_edges[category].append((u, v, key, data))
+
+    return categorized_edges
+
+
+def plot_roads_with_layers(G_proj, ax, svg_layers=False):
+    """
+    Plots roads either as a single layer or as separate SVG layers by line size.
+    When svg_layers is True, roads are grouped into separate SVG groups with gid labels.
+
+    Args:
+        G_proj: Projected graph
+        ax: Matplotlib axes
+        svg_layers: If True, create separate SVG groups for each road category
+    """
+    if not svg_layers:
+        # Standard plotting without layers
+        edge_colors = get_edge_colors_by_type(G_proj)
+        edge_widths = get_edge_widths_by_type(G_proj)
+        ox.plot_graph(
+            G_proj, ax=ax, bgcolor=THEME['bg'],
+            node_size=0,
+            edge_color=edge_colors,
+            edge_linewidth=edge_widths,
+            show=False, close=False
+        )
+        return
+
+    # Layered plotting: group edges by category and plot separately
+    # Plot from smallest (residential) to largest (motorway) so larger roads are on top
+    categorized_edges = group_edges_by_category(G_proj)
+
+    # Order from smallest to largest line width
+    category_order = ['residential', 'tertiary', 'secondary', 'primary', 'motorway']
+
+    # Get node positions from the projected graph
+    node_positions = {node: (data['x'], data['y']) for node, data in G_proj.nodes(data=True)}
+
+    for category in category_order:
+        edges = categorized_edges[category]
+        if not edges:
+            continue
+
+        cat_info = ROAD_CATEGORIES[category]
+        width = cat_info['width']
+        label = cat_info['label']
+
+        # Collect line segments for this category
+        lines = []
+        colors = []
+
+        for u, v, key, data in edges:
+            # Get geometry if available, otherwise use node positions
+            if 'geometry' in data:
+                xs, ys = data['geometry'].xy
+                lines.append(list(zip(xs, ys)))
+            else:
+                x1, y1 = node_positions[u]
+                x2, y2 = node_positions[v]
+                lines.append([(x1, y1), (x2, y2)])
+
+            # Get color for this edge
+            highway = data.get('highway', 'unclassified')
+            if isinstance(highway, list):
+                highway = highway[0] if highway else 'unclassified'
+
+            if highway in ['motorway', 'motorway_link']:
+                color = THEME['road_motorway']
+            elif highway in ['trunk', 'trunk_link', 'primary', 'primary_link']:
+                color = THEME['road_primary']
+            elif highway in ['secondary', 'secondary_link']:
+                color = THEME['road_secondary']
+            elif highway in ['tertiary', 'tertiary_link']:
+                color = THEME['road_tertiary']
+            else:
+                color = THEME['road_residential']
+            colors.append(color)
+
+        if lines:
+            from matplotlib.collections import LineCollection
+            # Create LineCollection with gid for SVG layer identification
+            lc = LineCollection(
+                lines,
+                colors=colors,
+                linewidths=width,
+                antialiaseds=True,
+                zorder=3 + category_order.index(category)  # Stack order
+            )
+            # Set gid for SVG grouping - this creates identifiable layers
+            lc.set_gid(f"layer_{category}_{label.replace(' ', '_')}_width_{width}")
+            lc.set_label(label)
+            ax.add_collection(lc)
 
 def get_coordinates(city, country):
     """
@@ -377,7 +504,7 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
 
 
 
-def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, country_label=None, name_label=None):
+def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, country_label=None, name_label=None, svg_layers=False):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
@@ -437,19 +564,18 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
     
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
-    edge_colors = get_edge_colors_by_type(G_proj)
-    edge_widths = get_edge_widths_by_type(G_proj)
 
     # Determine cropping limits to maintain the poster aspect ratio
     crop_xlim, crop_ylim = get_crop_limits(G_proj, point, fig, compensated_dist)
-    # Plot the projected graph and then apply the cropped limits
-    ox.plot_graph(
-        G_proj, ax=ax, bgcolor=THEME['bg'],
-        node_size=0,
-        edge_color=edge_colors,
-        edge_linewidth=edge_widths,
-        show=False, close=False
-    )
+
+    # Check if we should use layered SVG output
+    use_svg_layers = svg_layers and output_format.lower() == 'svg'
+    if use_svg_layers:
+        print("  Creating SVG with separate layers by line size...")
+
+    # Plot roads (either layered or standard)
+    plot_roads_with_layers(G_proj, ax, svg_layers=use_svg_layers)
+
     ax.set_aspect('equal', adjustable='box')
     ax.set_xlim(crop_xlim)
     ax.set_ylim(crop_ylim)
@@ -583,7 +709,10 @@ Examples:
   # River cities
   python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
   python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
-  
+
+  # SVG with layers for editing (e.g., in Illustrator/Inkscape)
+  python create_map_poster.py -c "Berlin" -C "Germany" -f svg --svg-layers -d 10000
+
   # List themes
   python create_map_poster.py --list-themes
 
@@ -594,6 +723,8 @@ Options:
   --theme, -t       Theme name (default: terracotta)
   --all-themes      Generate posters for all themes
   --distance, -d    Map radius in meters (default: 18000)
+  --format, -f      Output format: png, svg, pdf (default: png)
+  --svg-layers      Create SVG with separate layers by line size
   --list-themes     List all available themes
 
 Distance guide:
@@ -656,6 +787,7 @@ Examples:
     parser.add_argument('--height', '-H', type=float, default=16, help='Image height in inches (default: 16, max: 20)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--svg-layers', action='store_true', help='When using SVG format, organize roads into layers by line size for easier editing')
     
     args = parser.parse_args()
     
@@ -716,7 +848,7 @@ Examples:
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
             output_file = generate_output_filename(args.city, theme_name, args.format)
-            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.width, args.height, country_label=args.country_label)
+            create_poster(args.city, args.country, coords, args.distance, output_file, args.format, args.width, args.height, country_label=args.country_label, svg_layers=args.svg_layers)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
