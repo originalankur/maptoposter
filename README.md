@@ -39,14 +39,16 @@ python create_map_poster.py --city <city> --country <country> [options]
 |--------|-------|-------------|---------|
 | `--city` | `-c` | City name | required |
 | `--country` | `-C` | Country name | required |
+| **OPTIONAL:** `--latitude` | `-lat` | Override latitude center point (must also supply longitude) | |
+| **OPTIONAL:** `--longitude` | `-long` | Override longitude center point (must also supply latitude) | |
 | **OPTIONAL:** `--name` | | Override display name (city display on poster) | |
 | **OPTIONAL:** `--country-label` | | Override display country (country display on poster) | |
-| **OPTIONAL:** `--theme` | `-t` | Theme name | feature_based |
-| **OPTIONAL:** `--distance` | `-d` | Map radius in meters | 29000 |
+| **OPTIONAL:** `--theme` | `-t` | Theme name | terracotta |
+| **OPTIONAL:** `--distance` | `-d` | Map radius in meters | 18000 |
 | **OPTIONAL:** `--list-themes` | | List all available themes | |
 | **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
-| **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 |
-| **OPTIONAL:** `--height` | `-H` | Image height in inches | 16 |
+| **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 (max: 20) |
+| **OPTIONAL:** `--height` | `-H` | Image height in inches | 16 (max: 20) |
 | **OPTIONAL:** `--preview` | `-p` | Fast preview mode (100 DPI, roads only) | |
 
 ### Resolution Guide (300 DPI)
@@ -108,6 +110,9 @@ python create_map_poster.py -c "Mumbai" -C "India" -t contrast_zones -d 18000 # 
 python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
 python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
 
+# Override center coordinates
+python create_map_poster.py --city "New York" --country "USA" -lat 40.776676 -long -73.971321 -t noir
+
 # List available themes
 python create_map_poster.py --list-themes
 
@@ -129,7 +134,6 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 
 | Theme | Style |
 |-------|-------|
-| `feature_based` | Classic black & white with road hierarchy |
 | `gradient_roads` | Smooth gradient shading |
 | `contrast_zones` | High contrast urban density |
 | `noir` | Pure black background, white roads |

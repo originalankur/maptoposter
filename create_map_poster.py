@@ -21,6 +21,7 @@ from typing import cast
 from geopandas import GeoDataFrame
 import pickle
 from shapely.geometry import Point
+from lat_lon_parser import parse
 
 class CacheError(Exception):
     """Raised when a cache operation fails."""
@@ -30,12 +31,9 @@ CACHE_DIR_PATH = os.environ.get("CACHE_DIR", "cache")
 CACHE_DIR = Path(CACHE_DIR_PATH)
 CACHE_DIR.mkdir(exist_ok=True)
 
-
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
-
-CACHE_DIR = ".cache"
 
 class CacheError(Exception):
     pass
@@ -117,28 +115,29 @@ def get_available_themes():
             themes.append(theme_name)
     return themes
 
-def load_theme(theme_name="feature_based"):
+def load_theme(theme_name="terracotta"):
     """
     Load theme from JSON file in themes directory.
     """
     theme_file = os.path.join(THEMES_DIR, f"{theme_name}.json")
     
     if not os.path.exists(theme_file):
-        print(f"⚠ Theme file '{theme_file}' not found. Using default feature_based theme.")
-        # Fallback to embedded default theme
+        print(f"⚠ Theme file '{theme_file}' not found. Using default terracotta theme.")
+        # Fallback to embedded terracotta theme
         return {
-            "name": "Feature-Based Shading",
-            "bg": "#FFFFFF",
-            "text": "#000000",
-            "gradient_color": "#FFFFFF",
-            "water": "#C0C0C0",
-            "parks": "#F0F0F0",
-            "road_motorway": "#0A0A0A",
-            "road_primary": "#1A1A1A",
-            "road_secondary": "#2A2A2A",
-            "road_tertiary": "#3A3A3A",
-            "road_residential": "#4A4A4A",
-            "road_default": "#3A3A3A"
+            "name": "Terracotta",
+            "description": "Mediterranean warmth - burnt orange and clay tones on cream",
+            "bg": "#F5EDE4",
+            "text": "#8B4513",
+            "gradient_color": "#F5EDE4",
+            "water": "#A8C4C4",
+            "parks": "#E8E0D0",
+            "road_motorway": "#A0522D",
+            "road_primary": "#B8653A",
+            "road_secondary": "#C9846A",
+            "road_tertiary": "#D9A08A",
+            "road_residential": "#E5C4B0",
+            "road_default": "#D9A08A"
         }
     
     with open(theme_file, 'r') as f:
@@ -594,9 +593,9 @@ Options:
   --city, -c        City name (required)
   --country, -C     Country name (required)
   --country-label   Override country text displayed on poster
-  --theme, -t       Theme name (default: feature_based)
+  --theme, -t       Theme name (default: terracotta)
   --all-themes      Generate posters for all themes
-  --distance, -d    Map radius in meters (default: 29000)
+  --distance, -d    Map radius in meters (default: 18000)
   --list-themes     List all available themes
 
 Distance guide:
@@ -640,6 +639,7 @@ if __name__ == "__main__":
         epilog="""
 Examples:
   python create_map_poster.py --city "New York" --country "USA"
+  python create_map_poster.py --city "New York" --country "USA" -l 40.776676 -73.971321 --theme neon_cyberpunk
   python create_map_poster.py --city Tokyo --country Japan --theme midnight_blue
   python create_map_poster.py --city Paris --country France --theme noir --distance 15000
   python create_map_poster.py --list-themes
@@ -648,12 +648,14 @@ Examples:
     
     parser.add_argument('--city', '-c', type=str, help='City name')
     parser.add_argument('--country', '-C', type=str, help='Country name')
+    parser.add_argument('--latitude', '-lat', dest='latitude', type=str, help='Override latitude center point')
+    parser.add_argument('--longitude', '-long', dest='longitude', type=str, help='Override longitude center point')
     parser.add_argument('--country-label', dest='country_label', type=str, help='Override country text displayed on poster')
-    parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
+    parser.add_argument('--theme', '-t', type=str, default='terracotta', help='Theme name (default: terracotta)')
     parser.add_argument('--all-themes', '--All-themes', dest='all_themes', action='store_true', help='Generate posters for all themes')
-    parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
-    parser.add_argument('--width', '-W', type=float, default=12, help='Image width in inches (default: 12)')
-    parser.add_argument('--height', '-H', type=float, default=16, help='Image height in inches (default: 16)')
+    parser.add_argument('--distance', '-d', type=int, default=18000, help='Map radius in meters (default: 18000)')
+    parser.add_argument('--width', '-W', type=float, default=12, help='Image width in inches (default: 12, max: 20 )')
+    parser.add_argument('--height', '-H', type=float, default=16, help='Image height in inches (default: 16, max: 20)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
     parser.add_argument('--preview', '-p', action='store_true', help='Fast preview mode (100 DPI, roads only)')
@@ -676,10 +678,20 @@ Examples:
         print_examples()
         sys.exit(1)
     
+    # Enforce maximum dimensions
+    if args.width > 20:
+        print(f"⚠ Width {args.width} exceeds the maximum allowed limit of 20. It's enforced as max limit 20.")
+        args.width = 20.0
+    if args.height > 20:
+        print(f"⚠ Height {args.height} exceeds the maximum allowed limit of 20. It's enforced as max limit 20.")
+        args.height = 20.0
+    
     available_themes = get_available_themes()
     if not available_themes:
         print("No themes found in 'themes/' directory.")
         os.sys.exit(1)
+
+    
 
     if args.all_themes:
         themes_to_generate = available_themes
@@ -696,7 +708,14 @@ Examples:
     
     # Get coordinates and generate poster
     try:
-        coords = get_coordinates(args.city, args.country)
+        if args.latitude and args.longitude:
+            lat = parse(args.latitude)
+            lon = parse(args.longitude)
+            coords = [lat, lon]
+            print(f"✓ Coordinates: {', '.join([str(i) for i in coords])}")
+        else:
+            coords = get_coordinates(args.city, args.country)
+
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
             output_file = generate_output_filename(args.city, theme_name, args.format)
