@@ -591,7 +591,7 @@ Options:
   --country-label   Override country text displayed on poster
   --theme, -t       Theme name (default: feature_based)
   --all-themes      Generate posters for all themes
-  --distance, -d    Map radius in meters (default: 29000)
+  --distance, -d    Map radius in meters (default: 12000)
   --list-themes     List all available themes
 
 Distance guide:
@@ -646,9 +646,9 @@ Examples:
     parser.add_argument('--country-label', dest='country_label', type=str, help='Override country text displayed on poster')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--all-themes', '--All-themes', dest='all_themes', action='store_true', help='Generate posters for all themes')
-    parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
-    parser.add_argument('--width', '-W', type=float, default=12, help='Image width in inches (default: 12)')
-    parser.add_argument('--height', '-H', type=float, default=16, help='Image height in inches (default: 16)')
+    parser.add_argument('--distance', '-d', type=int, default=12000, help='Map radius in meters (default: 12000)')
+    parser.add_argument('--width', '-W', type=float, default=12, help='Image width in inches (default: 12, max: 20)')
+    parser.add_argument('--height', '-H', type=float, default=16, help='Image height in inches (default: 16, max: 20)')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
     
@@ -670,10 +670,20 @@ Examples:
         print_examples()
         sys.exit(1)
     
+    # Enforce maximum dimensions
+    if args.width > 20:
+        print(f"⚠ Width {args.width} exceeds the maximum allowed limit of 20. It's enforced as max limit 20.")
+        args.width = 20.0
+    if args.height > 20:
+        print(f"⚠ Height {args.height} exceeds the maximum allowed limit of 20. It's enforced as max limit 20.")
+        args.height = 20.0
+    
     available_themes = get_available_themes()
     if not available_themes:
         print("No themes found in 'themes/' directory.")
         os.sys.exit(1)
+
+    
 
     if args.all_themes:
         themes_to_generate = available_themes
