@@ -41,16 +41,13 @@ THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
 
-class CacheError(Exception):
-    pass
-
 def _cache_path(key: str) -> str:
     """
     Generate a safe cache file path from a cache key.
-    
+
     Args:
         key: Cache key identifier
-        
+
     Returns:
         Path to cache file with .pkl extension
     """
@@ -60,13 +57,13 @@ def _cache_path(key: str) -> str:
 def cache_get(key: str):
     """
     Retrieve a cached object by key.
-    
+
     Args:
         key: Cache key identifier
-        
+
     Returns:
         Cached object if found, None otherwise
-        
+
     Raises:
         CacheError: If cache read operation fails
     """
@@ -82,11 +79,11 @@ def cache_get(key: str):
 def cache_set(key: str, value):
     """
     Store an object in the cache.
-    
+
     Args:
         key: Cache key identifier
         value: Object to cache (must be picklable)
-        
+
     Raises:
         CacheError: If cache write operation fails
     """
@@ -368,14 +365,14 @@ def get_crop_limits(g_proj, center_lat_lon, fig, dist):
 def fetch_graph(point, dist) -> MultiDiGraph | None:
     """
     Fetch street network graph from OpenStreetMap.
-    
+
     Uses caching to avoid redundant downloads. Fetches all network types
     within the specified distance from the center point.
-    
+
     Args:
         point: (latitude, longitude) tuple for center point
         dist: Distance in meters from center point
-        
+
     Returns:
         MultiDiGraph of street network, or None if fetch fails
     """
@@ -402,16 +399,16 @@ def fetch_graph(point, dist) -> MultiDiGraph | None:
 def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
     """
     Fetch geographic features (water, parks, etc.) from OpenStreetMap.
-    
+
     Uses caching to avoid redundant downloads. Fetches features matching
     the specified OSM tags within distance from center point.
-    
+
     Args:
         point: (latitude, longitude) tuple for center point
         dist: Distance in meters from center point
         tags: Dictionary of OSM tags to filter features
         name: Name for this feature type (for caching and logging)
-        
+
     Returns:
         GeoDataFrame of features, or None if fetch fails
     """
@@ -439,10 +436,10 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
 def create_poster(city, country, point, dist, output_file, output_format, width=12, height=16, country_label=None, name_label=None):
     """
     Generate a complete map poster with roads, water, parks, and typography.
-    
+
     Creates a high-quality poster by fetching OSM data, rendering map layers,
     applying the current theme, and adding text labels with coordinates.
-    
+
     Args:
         city: City name for display on poster
         country: Country name for display on poster
@@ -454,7 +451,7 @@ def create_poster(city, country, point, dist, output_file, output_format, width=
         height: Poster height in inches (default: 16)
         country_label: Optional override for country text on poster
         name_label: Optional override for city name (unused)
-        
+
     Raises:
         RuntimeError: If street network data cannot be retrieved
     """
