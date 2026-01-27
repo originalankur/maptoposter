@@ -626,9 +626,8 @@ def create_poster(
 
     # 4. Typography - use custom fonts if provided, otherwise use default FONTS
     active_fonts = fonts or FONTS
-    # 4. Typography - use custom fonts if provided, otherwise use default FONTS
-    active_fonts = fonts or FONTS
     if active_fonts:
+        # font_main is calculated dynamically later based on length
         font_sub = FontProperties(
             fname=active_fonts["light"], size=BASE_SUB * scale_factor
         )
@@ -639,6 +638,7 @@ def create_poster(
             fname=active_fonts["light"], size=BASE_ATTR * scale_factor
         )
     else:
+        # Fallback to system fonts
         font_sub = FontProperties(
             family="monospace", weight="normal", size=BASE_SUB * scale_factor
         )
