@@ -209,7 +209,19 @@ THEME = dict[str, str]()  # Will be loaded later
 
 
 def create_gradient_fade(ax, color, location="bottom", zorder=10):
-    if location == 'bottom':
+    """
+    Creates a fade effect at the top or bottom of the map.
+    """
+    vals = np.linspace(0, 1, 256).reshape(-1, 1)
+    gradient = np.hstack((vals, vals))
+
+    rgb = mcolors.to_rgb(color)
+    my_colors = np.zeros((256, 4))
+    my_colors[:, 0] = rgb[0]
+    my_colors[:, 1] = rgb[1]
+    my_colors[:, 2] = rgb[2]
+
+    if location == "bottom":
         my_colors[:, 3] = np.linspace(1, 0, 256)
         extent_y_start = 0
         extent_y_end = 0.25
@@ -227,8 +239,14 @@ def create_gradient_fade(ax, color, location="bottom", zorder=10):
     y_bottom = ylim[0] + y_range * extent_y_start
     y_top = ylim[0] + y_range * extent_y_end
 
-    ax.imshow(gradient, extent=[xlim[0], xlim[1], y_bottom, y_top],
-              aspect='auto', cmap=custom_cmap, zorder=zorder, origin='lower')
+    ax.imshow(
+        gradient,
+        extent=[xlim[0], xlim[1], y_bottom, y_top],
+        aspect="auto",
+        cmap=custom_cmap,
+        zorder=zorder,
+        origin="lower",
+    )
 
 
 def get_edge_colors_by_type(g):
@@ -601,27 +619,63 @@ def create_poster(
 
     # Base font sizes (at 12 inches width)
     BASE_MAIN = 60
+    BASE_TOP = 40
     BASE_SUB = 22
     BASE_COORDS = 14
     BASE_ATTR = 8
 
-    # 4. Typography using Roboto font
-    if FONTS:
-        font_sub = FontProperties(fname=FONTS['light'], size=BASE_SUB * scale_factor)
-        font_coords = FontProperties(fname=FONTS['regular'], size=BASE_COORDS * scale_factor)
-        font_attr = FontProperties(fname=FONTS['light'], size=BASE_ATTR * scale_factor)
+
+    # 4. Typography - use custom fonts if provided, otherwise use default FONTS
+    active_fonts = fonts or FONTS
+    # 4. Typography - use custom fonts if provided, otherwise use default FONTS
+    active_fonts = fonts or FONTS
+    if active_fonts:
+        font_main = FontProperties(
+            fname=active_fonts["bold"], size=BASE_MAIN * scale_factor
+        )
+        font_top = FontProperties(
+            fname=active_fonts["bold"], size=BASE_TOP * scale_factor
+        )
+        font_sub = FontProperties(
+            fname=active_fonts["light"], size=BASE_SUB * scale_factor
+        )
+        font_coords = FontProperties(
+            fname=active_fonts["regular"], size=BASE_COORDS * scale_factor
+        )
+        font_attr = FontProperties(
+            fname=active_fonts["light"], size=BASE_ATTR * scale_factor
+        )
     else:
         # Fallback to system fonts
-        font_sub = FontProperties(family='monospace', weight='normal', size=BASE_SUB * scale_factor)
-        font_coords = FontProperties(family='monospace', size=BASE_COORDS * scale_factor)
-        font_attr = FontProperties(family='monospace', size=BASE_ATTR * scale_factor)
+        font_main = FontProperties(
+            family="monospace", weight="bold", size=BASE_MAIN * scale_factor
+        )
+        font_top = FontProperties(
+            family="monospace", weight="bold", size=BASE_TOP * scale_factor
+        )
+        font_sub = FontProperties(
+            family="monospace", weight="normal", size=BASE_SUB * scale_factor
+        )
+        font_coords = FontProperties(
+            family="monospace", size=BASE_COORDS * scale_factor
+        )
+        font_attr = FontProperties(family="monospace", size=BASE_ATTR * scale_factor)
 
-    spaced_city = "  ".join(list(city.upper()))
+    # Format city name based on script type
+    # Latin scripts: apply uppercase and letter spacing for aesthetic
+    # Non-Latin scripts (CJK, Thai, Arabic, etc.): no spacing, preserve case structure
+    if is_latin_script(display_city):
+        # Latin script: uppercase with letter spacing (e.g., "P  A  R  I  S")
+        spaced_city = "  ".join(list(display_city.upper()))
+    else:
+        # Non-Latin script: no spacing, no forced uppercase
+        # For scripts like Arabic, Thai, Japanese, etc.
+        spaced_city = display_city
 
     # Dynamically adjust font size based on city name length to prevent truncation
     # We use the already scaled "main" font size as the starting point.
     base_adjusted_main = BASE_MAIN * scale_factor
-    city_char_count = len(city)
+    city_char_count = len(display_city)
 
     # Heuristic: If length is > 10, start reducing.
     if city_char_count > 10:
@@ -640,12 +694,27 @@ def create_poster(
         )
 
     # --- BOTTOM TEXT ---
-    ax.text(0.5, 0.14, spaced_city, transform=ax.transAxes,
-            color=THEME['text'], ha='center', fontproperties=font_main_adjusted, zorder=11)
+    ax.text(
+        0.5,
+        0.14,
+        spaced_city,
+        transform=ax.transAxes,
+        color=THEME["text"],
+        ha="center",
+        fontproperties=font_main_adjusted,
+        zorder=11,
+    )
 
-    country_text = country_label if country_label is not None else country
-    ax.text(0.5, 0.10, country_text.upper(), transform=ax.transAxes,
-            color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
+    ax.text(
+        0.5,
+        0.10,
+        display_country.upper(),
+        transform=ax.transAxes,
+        color=THEME["text"],
+        ha="center",
+        fontproperties=font_sub,
+        zorder=11,
+    )
 
     lat, lon = point
     coords = (
@@ -714,6 +783,7 @@ def create_poster(
 
     plt.close()
     print(f"✓ Done! Poster saved as {output_file}")
+
 
 
 def print_examples():

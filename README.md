@@ -52,7 +52,6 @@ python create_map_poster.py --city <city> --country <country> [options]
 |--------|-------|-------------|---------|
 | **OPTIONAL:** `--latitude` | `-lat` | Override latitude center point (must also supply longitude) | |
 | **OPTIONAL:** `--longitude` | `-long` | Override longitude center point (must also supply latitude) | |
-| **OPTIONAL:** `--name` | | Override display name (city display on poster) | |
 | **OPTIONAL:** `--country-label` | | Override display country (country display on poster) | |
 | **OPTIONAL:** `--theme` | `-t` | Theme name | terracotta |
 | **OPTIONAL:** `--distance` | `-d` | Map radius in meters | 18000 |
