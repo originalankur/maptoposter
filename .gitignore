@@ -1,9 +1,10 @@
 cache/*
+
+# Virtual environments
 env/
 .env/
 .venv/
-.DS_Store
-.cache/*
+venv/
 
 # Build artifacts
 *.egg-info/
@@ -17,6 +18,18 @@ __pycache__/
 .vscode/
 *.swp
 *.swo
+*.sublime-*
 
 # OS files
+.DS_Store
 Thumbs.db
+.cache/*
+
+# Package manager
+uv.lock
+
+# Test outputs
+test_venv/
+htmlcov/
+.coverage
+.pytest_cache/

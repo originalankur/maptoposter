@@ -14,16 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added shebang to `create_map_poster.py` for direct execution
   - Updated README with uv installation instructions
 - **Python version specification** - `requires-python = ">=3.11"` in pyproject.toml (fixes [#79](https://github.com/originalankur/maptoposter/issues/79))
+- **Coordinate override** - `--latitude` and `--longitude` arguments to override the geocoded center point (existing from upstream PR #106, clarifies [#100](https://github.com/originalankur/maptoposter/issues/100))
+  - Still requires `--city` and `--country` for display name
+  - Useful for precise location control
 
 ### Fixed
 - **Z-order bug** - Roads now render above parks and water features (fixes [#39](https://github.com/originalankur/maptoposter/issues/39), relates to [PR #42](https://github.com/originalankur/maptoposter/pull/42))
   - Water layer: `zorder=1` → `zorder=0.5`
   - Parks layer: `zorder=2` → `zorder=0.8`
-  - Roads remain at `zorder=1` (osmnx default)
+  - Roads remain at `zorder=2` (matplotlib default), ensuring proper layering
 - **Text scaling for landscape orientations** - Font size now scales based on `min(height, width)` instead of just width (fixes [#112](https://github.com/originalankur/maptoposter/issues/112))
 
 ### Changed
-- Updated `.gitignore` with Python build artifacts, IDE files, and OS-specific files
+- Updated `.gitignore` with poster outputs, Python build artifacts, IDE files, and OS-specific files
 
 ---
 
