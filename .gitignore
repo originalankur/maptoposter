@@ -4,3 +4,19 @@ env/
 .venv/
 .DS_Store
 .cache/*
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+*.pyc
+__pycache__/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
