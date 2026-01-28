@@ -1,0 +1,53 @@
+{
+  "app": {
+    "title": "Map Poster Generator",
+    "subtitle": "Create beautiful, minimalist map posters for any city in the world",
+    "footer": "Powered by OpenStreetMap & OSMnx"
+  },
+  "form": {
+    "title": "Configure Poster",
+    "city": "City",
+    "country": "Country",
+    "cityPlaceholder": "e.g., Paris",
+    "countryPlaceholder": "e.g., France",
+    "searchCity": "Search for a city...",
+    "noResults": "No cities found",
+    "citySelected": "City selected",
+    "pleaseSelectCity": "Please select a city from the search results",
+    "selectCityAlert": "Please select a city from the search results or switch to manual input mode.",
+    "mapRadius": "Map Radius (meters)",
+    "denseCenter": "Dense center (4km)",
+    "largeMetro": "Large metro (20km)",
+    "advancedOptions": "Advanced Options",
+    "showAdvanced": "Show Advanced Options",
+    "hideAdvanced": "Hide Advanced Options",
+    "width": "Width (inches)",
+    "height": "Height (inches)",
+    "latitude": "Latitude (optional)",
+    "longitude": "Longitude (optional)",
+    "displayCity": "Display City (optional)",
+    "displayCountry": "Display Country (optional)",
+    "fontFamily": "Font Family (Google Fonts)",
+    "generate": "Generate Poster",
+    "generating": "Generating...",
+    "required": "*"
+  },
+  "theme": {
+    "title": "Choose Theme",
+    "description": "Select a color palette for your poster"
+  },
+  "preview": {
+    "title": "Preview & Gallery",
+    "currentPoster": "Current Poster",
+    "gallery": "Gallery",
+    "noPosters": "No posters yet. Generate your first one!",
+    "delete": "Delete",
+    "download": "Download",
+    "generatedOn": "Generated on"
+  },
+  "language": {
+    "switch": "Language",
+    "en": "English",
+    "zh": "中文"
+  }
+}
