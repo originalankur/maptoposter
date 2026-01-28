@@ -541,7 +541,7 @@ def create_poster(
         water = fetch_features(
             point,
             compensated_dist,
-            tags={"natural": "water", "waterway": "riverbank"},
+            tags={"natural": ["water", "bay", "strait"], "waterway": "riverbank"},
             name="water",
         )
         pbar.update(1)
