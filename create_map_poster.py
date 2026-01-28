@@ -492,6 +492,7 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    noText=False
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -518,7 +519,7 @@ def create_poster(
     # Priority: display_city/display_country > name_label/country_label > city/country
     display_city = display_city or name_label or city
     display_country = display_country or country_label or country
-
+ 
     print(f"\nGenerating map for {city}, {country}...")
 
     # Progress bar for data fetching
@@ -679,58 +680,59 @@ def create_poster(
             family="monospace", weight="bold", size=adjusted_font_size
         )
 
+    if noText == False:
     # --- BOTTOM TEXT ---
-    ax.text(
-        0.5,
-        0.14,
-        spaced_city,
-        transform=ax.transAxes,
-        color=THEME["text"],
-        ha="center",
-        fontproperties=font_main_adjusted,
-        zorder=11,
-    )
+        ax.text(
+            0.5,
+            0.14,
+            spaced_city,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            ha="center",
+            fontproperties=font_main_adjusted,
+            zorder=11,
+        )
 
-    ax.text(
-        0.5,
-        0.10,
-        display_country.upper(),
-        transform=ax.transAxes,
-        color=THEME["text"],
-        ha="center",
-        fontproperties=font_sub,
-        zorder=11,
-    )
+        ax.text(
+            0.5,
+            0.10,
+            display_country.upper(),
+            transform=ax.transAxes,
+            color=THEME["text"],
+            ha="center",
+            fontproperties=font_sub,
+            zorder=11,
+        )
 
-    lat, lon = point
-    coords = (
-        f"{lat:.4f}° N / {lon:.4f}° E"
-        if lat >= 0
-        else f"{abs(lat):.4f}° S / {lon:.4f}° E"
-    )
-    if lon < 0:
-        coords = coords.replace("E", "W")
+        lat, lon = point
+        coords = (
+            f"{lat:.4f}° N / {lon:.4f}° E"
+            if lat >= 0
+            else f"{abs(lat):.4f}° S / {lon:.4f}° E"
+        )
+        if lon < 0:
+            coords = coords.replace("E", "W")
 
-    ax.text(
-        0.5,
-        0.07,
-        coords,
-        transform=ax.transAxes,
-        color=THEME["text"],
-        alpha=0.7,
-        ha="center",
-        fontproperties=font_coords,
-        zorder=11,
-    )
+        ax.text(
+            0.5,
+            0.07,
+            coords,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            alpha=0.7,
+            ha="center",
+            fontproperties=font_coords,
+            zorder=11,
+        )
 
-    ax.plot(
-        [0.4, 0.6],
-        [0.125, 0.125],
-        transform=ax.transAxes,
-        color=THEME["text"],
-        linewidth=1 * scale_factor,
-        zorder=11,
-    )
+        ax.plot(
+            [0.4, 0.6],
+            [0.125, 0.125],
+            transform=ax.transAxes,
+            color=THEME["text"],
+            linewidth=1 * scale_factor,
+            zorder=11,
+        )
 
     # --- ATTRIBUTION (bottom right) ---
     if FONTS:
@@ -819,6 +821,7 @@ Options:
   --all-themes      Generate posters for all themes
   --distance, -d    Map radius in meters (default: 18000)
   --list-themes     List all available themes
+  --no-text         Dont display city name, country and coordinates
 
 Distance guide:
   4000-6000m   Small/dense cities (Venice, Amsterdam old center)
@@ -954,6 +957,12 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        '--no-text',
+        type=bool,
+        default=False,
+        help='Dont display city name, country and coordinates at the bottom of the poster.'
+    )
 
     args = parser.parse_args()
 
@@ -1029,13 +1038,14 @@ Examples:
                 coords,
                 args.distance,
                 output_file,
-                args.format,
+                args.format,    
                 args.width,
                 args.height,
                 country_label=args.country_label,
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                noText=args.no_text
             )
 
         print("\n" + "=" * 50)
