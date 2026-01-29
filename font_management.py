@@ -4,10 +4,11 @@ Handles font loading, Google Fonts integration, and caching.
 """
 
 import os
-import requests
 import re
 from pathlib import Path
 from typing import Optional
+
+import requests
 
 FONTS_DIR = "fonts"
 FONTS_CACHE_DIR = Path(FONTS_DIR) / "cache"
