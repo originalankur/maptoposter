@@ -620,33 +620,33 @@ def create_poster(
     scale_factor = min(height, width) / 12.0
 
     # Base font sizes (at 12 inches width)
-    BASE_MAIN = 60
-    BASE_SUB = 22
-    BASE_COORDS = 14
-    BASE_ATTR = 8
+    base_main = 60
+    base_sub = 22
+    base_coords = 14
+    base_attr = 8
 
     # 4. Typography - use custom fonts if provided, otherwise use default FONTS
     active_fonts = fonts or FONTS
     if active_fonts:
         # font_main is calculated dynamically later based on length
         font_sub = FontProperties(
-            fname=active_fonts["light"], size=BASE_SUB * scale_factor
+            fname=active_fonts["light"], size=base_sub * scale_factor
         )
         font_coords = FontProperties(
-            fname=active_fonts["regular"], size=BASE_COORDS * scale_factor
+            fname=active_fonts["regular"], size=base_coords * scale_factor
         )
         font_attr = FontProperties(
-            fname=active_fonts["light"], size=BASE_ATTR * scale_factor
+            fname=active_fonts["light"], size=base_attr * scale_factor
         )
     else:
         # Fallback to system fonts
         font_sub = FontProperties(
-            family="monospace", weight="normal", size=BASE_SUB * scale_factor
+            family="monospace", weight="normal", size=base_sub * scale_factor
         )
         font_coords = FontProperties(
-            family="monospace", size=BASE_COORDS * scale_factor
+            family="monospace", size=base_coords * scale_factor
         )
-        font_attr = FontProperties(family="monospace", size=BASE_ATTR * scale_factor)
+        font_attr = FontProperties(family="monospace", size=base_attr * scale_factor)
 
     # Format city name based on script type
     # Latin scripts: apply uppercase and letter spacing for aesthetic
@@ -661,7 +661,7 @@ def create_poster(
 
     # Dynamically adjust font size based on city name length to prevent truncation
     # We use the already scaled "main" font size as the starting point.
-    base_adjusted_main = BASE_MAIN * scale_factor
+    base_adjusted_main = base_main * scale_factor
     city_char_count = len(display_city)
 
     # Heuristic: If length is > 10, start reducing.
