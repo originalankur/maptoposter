@@ -47,6 +47,8 @@ THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
 
+FILE_ENCODING = "utf-8"
+
 FONTS = load_fonts()
 
 
@@ -199,7 +201,7 @@ def load_theme(theme_name="terracotta"):
             "road_default": "#D9A08A",
         }
 
-    with open(theme_file, "r") as f:
+    with open(theme_file, "r", encoding=FILE_ENCODING) as f:
         theme = json.load(f)
         print(f"✓ Loaded theme: {theme.get('name', theme_name)}")
         if "description" in theme:
@@ -843,7 +845,7 @@ def list_themes():
     for theme_name in available_themes:
         theme_path = os.path.join(THEMES_DIR, f"{theme_name}.json")
         try:
-            with open(theme_path, "r") as f:
+            with open(theme_path, "r", encoding=FILE_ENCODING) as f:
                 theme_data = json.load(f)
                 display_name = theme_data.get('name', theme_name)
                 description = theme_data.get('description', '')
