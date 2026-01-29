@@ -23,7 +23,19 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 ## Installation
 
-### With uv (Recommended)
+### Quick Start with uvx (Recommended)
+
+The easiest way to use maptoposter without cloning the repository:
+
+```bash
+# Run directly from GitHub with uvx (no installation needed)
+uvx --from git+https://github.com/originalankur/maptoposter.git maptoposter --city "Paris" --country "France"
+
+# With custom theme
+uvx --from git+https://github.com/originalankur/maptoposter.git maptoposter --city "Tokyo" --country "Japan" --theme japanese_ink
+```
+
+### With uv (For Development)
 
 Make sure [uv](https://docs.astral.sh/uv/) is installed. Running the script by prepending `uv run` automatically creates and manages a virtual environment.
 
@@ -48,7 +60,12 @@ pip install -r requirements.txt
 
 ### Generate Poster
 
-If you're using `uv`:
+If you're using `uvx`:
+```bash
+uvx --from git+https://github.com/originalankur/maptoposter.git maptoposter --city <city> --country <country> [options]
+```
+
+If you're using `uv` (for development):
 ```bash
 uv run ./create_map_poster.py --city <city> --country <country> [options]
 ```

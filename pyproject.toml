@@ -43,9 +43,12 @@ dependencies = [
     "urllib3==2.6.3",
 ]
 
+[project.scripts]
+maptoposter = "create_map_poster:main"
+
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["create_map_poster"]
+py-modules = ["create_map_poster", "font_management"]
