@@ -151,8 +151,8 @@ def load_fonts(font_family: Optional[str] = None) -> Optional[dict]:
         if fonts:
             print(f"✓ Font '{font_family}' loaded successfully")
             return fonts
-        else:
-            print(f"⚠ Failed to load '{font_family}', falling back to local Roboto")
+
+        print(f"⚠ Failed to load '{font_family}', falling back to local Roboto")
 
     # Default: Load local Roboto fonts
     fonts = {
@@ -162,7 +162,7 @@ def load_fonts(font_family: Optional[str] = None) -> Optional[dict]:
     }
 
     # Verify fonts exist
-    for weight, path in fonts.items():
+    for _weight, path in fonts.items():
         if not os.path.exists(path):
             print(f"⚠ Font not found: {path}")
             return None
