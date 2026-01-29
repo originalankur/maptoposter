@@ -122,10 +122,10 @@ def download_google_font(font_family: str, weights: list = None) -> Optional[dic
         # If we don't have all three weights, duplicate available ones
         if "bold" not in font_files and "regular" in font_files:
             font_files["bold"] = font_files["regular"]
-            print(f"  Using regular weight as bold")
+            print("  Using regular weight as bold")
         if "light" not in font_files and "regular" in font_files:
             font_files["light"] = font_files["regular"]
-            print(f"  Using regular weight as light")
+            print("  Using regular weight as light")
 
         return font_files if font_files else None
 
