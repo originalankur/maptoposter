@@ -771,45 +771,45 @@ def create_poster(
     print(f"✓ Done! Poster saved as {output_file}")
 
 
-def print_examples():
+def print_examples(cmd="maptoposter"):
     """Print usage examples."""
-    print("""
+    print(f"""
 City Map Poster Generator
 =========================
 
 Usage:
-  python create_map_poster.py --city <city> --country <country> [options]
+  {cmd} --city <city> --country <country> [options]
 
 Examples:
   # Iconic grid patterns
-  python create_map_poster.py -c "New York" -C "USA" -t noir -d 12000           # Manhattan grid
-  python create_map_poster.py -c "Barcelona" -C "Spain" -t warm_beige -d 8000   # Eixample district grid
+  {cmd} -c "New York" -C "USA" -t noir -d 12000           # Manhattan grid
+  {cmd} -c "Barcelona" -C "Spain" -t warm_beige -d 8000   # Eixample district grid
 
   # Waterfront & canals
-  python create_map_poster.py -c "Venice" -C "Italy" -t blueprint -d 4000       # Canal network
-  python create_map_poster.py -c "Amsterdam" -C "Netherlands" -t ocean -d 6000  # Concentric canals
-  python create_map_poster.py -c "Dubai" -C "UAE" -t midnight_blue -d 15000     # Palm & coastline
+  {cmd} -c "Venice" -C "Italy" -t blueprint -d 4000       # Canal network
+  {cmd} -c "Amsterdam" -C "Netherlands" -t ocean -d 6000  # Concentric canals
+  {cmd} -c "Dubai" -C "UAE" -t midnight_blue -d 15000     # Palm & coastline
 
   # Radial patterns
-  python create_map_poster.py -c "Paris" -C "France" -t pastel_dream -d 10000   # Haussmann boulevards
-  python create_map_poster.py -c "Moscow" -C "Russia" -t noir -d 12000          # Ring roads
+  {cmd} -c "Paris" -C "France" -t pastel_dream -d 10000   # Haussmann boulevards
+  {cmd} -c "Moscow" -C "Russia" -t noir -d 12000          # Ring roads
 
   # Organic old cities
-  python create_map_poster.py -c "Tokyo" -C "Japan" -t japanese_ink -d 15000    # Dense organic streets
-  python create_map_poster.py -c "Marrakech" -C "Morocco" -t terracotta -d 5000 # Medina maze
-  python create_map_poster.py -c "Rome" -C "Italy" -t warm_beige -d 8000        # Ancient street layout
+  {cmd} -c "Tokyo" -C "Japan" -t japanese_ink -d 15000    # Dense organic streets
+  {cmd} -c "Marrakech" -C "Morocco" -t terracotta -d 5000 # Medina maze
+  {cmd} -c "Rome" -C "Italy" -t warm_beige -d 8000        # Ancient street layout
 
   # Coastal cities
-  python create_map_poster.py -c "San Francisco" -C "USA" -t sunset -d 10000    # Peninsula grid
-  python create_map_poster.py -c "Sydney" -C "Australia" -t ocean -d 12000      # Harbor city
-  python create_map_poster.py -c "Mumbai" -C "India" -t contrast_zones -d 18000 # Coastal peninsula
+  {cmd} -c "San Francisco" -C "USA" -t sunset -d 10000    # Peninsula grid
+  {cmd} -c "Sydney" -C "Australia" -t ocean -d 12000      # Harbor city
+  {cmd} -c "Mumbai" -C "India" -t contrast_zones -d 18000 # Coastal peninsula
 
   # River cities
-  python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
-  python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
+  {cmd} -c "London" -C "UK" -t noir -d 15000              # Thames curves
+  {cmd} -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
 
   # List themes
-  python create_map_poster.py --list-themes
+  {cmd} --list-themes
 
 Options:
   --city, -c        City name (required)
@@ -856,17 +856,26 @@ def list_themes():
         print()
 
 
-if __name__ == "__main__":
+def main():
+    global THEME
+    """Main entry point for the map poster generator."""
+    # Detect how the script was invoked to show appropriate examples
+    prog_name = Path(sys.argv[0]).name
+    if prog_name == "maptoposter" or not prog_name.endswith(".py"):
+        cmd = "maptoposter"
+    else:
+        cmd = f"python {prog_name}"
+
     parser = argparse.ArgumentParser(
         description="Generate beautiful map posters for any city",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog=f"""
 Examples:
-  python create_map_poster.py --city "New York" --country "USA"
-  python create_map_poster.py --city "New York" --country "USA" -l 40.776676 -73.971321 --theme neon_cyberpunk
-  python create_map_poster.py --city Tokyo --country Japan --theme midnight_blue
-  python create_map_poster.py --city Paris --country France --theme noir --distance 15000
-  python create_map_poster.py --list-themes
+  {cmd} --city "New York" --country "USA"
+  {cmd} --city "New York" --country "USA" -lat 40.776676 -long -73.971321 --theme neon_cyberpunk
+  {cmd} --city Tokyo --country Japan --theme midnight_blue
+  {cmd} --city Paris --country France --theme noir --distance 15000
+  {cmd} --list-themes
         """,
     )
 
@@ -959,7 +968,7 @@ Examples:
 
     # If no arguments provided, show examples
     if len(sys.argv) == 1:
-        print_examples()
+        print_examples(cmd)
         sys.exit(0)
 
     # List themes if requested
@@ -970,7 +979,7 @@ Examples:
     # Validate required arguments
     if not args.city or not args.country:
         print("Error: --city and --country are required.\n")
-        print_examples()
+        print_examples(cmd)
         sys.exit(1)
 
     # Enforce maximum dimensions
@@ -1048,3 +1057,7 @@ Examples:
 
         traceback.print_exc()
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
