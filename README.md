@@ -44,6 +44,39 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### With Docker
+
+Run with docker:
+
+```bash
+# Basic usage
+docker run --rm -v $(pwd)/posters:/app/posters -v $(pwd)/cache:/app/cache \
+  ghcr.io/originalankur/maptoposter:latest --city "Paris" --country "France"
+
+# With custom theme and distance
+docker run --rm -v $(pwd)/posters:/app/posters -v $(pwd)/cache:/app/cache \
+  ghcr.io/originalankur/maptoposter:latest --city "New York" --country "USA" --theme noir --distance 12000
+
+# With all options
+docker run --rm -v $(pwd)/posters:/app/posters -v $(pwd)/cache:/app/cache \
+  ghcr.io/originalankur/maptoposter:latest --city "Tokyo" --country "Japan" \
+  --display-city "東京" --display-country "日本" \
+  --font-family "Noto Sans JP" --theme japanese_ink --distance 15000
+
+# List available themes
+docker run --rm ghcr.io/originalankur/maptoposter:latest --list-themes
+
+# Generate for all themes
+docker run --rm -v $(pwd)/posters:/app/posters -v $(pwd)/cache:/app/cache \
+  ghcr.io/originalankur/maptoposter:latest --city "Paris" --country "France" --all-themes
+```
+
+**Note**: The `-v $(pwd)/posters:/app/posters` and `-v $(pwd)/cache:/app/cache` flags mount local directories so that generated posters and cached data persist on your host machine. 
+
+**Windows users**: 
+- PowerShell: Use `$PWD` instead of `$(pwd)`
+- CMD: Use `%cd%` instead of `$(pwd)`
+
 ## Usage
 
 ### Generate Poster
