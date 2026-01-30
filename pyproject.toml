@@ -3,7 +3,7 @@ name = "maptoposter"
 version = "0.2.0"
 description = "Generate beautiful, minimalist map posters for any city in the world."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 license = {text = "MIT"}
 authors = [
     {name = "Ankur Gupta", email = "originalankur@github.com"}
@@ -15,6 +15,7 @@ dependencies = [
     "charset-normalizer==3.4.4",
     "contourpy==1.3.3",
     "cycler==0.12.1",
+    "fastapi>=0.115.6",
     "fonttools==4.61.1",
     "geographiclib==2.1",
     "geopandas==1.1.2",
@@ -29,6 +30,7 @@ dependencies = [
     "packaging==25.0",
     "pandas==2.3.3",
     "pillow==12.1.0",
+    "pydantic>=2.10.4",
     "pyogrio==0.12.1",
     "pyparsing==3.3.1",
     "pyproj==3.7.2",
@@ -38,9 +40,11 @@ dependencies = [
     "scipy==1.16.3",
     "shapely==2.1.2",
     "six==1.17.0",
+    "starlette>=0.41.3",
     "tqdm==4.67.1",
     "tzdata==2025.3",
     "urllib3==2.6.3",
+    "uvicorn[standard]>=0.34.0",
 ]
 
 [build-system]
