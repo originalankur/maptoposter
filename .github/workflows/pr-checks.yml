@@ -36,7 +36,7 @@ jobs:
           pip install flake8 pylint mypy
 
       - name: Validate Python syntax
-        run: python -m py_compile create_map_poster.py
+        run: python -m compileall . -q
 
       - name: Test CLI help
         run: python create_map_poster.py --help
@@ -47,15 +47,15 @@ jobs:
       - name: Lint with flake8
         run: |
           # Stop the build if there are Python syntax errors or undefined names
-          flake8 create_map_poster.py --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 create_map_poster.py --count --statistics --max-line-length=${{ env.MAX_LINE_LENGTH }}
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --statistics --max-line-length=${{ env.MAX_LINE_LENGTH }}
 
       - name: Lint with pylint
-        run: pylint create_map_poster.py --max-line-length=${{ env.MAX_LINE_LENGTH }}
+        run: pylint . --max-line-length=${{ env.MAX_LINE_LENGTH }}
         continue-on-error: true
 
       - name: Type check with mypy
-        run: mypy create_map_poster.py --ignore-missing-imports --no-strict-optional
+        run: mypy . --ignore-missing-imports --no-strict-optional
 
   dependency-check:
     name: Security and Dependency Check

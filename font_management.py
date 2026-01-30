@@ -4,10 +4,11 @@ Handles font loading, Google Fonts integration, and caching.
 """
 
 import os
-import requests
 import re
 from pathlib import Path
 from typing import Optional
+
+import requests
 
 FONTS_DIR = "fonts"
 FONTS_CACHE_DIR = Path(FONTS_DIR) / "cache"
@@ -121,10 +122,10 @@ def download_google_font(font_family: str, weights: list = None) -> Optional[dic
         # If we don't have all three weights, duplicate available ones
         if "bold" not in font_files and "regular" in font_files:
             font_files["bold"] = font_files["regular"]
-            print(f"  Using regular weight as bold")
+            print("  Using regular weight as bold")
         if "light" not in font_files and "regular" in font_files:
             font_files["light"] = font_files["regular"]
-            print(f"  Using regular weight as light")
+            print("  Using regular weight as light")
 
         return font_files if font_files else None
 
@@ -150,8 +151,8 @@ def load_fonts(font_family: Optional[str] = None) -> Optional[dict]:
         if fonts:
             print(f"✓ Font '{font_family}' loaded successfully")
             return fonts
-        else:
-            print(f"⚠ Failed to load '{font_family}', falling back to local Roboto")
+
+        print(f"⚠ Failed to load '{font_family}', falling back to local Roboto")
 
     # Default: Load local Roboto fonts
     fonts = {
@@ -161,7 +162,7 @@ def load_fonts(font_family: Optional[str] = None) -> Optional[dict]:
     }
 
     # Verify fonts exist
-    for weight, path in fonts.items():
+    for _weight, path in fonts.items():
         if not os.path.exists(path):
             print(f"⚠ Font not found: {path}")
             return None

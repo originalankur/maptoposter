@@ -7,7 +7,6 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 ## Examples
 
-
 | Country      | City           | Theme           | Poster |
 |:------------:|:--------------:|:---------------:|:------:|
 | USA          | San Francisco  | sunset          | <img src="posters/san_francisco_sunset_20260118_144726.png" width="250"> |
@@ -49,11 +48,13 @@ pip install -r requirements.txt
 ### Generate Poster
 
 If you're using `uv`:
+
 ```bash
 uv run ./create_map_poster.py --city <city> --country <country> [options]
 ```
 
 Otherwise (pip + venv):
+
 ```bash
 python create_map_poster.py --city <city> --country <country> [options]
 ```
@@ -116,9 +117,10 @@ Use these values for `-W` and `-H` to target specific resolutions:
 | **4K Wallpaper** | 3840 x 2160 | 12.8 x 7.2 |
 | **A4 Print** | 2480 x 3508 | 8.3 x 11.7 |
 
-### Examples
+### Usage Examples
 
 #### Basic Examples
+
 ```bash
 # Simple usage with default theme
 python create_map_poster.py -c "Paris" -C "France"
@@ -152,6 +154,7 @@ python create_map_poster.py -c "Phnom Penh" -C "Cambodia" -dc "ភ្នំព�
 ```
 
 #### Advanced Examples
+
 ```bash
 # Iconic grid patterns
 python create_map_poster.py -c "New York" -C "USA" -t noir -d 12000           # Manhattan grid
@@ -225,7 +228,8 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 ## Output
 
 Posters are saved to `posters/` directory with format:
-```
+
+```text
 {city}_{theme}_{YYYYMMDD_HHMMSS}.png
 ```
 
@@ -253,7 +257,7 @@ Create a JSON file in `themes/` directory:
 
 ## Project Structure
 
-```
+```text
 map_poster/
 ├── create_map_poster.py    # Main script
 ├── font_management.py      # Font loading and Google Fonts integration
@@ -271,7 +275,7 @@ Quick reference for contributors who want to extend or modify the script.
 
 ### Architecture Overview
 
-```
+```text
 ┌─────────────────┐     ┌──────────────┐     ┌─────────────────┐
 │   CLI Parser    │────▶│  Geocoding   │────▶│  Data Fetching  │
 │   (argparse)    │     │  (Nominatim) │     │    (OSMnx)      │
@@ -299,7 +303,7 @@ Quick reference for contributors who want to extend or modify the script.
 
 ### Rendering Layers (z-order)
 
-```
+```text
 z=11  Text labels (city, country, coords)
 z=10  Gradient fades (top & bottom)
 z=3   Roads (via ox.plot_graph)
@@ -331,6 +335,7 @@ Script detection uses Unicode ranges (U+0000-U+024F for Latin). If >80% of alpha
 ### Adding New Features
 
 **New map layer (e.g., railways):**
+
 ```python
 # In create_poster(), after parks fetch:
 try:
@@ -344,6 +349,7 @@ if railways is not None and not railways.empty:
 ```
 
 **New theme property:**
+
 1. Add to theme JSON: `"railway": "#FF0000"`
 2. Use in code: `THEME['railway']`
 3. Add fallback in `load_theme()` default dict
@@ -351,7 +357,8 @@ if railways is not None and not railways.empty:
 ### Typography Positioning
 
 All text uses `transform=ax.transAxes` (0-1 normalized coordinates):
-```
+
+```text
 y=0.14  City name (spaced letters for Latin scripts)
 y=0.125 Decorative line
 y=0.10  Country name
