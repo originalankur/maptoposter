@@ -36,8 +36,6 @@ from font_management import load_fonts
 class CacheError(Exception):
     """Raised when a cache operation fails."""
 
-    pass
-
 
 CACHE_DIR_PATH = os.environ.get("CACHE_DIR", "cache")
 CACHE_DIR = Path(CACHE_DIR_PATH)
