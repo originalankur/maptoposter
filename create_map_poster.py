@@ -261,11 +261,11 @@ def get_edge_colors_by_type(g):
 
     for _u, _v, data in g.edges(data=True):
         # Get the highway type (can be a list or string)
-        highway = data.get('highway', 'unclassified')
+        highway = data.get("highway", "unclassified")
 
         # Handle list of highway types (take the first one)
         if isinstance(highway, list):
-            highway = highway[0] if highway else 'unclassified'
+            highway = highway[0] if highway else "unclassified"
 
         # Assign color based on road type
         if highway in ["motorway", "motorway_link"]:
@@ -279,7 +279,7 @@ def get_edge_colors_by_type(g):
         elif highway in ["residential", "living_street", "unclassified"]:
             color = THEME["road_residential"]
         else:
-            color = THEME['road_default']
+            color = THEME["road_default"]
 
         edge_colors.append(color)
 
@@ -294,10 +294,10 @@ def get_edge_widths_by_type(g):
     edge_widths = []
 
     for _u, _v, data in g.edges(data=True):
-        highway = data.get('highway', 'unclassified')
+        highway = data.get("highway", "unclassified")
 
         if isinstance(highway, list):
-            highway = highway[0] if highway else 'unclassified'
+            highway = highway[0] if highway else "unclassified"
 
         # Assign width based on road importance
         if highway in ["motorway", "motorway_link"]:
@@ -378,13 +378,9 @@ def get_crop_limits(g_proj, center_lat_lon, fig, dist):
     lat, lon = center_lat_lon
 
     # Project center point into graph CRS
-    center = (
-        ox.projection.project_geometry(
-            Point(lon, lat),
-            crs="EPSG:4326",
-            to_crs=g_proj.graph["crs"]
-        )[0]
-    )
+    center = ox.projection.project_geometry(
+        Point(lon, lat), crs="EPSG:4326", to_crs=g_proj.graph["crs"]
+    )[0]
     center_x, center_y = center.x, center.y
 
     fig_width, fig_height = fig.get_size_inches()
@@ -428,7 +424,13 @@ def fetch_graph(point, dist) -> MultiDiGraph | None:
         return cast(MultiDiGraph, cached)
 
     try:
-        g = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all', truncate_by_edge=True)
+        g = ox.graph_from_point(
+            point,
+            dist=dist,
+            dist_type="bbox",
+            network_type="all",
+            truncate_by_edge=True,
+        )
         # Rate limit between requests
         time.sleep(0.5)
         try:
@@ -493,6 +495,7 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    no_text=False,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -531,7 +534,9 @@ def create_poster(
     ) as pbar:
         # 1. Fetch Street Network
         pbar.set_description("Downloading street network")
-        compensated_dist = dist * (max(height, width) / min(height, width)) / 4  # To compensate for viewport crop
+        compensated_dist = (
+            dist * (max(height, width) / min(height, width)) / 4
+        )  # To compensate for viewport crop
         g = fetch_graph(point, compensated_dist)
         if g is None:
             raise RuntimeError("Failed to retrieve street network data.")
@@ -578,8 +583,10 @@ def create_poster(
             try:
                 water_polys = ox.projection.project_gdf(water_polys)
             except Exception:
-                water_polys = water_polys.to_crs(g_proj.graph['crs'])
-            water_polys.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=0.5)
+                water_polys = water_polys.to_crs(g_proj.graph["crs"])
+            water_polys.plot(
+                ax=ax, facecolor=THEME["water"], edgecolor="none", zorder=0.5
+            )
 
     if parks is not None and not parks.empty:
         # Filter to only polygon/multipolygon geometries to avoid point features showing as dots
@@ -589,8 +596,10 @@ def create_poster(
             try:
                 parks_polys = ox.projection.project_gdf(parks_polys)
             except Exception:
-                parks_polys = parks_polys.to_crs(g_proj.graph['crs'])
-            parks_polys.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=0.8)
+                parks_polys = parks_polys.to_crs(g_proj.graph["crs"])
+            parks_polys.plot(
+                ax=ax, facecolor=THEME["parks"], edgecolor="none", zorder=0.8
+            )
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
     edge_colors = get_edge_colors_by_type(g_proj)
@@ -600,7 +609,9 @@ def create_poster(
     crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
     # Plot the projected graph and then apply the cropped limits
     ox.plot_graph(
-        g_proj, ax=ax, bgcolor=THEME['bg'],
+        g_proj,
+        ax=ax,
+        bgcolor=THEME["bg"],
         node_size=0,
         edge_color=edge_colors,
         edge_linewidth=edge_widths,
@@ -612,145 +623,150 @@ def create_poster(
     ax.set_ylim(crop_ylim)
 
     # Layer 3: Gradients (Top and Bottom)
-    create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
-    create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
+    create_gradient_fade(ax, THEME["gradient_color"], location="bottom", zorder=10)
+    create_gradient_fade(ax, THEME["gradient_color"], location="top", zorder=10)
 
-    # Calculate scale factor based on smaller dimension (reference 12 inches)
-    # This ensures text scales properly for both portrait and landscape orientations
-    scale_factor = min(height, width) / 12.0
+    if not no_text:
+        # Calculate scale factor based on smaller dimension (reference 12 inches)
+        # This ensures text scales properly for both portrait and landscape orientations
+        scale_factor = min(height, width) / 12.0
 
-    # Base font sizes (at 12 inches width)
-    base_main = 60
-    base_sub = 22
-    base_coords = 14
-    base_attr = 8
+        # Base font sizes (at 12 inches width)
+        base_main = 60
+        base_sub = 22
+        base_coords = 14
+        base_attr = 8
 
-    # 4. Typography - use custom fonts if provided, otherwise use default FONTS
-    active_fonts = fonts or FONTS
-    if active_fonts:
-        # font_main is calculated dynamically later based on length
-        font_sub = FontProperties(
-            fname=active_fonts["light"], size=base_sub * scale_factor
+        # 4. Typography - use custom fonts if provided, otherwise use default FONTS
+        active_fonts = fonts or FONTS
+        if active_fonts:
+            # font_main is calculated dynamically later based on length
+            font_sub = FontProperties(
+                fname=active_fonts["light"], size=base_sub * scale_factor
+            )
+            font_coords = FontProperties(
+                fname=active_fonts["regular"], size=base_coords * scale_factor
+            )
+            font_attr = FontProperties(
+                fname=active_fonts["light"], size=base_attr * scale_factor
+            )
+        else:
+            # Fallback to system fonts
+            font_sub = FontProperties(
+                family="monospace", weight="normal", size=base_sub * scale_factor
+            )
+            font_coords = FontProperties(
+                family="monospace", size=base_coords * scale_factor
+            )
+            font_attr = FontProperties(
+                family="monospace", size=base_attr * scale_factor
+            )
+
+        # Format city name based on script type
+        # Latin scripts: apply uppercase and letter spacing for aesthetic
+        # Non-Latin scripts (CJK, Thai, Arabic, etc.): no spacing, preserve case structure
+        if is_latin_script(display_city):
+            # Latin script: uppercase with letter spacing (e.g., "P  A  R  I  S")
+            spaced_city = "  ".join(list(display_city.upper()))
+        else:
+            # Non-Latin script: no spacing, no forced uppercase
+            # For scripts like Arabic, Thai, Japanese, etc.
+            spaced_city = display_city
+
+        # Dynamically adjust font size based on city name length to prevent truncation
+        # We use the already scaled "main" font size as the starting point.
+        base_adjusted_main = base_main * scale_factor
+        city_char_count = len(display_city)
+
+        # Heuristic: If length is > 10, start reducing.
+        if city_char_count > 10:
+            length_factor = 10 / city_char_count
+            adjusted_font_size = max(
+                base_adjusted_main * length_factor, 10 * scale_factor
+            )
+        else:
+            adjusted_font_size = base_adjusted_main
+
+        if active_fonts:
+            font_main_adjusted = FontProperties(
+                fname=active_fonts["bold"], size=adjusted_font_size
+            )
+        else:
+            font_main_adjusted = FontProperties(
+                family="monospace", weight="bold", size=adjusted_font_size
+            )
+
+        # --- BOTTOM TEXT ---
+        ax.text(
+            0.5,
+            0.14,
+            spaced_city,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            ha="center",
+            fontproperties=font_main_adjusted,
+            zorder=11,
         )
-        font_coords = FontProperties(
-            fname=active_fonts["regular"], size=base_coords * scale_factor
-        )
-        font_attr = FontProperties(
-            fname=active_fonts["light"], size=base_attr * scale_factor
-        )
-    else:
-        # Fallback to system fonts
-        font_sub = FontProperties(
-            family="monospace", weight="normal", size=base_sub * scale_factor
-        )
-        font_coords = FontProperties(
-            family="monospace", size=base_coords * scale_factor
-        )
-        font_attr = FontProperties(family="monospace", size=base_attr * scale_factor)
 
-    # Format city name based on script type
-    # Latin scripts: apply uppercase and letter spacing for aesthetic
-    # Non-Latin scripts (CJK, Thai, Arabic, etc.): no spacing, preserve case structure
-    if is_latin_script(display_city):
-        # Latin script: uppercase with letter spacing (e.g., "P  A  R  I  S")
-        spaced_city = "  ".join(list(display_city.upper()))
-    else:
-        # Non-Latin script: no spacing, no forced uppercase
-        # For scripts like Arabic, Thai, Japanese, etc.
-        spaced_city = display_city
-
-    # Dynamically adjust font size based on city name length to prevent truncation
-    # We use the already scaled "main" font size as the starting point.
-    base_adjusted_main = base_main * scale_factor
-    city_char_count = len(display_city)
-
-    # Heuristic: If length is > 10, start reducing.
-    if city_char_count > 10:
-        length_factor = 10 / city_char_count
-        adjusted_font_size = max(base_adjusted_main * length_factor, 10 * scale_factor)
-    else:
-        adjusted_font_size = base_adjusted_main
-
-    if active_fonts:
-        font_main_adjusted = FontProperties(
-            fname=active_fonts["bold"], size=adjusted_font_size
-        )
-    else:
-        font_main_adjusted = FontProperties(
-            family="monospace", weight="bold", size=adjusted_font_size
+        ax.text(
+            0.5,
+            0.10,
+            display_country.upper(),
+            transform=ax.transAxes,
+            color=THEME["text"],
+            ha="center",
+            fontproperties=font_sub,
+            zorder=11,
         )
 
-    # --- BOTTOM TEXT ---
-    ax.text(
-        0.5,
-        0.14,
-        spaced_city,
-        transform=ax.transAxes,
-        color=THEME["text"],
-        ha="center",
-        fontproperties=font_main_adjusted,
-        zorder=11,
-    )
+        lat, lon = point
+        coords = (
+            f"{lat:.4f}° N / {lon:.4f}° E"
+            if lat >= 0
+            else f"{abs(lat):.4f}° S / {lon:.4f}° E"
+        )
+        if lon < 0:
+            coords = coords.replace("E", "W")
 
-    ax.text(
-        0.5,
-        0.10,
-        display_country.upper(),
-        transform=ax.transAxes,
-        color=THEME["text"],
-        ha="center",
-        fontproperties=font_sub,
-        zorder=11,
-    )
+        ax.text(
+            0.5,
+            0.07,
+            coords,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            alpha=0.7,
+            ha="center",
+            fontproperties=font_coords,
+            zorder=11,
+        )
 
-    lat, lon = point
-    coords = (
-        f"{lat:.4f}° N / {lon:.4f}° E"
-        if lat >= 0
-        else f"{abs(lat):.4f}° S / {lon:.4f}° E"
-    )
-    if lon < 0:
-        coords = coords.replace("E", "W")
+        ax.plot(
+            [0.4, 0.6],
+            [0.125, 0.125],
+            transform=ax.transAxes,
+            color=THEME["text"],
+            linewidth=1 * scale_factor,
+            zorder=11,
+        )
 
-    ax.text(
-        0.5,
-        0.07,
-        coords,
-        transform=ax.transAxes,
-        color=THEME["text"],
-        alpha=0.7,
-        ha="center",
-        fontproperties=font_coords,
-        zorder=11,
-    )
+        # --- ATTRIBUTION (bottom right) ---
+        if FONTS:
+            font_attr = FontProperties(fname=FONTS["light"], size=8)
+        else:
+            font_attr = FontProperties(family="monospace", size=8)
 
-    ax.plot(
-        [0.4, 0.6],
-        [0.125, 0.125],
-        transform=ax.transAxes,
-        color=THEME["text"],
-        linewidth=1 * scale_factor,
-        zorder=11,
-    )
-
-    # --- ATTRIBUTION (bottom right) ---
-    if FONTS:
-        font_attr = FontProperties(fname=FONTS["light"], size=8)
-    else:
-        font_attr = FontProperties(family="monospace", size=8)
-
-    ax.text(
-        0.98,
-        0.02,
-        "© OpenStreetMap contributors",
-        transform=ax.transAxes,
-        color=THEME["text"],
-        alpha=0.5,
-        ha="right",
-        va="bottom",
-        fontproperties=font_attr,
-        zorder=11,
-    )
+        ax.text(
+            0.98,
+            0.02,
+            "© OpenStreetMap contributors",
+            transform=ax.transAxes,
+            color=THEME["text"],
+            alpha=0.5,
+            ha="right",
+            va="bottom",
+            fontproperties=font_attr,
+            zorder=11,
+        )
 
     # 5. Save
     print(f"Saving to {output_file}...")
@@ -809,6 +825,9 @@ Examples:
   python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
   python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
 
+  # Cities with no text
+  python create_map_poster.py -c "Cairo" -C "Egypt" -t desert_sand -d 15000 --no-text
+
   # List themes
   python create_map_poster.py --list-themes
 
@@ -845,8 +864,8 @@ def list_themes():
         try:
             with open(theme_path, "r", encoding=FILE_ENCODING) as f:
                 theme_data = json.load(f)
-                display_name = theme_data.get('name', theme_name)
-                description = theme_data.get('description', '')
+                display_name = theme_data.get("name", theme_name)
+                description = theme_data.get("description", "")
         except (OSError, json.JSONDecodeError):
             display_name = theme_name
             description = ""
@@ -955,6 +974,11 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--no-text",
+        action="store_true",
+        help="Generate poster without any text labels",
+    )
 
     args = parser.parse_args()
 
@@ -1037,6 +1061,7 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                no_text=args.no_text,
             )
 
         print("\n" + "=" * 50)
