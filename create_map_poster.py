@@ -980,7 +980,7 @@ Examples:
         print_examples()
         sys.exit(1)
 
-    # set putput path
+    # set output path
     if args.output_directory:
         POSTERS_DIR = os.path.expanduser(args.output_directory)
 
