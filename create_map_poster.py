@@ -955,6 +955,12 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--output-directory",
+        "-o",
+        default=POSTERS_DIR,
+        help=f"Output directory for the poster (default: {POSTERS_DIR})"
+    )
 
     args = parser.parse_args()
 
@@ -973,6 +979,10 @@ Examples:
         print("Error: --city and --country are required.\n")
         print_examples()
         sys.exit(1)
+
+    # set putput path
+    if args.output_directory:
+        POSTERS_DIR = os.path.expanduser(args.output_directory)
 
     # Enforce maximum dimensions
     if args.width > 20:
