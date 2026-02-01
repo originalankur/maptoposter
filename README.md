@@ -203,7 +203,7 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 
 ## Themes
 
-17 themes available in `themes/` directory:
+18 themes available in `themes/` directory:
 
 | Theme | Style |
 |-------|-------|
@@ -219,6 +219,7 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 | `emerald`      | Lush dark green aesthetic |
 | `forest` | Deep greens and sage |
 | `ocean` | Blues and teals for coastal cities |
+| `night_drive` | Dark with brakelight accents|
 | `terracotta` | Mediterranean warmth |
 | `sunset` | Warm oranges and pinks |
 | `autumn` | Seasonal burnt oranges and reds |

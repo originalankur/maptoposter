@@ -1,0 +1,15 @@
+{
+  "name": "Night Drive",
+  "description": "Dark background with brakelight accents",
+  "bg": "#000000",
+  "text": "#FFFFFF",
+  "gradient_color": "#000000",
+  "water": "#0A0A0A",
+  "parks": "#111111",
+  "road_motorway": "#FFFFFF",
+  "road_primary": "#EB0402",
+  "road_secondary": "#F2E600",
+  "road_tertiary": "#540302",
+  "road_residential": "#F2E600",
+  "road_default": "#540302"
+}
