@@ -158,7 +158,7 @@ python create_map_poster.py -c "Phnom Penh" -C "Cambodia" -dc "ភ្នំព�
 ```bash
 # Iconic grid patterns
 python create_map_poster.py -c "New York" -C "USA" -t noir -d 12000           # Manhattan grid
-python create_map_poster.py -c "Barcelona" -C "Spain" -t warm_beige -d 8000   # Eixample district
+python create_map_poster.py -c "Barcelona" -C "Spain" -t warm_beige -d 8000   # Example district
 
 # Waterfront & canals
 python create_map_poster.py -c "Venice" -C "Italy" -t blueprint -d 4000       # Canal network
