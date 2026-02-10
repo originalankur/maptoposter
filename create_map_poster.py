@@ -370,6 +370,123 @@ def get_coordinates(city, country):
     raise ValueError(f"Could not find coordinates for {city}, {country}")
 
 
+def _country_to_code(country_name):
+    """
+    Convert a country name to its ISO 3166-1 alpha-2 code for Nominatim.
+    Falls back to the first two letters if not found in the lookup table.
+    """
+    # Common mappings for countries users are likely to use
+    lookup = {
+        "united states": "us", "usa": "us", "us": "us", "america": "us",
+        "united kingdom": "gb", "uk": "gb", "england": "gb",
+        "great britain": "gb", "scotland": "gb", "wales": "gb",
+        "canada": "ca", "mexico": "mx", "brazil": "br",
+        "france": "fr", "germany": "de", "spain": "es", "italy": "it",
+        "netherlands": "nl", "belgium": "be", "portugal": "pt",
+        "switzerland": "ch", "austria": "at", "sweden": "se",
+        "norway": "no", "denmark": "dk", "finland": "fi",
+        "poland": "pl", "czech republic": "cz", "czechia": "cz",
+        "hungary": "hu", "romania": "ro", "greece": "gr",
+        "turkey": "tr", "russia": "ru", "ukraine": "ua",
+        "japan": "jp", "china": "cn", "south korea": "kr", "korea": "kr",
+        "india": "in", "australia": "au", "new zealand": "nz",
+        "south africa": "za", "argentina": "ar", "colombia": "co",
+        "chile": "cl", "peru": "pe", "uae": "ae",
+        "united arab emirates": "ae", "singapore": "sg",
+        "ireland": "ie", "thailand": "th", "vietnam": "vn",
+        "philippines": "ph", "malaysia": "my", "indonesia": "id",
+        "egypt": "eg", "morocco": "ma", "israel": "il",
+        "saudi arabia": "sa", "pakistan": "pk", "bangladesh": "bd",
+        "nigeria": "ng", "kenya": "ke", "ethiopia": "et",
+        "taiwan": "tw", "hong kong": "hk",
+    }
+    code = lookup.get(country_name.lower().strip())
+    if not code:
+        raise ValueError(
+            f"Could not determine country code for '{country_name}'. "
+            "Please use a standard country name (e.g., 'USA', 'Germany', 'Japan')."
+        )
+    return code
+
+
+def get_location_from_zipcode(zipcode, country=None):
+    """
+    Fetches coordinates, city, and country for a given zip/postal code using geopy.
+    Includes rate limiting to be respectful to the geocoding service.
+
+    Args:
+        zipcode: Zip or postal code string
+        country: Optional country to narrow the search
+
+    Returns:
+        dict with keys: latitude, longitude, city, country
+    """
+    cache_key = f"zipcode_{zipcode}_{(country or 'us').lower()}"
+    cached = cache_get(cache_key)
+    if cached:
+        print(f"✓ Using cached location for zip code {zipcode}")
+        return cached
+
+    print(f"Looking up zip code {zipcode}...")
+    geolocator = Nominatim(user_agent="city_map_poster", timeout=10)
+
+    # Add a small delay to respect Nominatim's usage policy
+    time.sleep(1)
+
+    # Use country_codes to restrict results. Default to US when no country given.
+    country_code = _country_to_code(country) if country else "us"
+
+    try:
+        location = geolocator.geocode(
+            zipcode, addressdetails=True, country_codes=[country_code]
+        )
+    except Exception as e:
+        raise ValueError(f"Geocoding failed for zip code {zipcode}: {e}") from e
+
+    # If geocode returned a coroutine in some environments, run it to get the result.
+    if asyncio.iscoroutine(location):
+        try:
+            location = asyncio.run(location)
+        except RuntimeError as exc:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                raise RuntimeError(
+                    "Geocoder returned a coroutine while an event loop is already running. "
+                    "Run this script in a synchronous environment."
+                ) from exc
+            location = loop.run_until_complete(location)
+
+    if location:
+        addr = getattr(location, "raw", {}).get("address", {})
+        city = (
+            addr.get("city")
+            or addr.get("town")
+            or addr.get("village")
+            or addr.get("municipality")
+            or addr.get("county")
+            or "Unknown"
+        )
+        resolved_country = addr.get("country", country or "Unknown")
+
+        print(f"✓ Found: {getattr(location, 'address', city)}")
+        print(f"✓ City: {city}, Country: {resolved_country}")
+        print(f"✓ Coordinates: {location.latitude}, {location.longitude}")
+
+        result = {
+            "latitude": location.latitude,
+            "longitude": location.longitude,
+            "city": city,
+            "country": resolved_country,
+        }
+        try:
+            cache_set(cache_key, result)
+        except CacheError as e:
+            print(e)
+        return result
+
+    raise ValueError(f"Could not find location for zip code {zipcode}")
+
+
 def get_crop_limits(g_proj, center_lat_lon, fig, dist):
     """
     Crop inward to preserve aspect ratio while guaranteeing
@@ -780,6 +897,7 @@ City Map Poster Generator
 
 Usage:
   python create_map_poster.py --city <city> --country <country> [options]
+  python create_map_poster.py --zipcode <zip> [options]
 
 Examples:
   # Iconic grid patterns
@@ -809,12 +927,17 @@ Examples:
   python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
   python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
 
+  # From zip code
+  python create_map_poster.py -z 10001 -t noir -d 12000                        # Manhattan by zip
+  python create_map_poster.py -z "SW1A 1AA" -C "UK" -t noir -d 15000           # London by postcode
+
   # List themes
   python create_map_poster.py --list-themes
 
 Options:
-  --city, -c        City name (required)
-  --country, -C     Country name (required)
+  --city, -c        City name (required unless --zipcode is used)
+  --country, -C     Country name (required unless --zipcode is used)
+  --zipcode, -z     Zip/postal code (auto-resolves city and country)
   --country-label   Override country text displayed on poster
   --theme, -t       Theme name (default: terracotta)
   --all-themes      Generate posters for all themes
@@ -867,12 +990,19 @@ Examples:
   python create_map_poster.py --city "New York" --country "USA" -l 40.776676 -73.971321 --theme neon_cyberpunk
   python create_map_poster.py --city Tokyo --country Japan --theme midnight_blue
   python create_map_poster.py --city Paris --country France --theme noir --distance 15000
+  python create_map_poster.py --zipcode 10001 --theme noir --distance 12000
   python create_map_poster.py --list-themes
         """,
     )
 
     parser.add_argument("--city", "-c", type=str, help="City name")
     parser.add_argument("--country", "-C", type=str, help="Country name")
+    parser.add_argument(
+        "--zipcode",
+        "-z",
+        type=str,
+        help="Zip/postal code (auto-resolves city and country)",
+    )
     parser.add_argument(
         "--latitude",
         "-lat",
@@ -968,9 +1098,21 @@ Examples:
         list_themes()
         sys.exit(0)
 
+    # Resolve zip code to city/country if provided
+    if args.zipcode:
+        zip_location = get_location_from_zipcode(args.zipcode, args.country)
+        if not args.city:
+            args.city = zip_location["city"]
+        if not args.country:
+            args.country = zip_location["country"]
+        # Store resolved coords so we don't geocode again below
+        args.zip_coords = (zip_location["latitude"], zip_location["longitude"])
+    else:
+        args.zip_coords = None
+
     # Validate required arguments
     if not args.city or not args.country:
-        print("Error: --city and --country are required.\n")
+        print("Error: --city and --country are required (or use --zipcode).\n")
         print_examples()
         sys.exit(1)
 
@@ -1018,6 +1160,8 @@ Examples:
             lon = parse(args.longitude)
             coords = [lat, lon]
             print(f"✓ Coordinates: {', '.join([str(i) for i in coords])}")
+        elif args.zip_coords:
+            coords = list(args.zip_coords)
         else:
             coords = get_coordinates(args.city, args.country)
 
