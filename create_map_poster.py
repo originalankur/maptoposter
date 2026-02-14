@@ -27,7 +27,8 @@ from geopy.geocoders import Nominatim
 from lat_lon_parser import parse
 from matplotlib.font_manager import FontProperties
 from networkx import MultiDiGraph
-from shapely.geometry import Point
+from shapely.geometry import Point, box as shapely_box
+from shapely.ops import linemerge, polygonize, unary_union
 from tqdm import tqdm
 
 from font_management import load_fonts
@@ -406,6 +407,77 @@ def get_crop_limits(g_proj, center_lat_lon, fig, dist):
     )
 
 
+def build_sea_polygons(coastline_gdf, g_proj, crop_xlim, crop_ylim, center_lat_lon):
+    """
+    Build sea/ocean polygons from OSM coastline data.
+
+    In OpenStreetMap, seas and oceans are defined by coastline lines rather
+    than water polygons. This function converts coastline lines into renderable
+    water polygons by splitting the viewport into land and water regions.
+
+    Args:
+        coastline_gdf: GeoDataFrame of coastline LineString features (or None)
+        g_proj: Projected graph (used for CRS)
+        crop_xlim: (xmin, xmax) tuple from get_crop_limits
+        crop_ylim: (ymin, ymax) tuple from get_crop_limits
+        center_lat_lon: (lat, lon) tuple of the map center
+
+    Returns:
+        GeoDataFrame of water polygons in the projected CRS, or None
+    """
+    if coastline_gdf is None or coastline_gdf.empty:
+        return None
+
+    crs = g_proj.graph["crs"]
+
+    # Filter to line geometries only
+    line_mask = coastline_gdf.geometry.type.isin(["LineString", "MultiLineString"])
+    coast_lines = coastline_gdf[line_mask]
+    if coast_lines.empty:
+        return None
+
+    # Project coastline to graph CRS
+    try:
+        coast_proj = ox.projection.project_gdf(coast_lines, to_crs=crs)
+    except Exception:
+        try:
+            coast_proj = coast_lines.to_crs(crs)
+        except Exception:
+            return None
+
+    # Build viewport rectangle from crop limits
+    viewport = shapely_box(crop_xlim[0], crop_ylim[0], crop_xlim[1], crop_ylim[1])
+
+    # Merge coastline fragments and clip to viewport
+    merged = linemerge(list(coast_proj.geometry))
+    clipped = merged.intersection(viewport)
+
+    if clipped.is_empty:
+        return None
+
+    # Combine clipped coastline with viewport boundary to form closed regions
+    combined = unary_union([clipped, viewport.boundary])
+
+    # Create polygons from the line network
+    polygons = list(polygonize(combined))
+    if not polygons:
+        return None
+
+    # Project center point to identify which polygon is land
+    lat, lon = center_lat_lon
+    center_proj = ox.projection.project_geometry(
+        Point(lon, lat), crs="EPSG:4326", to_crs=crs
+    )[0]
+
+    # Land polygon contains the center; everything else is water
+    water_polys = [p for p in polygons if not p.contains(center_proj)]
+
+    if not water_polys:
+        return None
+
+    return GeoDataFrame(geometry=water_polys, crs=crs)
+
+
 def fetch_graph(point, dist) -> MultiDiGraph | None:
     """
     Fetch street network graph from OpenStreetMap.
@@ -524,7 +596,7 @@ def create_poster(
 
     # Progress bar for data fetching
     with tqdm(
-        total=3,
+        total=4,
         desc="Fetching map data",
         unit="step",
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt}",
@@ -557,6 +629,16 @@ def create_poster(
         )
         pbar.update(1)
 
+        # 4. Fetch Coastline
+        pbar.set_description("Downloading coastline data")
+        coastline = fetch_features(
+            point,
+            compensated_dist,
+            tags={"natural": "coastline"},
+            name="coastline",
+        )
+        pbar.update(1)
+
     print("✓ All data retrieved successfully!")
 
     # 2. Setup Plot
@@ -568,7 +650,17 @@ def create_poster(
     # Project graph to a metric CRS so distances and aspect are linear (meters)
     g_proj = ox.project_graph(g)
 
+    # Determine cropping limits early (needed for sea polygon construction)
+    crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
+
+    # Build sea/ocean polygons from coastline data
+    sea_polys = build_sea_polygons(coastline, g_proj, crop_xlim, crop_ylim, point)
+
     # 3. Plot Layers
+    # Layer 0: Sea/ocean from coastline
+    if sea_polys is not None and not sea_polys.empty:
+        sea_polys.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=0.4)
+
     # Layer 1: Polygons (filter to only plot polygon/multipolygon geometries, not points)
     if water is not None and not water.empty:
         # Filter to only polygon/multipolygon geometries to avoid point features showing as dots
@@ -596,8 +688,6 @@ def create_poster(
     edge_colors = get_edge_colors_by_type(g_proj)
     edge_widths = get_edge_widths_by_type(g_proj)
 
-    # Determine cropping limits to maintain the poster aspect ratio
-    crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
     # Plot the projected graph and then apply the cropped limits
     ox.plot_graph(
         g_proj, ax=ax, bgcolor=THEME['bg'],
