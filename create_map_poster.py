@@ -407,6 +407,53 @@ def get_crop_limits(g_proj, center_lat_lon, fig, dist):
     )
 
 
+def _is_land_polygon(polygon, coastline_geom):
+    """
+    Determine if a polygon is land using the OSM coastline direction convention.
+
+    In OpenStreetMap, coastlines are oriented with land on the LEFT and water
+    on the RIGHT when following the direction of the way. This function checks
+    which side of the nearest coastline segment a polygon falls on.
+
+    Args:
+        polygon: A Shapely Polygon to classify
+        coastline_geom: The projected coastline geometry (LineString or MultiLineString)
+
+    Returns:
+        True if the polygon is on the land side, False if water
+    """
+    test_point = polygon.representative_point()
+
+    # Find the nearest individual LineString segment
+    if coastline_geom.geom_type == 'MultiLineString':
+        nearest_line = min(coastline_geom.geoms, key=lambda l: l.distance(test_point))
+    elif coastline_geom.geom_type == 'LineString':
+        nearest_line = coastline_geom
+    else:
+        return False
+
+    # Project test point onto the nearest coastline
+    param = nearest_line.project(test_point)
+
+    # Get local direction of coastline at the nearest point
+    epsilon = 1.0  # 1 meter in projected CRS
+    p1 = nearest_line.interpolate(max(0, param - epsilon))
+    p2 = nearest_line.interpolate(min(nearest_line.length, param + epsilon))
+
+    # Direction vector of coastline
+    dx = p2.x - p1.x
+    dy = p2.y - p1.y
+
+    # Vector from coastline point to polygon test point
+    nearest_point = nearest_line.interpolate(param)
+    cx = test_point.x - nearest_point.x
+    cy = test_point.y - nearest_point.y
+
+    # Cross product: positive = left side = land, negative = right side = water
+    cross = dx * cy - dy * cx
+    return cross > 0
+
+
 def build_sea_polygons(coastline_gdf, g_proj, crop_xlim, crop_ylim, center_lat_lon):
     """
     Build sea/ocean polygons from OSM coastline data.
@@ -414,6 +461,10 @@ def build_sea_polygons(coastline_gdf, g_proj, crop_xlim, crop_ylim, center_lat_l
     In OpenStreetMap, seas and oceans are defined by coastline lines rather
     than water polygons. This function converts coastline lines into renderable
     water polygons by splitting the viewport into land and water regions.
+
+    Uses the OSM coastline direction convention (land on left, water on right)
+    to correctly classify all land masses, even when multiple disconnected
+    land polygons exist (e.g. Istanbul's European and Asian sides).
 
     Args:
         coastline_gdf: GeoDataFrame of coastline LineString features (or None)
@@ -463,14 +514,9 @@ def build_sea_polygons(coastline_gdf, g_proj, crop_xlim, crop_ylim, center_lat_l
     if not polygons:
         return None
 
-    # Project center point to identify which polygon is land
-    lat, lon = center_lat_lon
-    center_proj = ox.projection.project_geometry(
-        Point(lon, lat), crs="EPSG:4326", to_crs=crs
-    )[0]
-
-    # Land polygon contains the center; everything else is water
-    water_polys = [p for p in polygons if not p.contains(center_proj)]
+    # Classify each polygon using coastline direction convention.
+    # OSM coastlines have land on the left, water on the right.
+    water_polys = [p for p in polygons if not _is_land_polygon(p, clipped)]
 
     if not water_polys:
         return None
