@@ -1,0 +1,53 @@
+{
+  "app": {
+    "title": "地图海报生成器",
+    "subtitle": "为全球任何城市创建精美的极简主义地图海报",
+    "footer": "基于 OpenStreetMap 和 OSMnx 技术"
+  },
+  "form": {
+    "title": "配置海报",
+    "city": "城市",
+    "country": "国家",
+    "cityPlaceholder": "例如：巴黎",
+    "countryPlaceholder": "例如：法国",
+    "searchCity": "搜索城市...",
+    "noResults": "未找到城市",
+    "citySelected": "已选择城市",
+    "pleaseSelectCity": "请从搜索结果中选择一个城市",
+    "selectCityAlert": "请从搜索结果中选择一个城市，或切换到手动输入模式。",
+    "mapRadius": "地图半径（米）",
+    "denseCenter": "密集市中心（4公里）",
+    "largeMetro": "大都市圈（20公里）",
+    "advancedOptions": "高级选项",
+    "showAdvanced": "显示高级选项",
+    "hideAdvanced": "隐藏高级选项",
+    "width": "宽度（英寸）",
+    "height": "高度（英寸）",
+    "latitude": "纬度（可选）",
+    "longitude": "经度（可选）",
+    "displayCity": "显示城市名（可选）",
+    "displayCountry": "显示国家名（可选）",
+    "fontFamily": "字体（Google Fonts）",
+    "generate": "生成海报",
+    "generating": "生成中...",
+    "required": "*"
+  },
+  "theme": {
+    "title": "选择主题",
+    "description": "为您的海报选择配色方案"
+  },
+  "preview": {
+    "title": "预览与图库",
+    "currentPoster": "当前海报",
+    "gallery": "图库",
+    "noPosters": "还没有海报。生成您的第一张吧！",
+    "delete": "删除",
+    "download": "下载",
+    "generatedOn": "生成于"
+  },
+  "language": {
+    "switch": "语言",
+    "en": "English",
+    "zh": "中文"
+  }
+}

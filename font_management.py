@@ -154,12 +154,24 @@ def load_fonts(font_family: Optional[str] = None) -> Optional[dict]:
 
         print(f"⚠ Failed to load '{font_family}', falling back to local Roboto")
 
-    # Default: Load local Roboto fonts
+    # Default: Try Noto Sans SC (Chinese support) first, fallback to Roboto
+    # Noto Sans SC supports Chinese characters
     fonts = {
-        "bold": os.path.join(FONTS_DIR, "Roboto-Bold.ttf"),
-        "regular": os.path.join(FONTS_DIR, "Roboto-Regular.ttf"),
-        "light": os.path.join(FONTS_DIR, "Roboto-Light.ttf"),
+        "bold": os.path.join(FONTS_DIR, "NotoSansSC-Bold.ttf"),
+        "regular": os.path.join(FONTS_DIR, "NotoSansSC-Regular.ttf"),
+        "light": os.path.join(FONTS_DIR, "NotoSansSC-Light.ttf"),
     }
+
+    # Check if Noto Sans SC exists, otherwise fallback to Roboto
+    noto_exists = all(os.path.exists(path) for path in fonts.values())
+    
+    if not noto_exists:
+        print("⚠ Noto Sans SC not found, using Roboto (limited Chinese support)")
+        fonts = {
+            "bold": os.path.join(FONTS_DIR, "Roboto-Bold.ttf"),
+            "regular": os.path.join(FONTS_DIR, "Roboto-Regular.ttf"),
+            "light": os.path.join(FONTS_DIR, "Roboto-Light.ttf"),
+        }
 
     # Verify fonts exist
     for _weight, path in fonts.items():
