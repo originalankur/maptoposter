@@ -20,6 +20,7 @@ from typing import cast
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
 import numpy as np
 import osmnx as ox
 from geopandas import GeoDataFrame
@@ -492,6 +493,7 @@ def create_poster(
     name_label=None,
     display_city=None,
     display_country=None,
+    poi_dict={},
     fonts=None,
 ):
     """
@@ -524,7 +526,7 @@ def create_poster(
 
     # Progress bar for data fetching
     with tqdm(
-        total=3,
+        total=4,
         desc="Fetching map data",
         unit="step",
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt}",
@@ -556,6 +558,17 @@ def create_poster(
             name="parks",
         )
         pbar.update(1)
+
+        # 4. Fetch POIs 
+        if len(poi_dict) > 0 and poi_dict[next(iter(poi_dict))] != []:
+            pbar.set_description("Downloading points of interest")
+            points_of_interest = fetch_features(
+                point,
+                compensated_dist,
+                tags=poi_dict,
+                name="_".join(poi_dict[next(iter(poi_dict))])
+            )
+            pbar.update(1)
 
     print("✓ All data retrieved successfully!")
 
@@ -591,13 +604,20 @@ def create_poster(
             except Exception:
                 parks_polys = parks_polys.to_crs(g_proj.graph['crs'])
             parks_polys.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=0.8)
+    
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
     edge_colors = get_edge_colors_by_type(g_proj)
     edge_widths = get_edge_widths_by_type(g_proj)
 
+
     # Determine cropping limits to maintain the poster aspect ratio
     crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
+
+    # Calculate scale factor based on smaller dimension (reference 12 inches)
+    # This ensures text scales properly for both portrait and landscape orientations
+    scale_factor = min(height, width) / 12.0
+
     # Plot the projected graph and then apply the cropped limits
     ox.plot_graph(
         g_proj, ax=ax, bgcolor=THEME['bg'],
@@ -611,13 +631,31 @@ def create_poster(
     ax.set_xlim(crop_xlim)
     ax.set_ylim(crop_ylim)
 
-    # Layer 3: Gradients (Top and Bottom)
+    # Layer 3: Points of interest
+    if (len(poi_dict) > 0 and poi_dict[next(iter(poi_dict))] != []) \
+    and points_of_interest is not None and not points_of_interest.empty:
+        points_of_interest = ox.projection.project_gdf(points_of_interest)
+        for poi in points_of_interest.geometry:
+            center = (0,0)
+            if poi.geom_type == "Point":
+                center = poi.x, poi.y
+            else:
+                center = poi.centroid.x, poi.centroid.y
+
+            c = Circle(
+                center,
+                radius=12 * scale_factor,
+                facecolor=THEME.get("poi", "text"),
+                edgecolor=THEME.get("poi", "text"),
+                linewidth=1,
+                alpha=1,
+                zorder=9,
+            )
+            ax.add_patch(c)
+
+    # Layer 4: Gradients (Top and Bottom)
     create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
     create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
-
-    # Calculate scale factor based on smaller dimension (reference 12 inches)
-    # This ensures text scales properly for both portrait and landscape orientations
-    scale_factor = min(height, width) / 12.0
 
     # Base font sizes (at 12 inches width)
     base_main = 60
@@ -679,6 +717,7 @@ def create_poster(
         font_main_adjusted = FontProperties(
             family="monospace", weight="bold", size=adjusted_font_size
         )
+
 
     # --- BOTTOM TEXT ---
     ax.text(
@@ -955,6 +994,28 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default="posters",
+        help="Path to output directory for the poster (default: posters)"
+    )
+    parser.add_argument(
+        "--points-of-interest-key",
+        "-poiK",
+        type=str,
+        default="",
+        help="Top level tag from OpenStreetMap (ex: amenities)"
+    )
+    parser.add_argument(
+        "--points-of-interest-val",
+        "-poiV",
+        type=str,
+        nargs='+',
+        default=[],
+        help="List of points of interest under the top level tag (ex: pub)"
+    )
 
     args = parser.parse_args()
 
@@ -985,6 +1046,10 @@ Examples:
             f"⚠ Height {args.height} exceeds the maximum allowed limit of 20. It's enforced as max limit 20."
         )
         args.height = 20.0
+
+    # Change output directory
+    if args.output:
+        POSTERS_DIR = args.output
 
     available_themes = get_available_themes()
     if not available_themes:
@@ -1036,6 +1101,7 @@ Examples:
                 country_label=args.country_label,
                 display_city=args.display_city,
                 display_country=args.display_country,
+                poi_dict={ args.points_of_interest_key: args.points_of_interest_val },
                 fonts=custom_fonts,
             )
 

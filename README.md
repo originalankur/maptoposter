@@ -79,6 +79,9 @@ python create_map_poster.py --city <city> --country <country> [options]
 | **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
 | **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 (max: 20) |
 | **OPTIONAL:** `--height` | `-H` | Image height in inches | 16 (max: 20) |
+| **OPTIONAL:** `--output` | `-o` | Path to output directory | posters |
+| **OPTIONAL:** `--points-of-interest-key` | `-poiK` | Top level tag from OpenStreetMap ( use with --points-of-interest-val) | |
+| **OPTIONAL:** `--points-of-interest-val` | `-poiV` | List of points of interest under the top level tag ( use with  --points-of-interest-key) | |
 
 ### Multilingual Support - i18n
 
