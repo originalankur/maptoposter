@@ -809,6 +809,13 @@ Examples:
   python create_map_poster.py -c "London" -C "UK" -t noir -d 15000              # Thames curves
   python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000  # Danube split
 
+  # Custom fonts from local path
+  python create_map_poster.py -c "Paris" -C "France" --font-path "D:\\Fonts\\BrownieStencil-8O8MJ.ttf"
+  python create_map_poster.py -c "Tokyo" -C "Japan" --font-path "/path/to/fonts/" -t japanese_ink
+
+  # Google Fonts
+  python create_map_poster.py -c "Berlin" -C "Germany" --font-family "Noto Sans JP"
+
   # List themes
   python create_map_poster.py --list-themes
 
@@ -819,12 +826,19 @@ Options:
   --theme, -t       Theme name (default: terracotta)
   --all-themes      Generate posters for all themes
   --distance, -d    Map radius in meters (default: 18000)
+  --font-family     Google Fonts family name (e.g., "Noto Sans JP", "Open Sans")
+  --font-path       Path to local font file or directory (e.g., "fonts/custom.ttf" or "fonts/")
   --list-themes     List all available themes
 
 Distance guide:
   4000-6000m   Small/dense cities (Venice, Amsterdam old center)
   8000-12000m  Medium cities, focused downtown (Paris, Barcelona)
   15000-20000m Large metros, full city view (Tokyo, Mumbai)
+
+Font loading priority:
+    1. --font-family (Google Fonts) - highest priority
+    2. --font-path (local file or directory) - second priority
+  3. Roboto fonts (default fallback)
 
 Available themes can be found in the 'themes/' directory.
 Generated posters are saved to 'posters/' directory.
@@ -949,6 +963,11 @@ Examples:
         help='Google Fonts family name (e.g., "Noto Sans JP", "Open Sans"). If not specified, uses local Roboto fonts.',
     )
     parser.add_argument(
+        "--font-path",
+        type=str,
+        help="Path to local font file or directory containing fonts (e.g., /path/to/font.ttf or /path/to/fonts/)",
+    )
+    parser.add_argument(
         "--format",
         "-f",
         default="png",
@@ -1010,6 +1029,10 @@ Examples:
         custom_fonts = load_fonts(args.font_family)
         if not custom_fonts:
             print(f"⚠ Failed to load '{args.font_family}', falling back to Roboto")
+    elif args.font_path:
+        custom_fonts = load_fonts(font_path=args.font_path)
+        if not custom_fonts:
+            print(f"⚠ Failed to load fonts from path '{args.font_path}', falling back to Roboto")
 
     # Get coordinates and generate poster
     try:
