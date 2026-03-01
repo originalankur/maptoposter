@@ -23,7 +23,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import osmnx as ox
 from geopandas import GeoDataFrame
-from geopy.geocoders import Nominatim
 from lat_lon_parser import parse
 from matplotlib.font_manager import FontProperties
 from networkx import MultiDiGraph
@@ -316,10 +315,15 @@ def get_edge_widths_by_type(g):
     return edge_widths
 
 
-def get_coordinates(city, country):
+def get_coordinates(city, country, ignore_ssl_errors=False):
     """
     Fetches coordinates for a given city and country using geopy.
     Includes rate limiting to be respectful to the geocoding service.
+    
+    Args:
+        city: Name of the city
+        country: Name of the country
+        ignore_ssl_errors: Whether to ignore SSL certificate verification errors (not recommended for production)
     """
     coords = f"coords_{city.lower()}_{country.lower()}"
     cached = cache_get(coords)
@@ -328,6 +332,10 @@ def get_coordinates(city, country):
         return cached
 
     print("Looking up coordinates...")
+    
+    # Import geopy here to allow SSL patching to take effect first
+    from geopy.geocoders import Nominatim
+    
     geolocator = Nominatim(user_agent="city_map_poster", timeout=10)
 
     # Add a small delay to respect Nominatim's usage policy
@@ -955,8 +963,22 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--ignore-ssl-errors",
+        action="store_true",
+        help="Ignore SSL certificate verification errors (not recommended for production)",
+    )
 
     args = parser.parse_args()
+    
+    # Apply SSL configuration globally if requested
+    if hasattr(args, 'ignore_ssl_errors') and args.ignore_ssl_errors:
+        import ssl
+        import urllib3
+        print("⚠ SSL certificate verification disabled (--ignore-ssl-errors flag active)")
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        # Monkey-patch the ssl module to use unverified context by default
+        ssl._create_default_https_context = ssl._create_unverified_context
 
     # If no arguments provided, show examples
     if len(sys.argv) == 1:
@@ -1019,7 +1041,7 @@ Examples:
             coords = [lat, lon]
             print(f"✓ Coordinates: {', '.join([str(i) for i in coords])}")
         else:
-            coords = get_coordinates(args.city, args.country)
+            coords = get_coordinates(args.city, args.country, args.ignore_ssl_errors)
 
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
