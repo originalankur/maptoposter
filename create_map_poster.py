@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import osmnx as ox
 from geopandas import GeoDataFrame
-from geopy.geocoders import Nominatim
+from geopy.geocoders import Nominatim, Photon, ArcGIS
 from lat_lon_parser import parse
 from matplotlib.font_manager import FontProperties
 from networkx import MultiDiGraph
@@ -318,8 +318,8 @@ def get_edge_widths_by_type(g):
 
 def get_coordinates(city, country):
     """
-    Fetches coordinates for a given city and country using geopy.
-    Includes rate limiting to be respectful to the geocoding service.
+    Fetches coordinates for a given city and country using multiple geocoding services.
+    Falls back to alternative services if primary ones fail.
     """
     coords = f"coords_{city.lower()}_{country.lower()}"
     cached = cache_get(coords)
@@ -328,15 +328,45 @@ def get_coordinates(city, country):
         return cached
 
     print("Looking up coordinates...")
-    geolocator = Nominatim(user_agent="city_map_poster", timeout=10)
 
-    # Add a small delay to respect Nominatim's usage policy
-    time.sleep(1)
+    # Define multiple geocoding services as fallbacks
+    geocoders = [
+        # Photon - Free, based on OSM data, usually more reliable than Nominatim
+        ("Photon", lambda: Photon(user_agent="map_poster_generator/1.0", timeout=15)),
+        # ArcGIS - Usually very reliable, no API key required for basic usage
+        ("ArcGIS", lambda: ArcGIS(user_agent="map_poster_generator/1.0", timeout=15)),
+        # Nominatim as fallback (original service)
+        ("Nominatim", lambda: Nominatim(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36", timeout=15)),
+    ]
 
-    try:
-        location = geolocator.geocode(f"{city}, {country}")
-    except Exception as e:
-        raise ValueError(f"Geocoding failed for {city}, {country}: {e}") from e
+    location = None
+    last_error = None
+
+    for service_name, geocoder_factory in geocoders:
+        try:
+            print(f"  Trying {service_name}...")
+            geolocator = geocoder_factory()
+
+            # Add a small delay to respect service policies
+            time.sleep(1)
+
+            location = geolocator.geocode(f"{city}, {country}")
+
+            if location:
+                print(f"✓ Success with {service_name}!")
+                break
+            else:
+                print(f"  {service_name}: No results found")
+
+        except Exception as e:
+            print(f"  {service_name}: Failed ({str(e)[:100]}...)")
+            last_error = e
+            continue
+
+    if not location and last_error:
+        raise ValueError(f"All geocoding services failed for {city}, {country}. Last error: {last_error}") from last_error
+    elif not location:
+        raise ValueError(f"Could not find coordinates for {city}, {country} using any geocoding service")
 
     # If geocode returned a coroutine in some environments, run it to get the result.
     if asyncio.iscoroutine(location):

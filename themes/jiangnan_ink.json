@@ -1,0 +1,15 @@
+{
+  "name": "Jiangnan Ink",
+  "description": "Traditional Chinese ink wash painting style - elegant grey tones with subtle blue accents inspired by Jiangnan water towns",
+  "bg": "#F8F6F0",
+  "text": "#2C2C2C",
+  "gradient_color": "#F8F6F0",
+  "water": "#B8C5D6",
+  "parks": "#E8E6E0",
+  "road_motorway": "#4A4A4A",
+  "road_primary": "#606060",
+  "road_secondary": "#787878",
+  "road_tertiary": "#909090",
+  "road_residential": "#B0B0B0",
+  "road_default": "#909090"
+}

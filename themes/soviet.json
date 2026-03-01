@@ -1,0 +1,15 @@
+{
+  "name": "Soviet",
+  "description": "USSR-inspired theme - deep red background with golden accents and industrial tones",
+  "bg": "#8B0000",
+  "text": "#FFD700",
+  "gradient_color": "#8B0000",
+  "water": "#2F4F4F",
+  "parks": "#556B2F",
+  "road_motorway": "#FFD700",
+  "road_primary": "#FFA500",
+  "road_secondary": "#CD853F",
+  "road_tertiary": "#A0522D",
+  "road_residential": "#8B4513",
+  "road_default": "#A0522D"
+}
