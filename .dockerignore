@@ -1,0 +1,53 @@
+# Cache and temporary files
+cache/
+.cache/
+*.pyc
+__pycache__/
+*.pkl
+
+# Virtual environments
+env/
+.env/
+.venv/
+venv/
+test_venv/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-*
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Test outputs
+test_posters/
+test_cache/
+
+# Old posters (keep structure but not old files)
+posters/old/
+
+# Documentation (not needed in container)
+*.md
+!README.md
+
+# Package manager files
+uv.lock
+
+# Docker files (don't need to copy into image)
+Dockerfile
+.dockerignore
