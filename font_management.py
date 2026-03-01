@@ -137,15 +137,64 @@ def download_google_font(font_family: str, weights: list = None) -> Optional[dic
 def load_fonts(font_family: Optional[str] = None) -> Optional[dict]:
     """
     Load fonts from local directory or download from Google Fonts.
-    Returns dict with font paths for different weights.
-
-    :param font_family: Google Fonts family name (e.g., 'Noto Sans JP', 'Open Sans').
-                       If None, uses local Roboto fonts.
-    :return: Dict with 'bold', 'regular', 'light' keys mapping to font file paths,
-             or None if all loading methods fail
+    
+    Priority order:
+    1. Local font files in fonts/ directory
+    2. Google Fonts download
+    3. Default Roboto fonts
+    
+    Args:
+        font_family: Font family name (e.g., 'Noto Sans Arabic', 'NRT').
+                    If None, uses local Roboto fonts.
+                    
+    Returns:
+        dict: Font paths for 'bold', 'regular', 'light' weights,
+              or None if all loading methods fail
     """
-    # If custom font family specified, try to download from Google Fonts
+    # Check local fonts directory first for custom font families
     if font_family and font_family.lower() != "roboto":
+        # Search for font files with various naming patterns
+        local_font_patterns = [
+            f"{font_family}-Reg.ttf",
+            f"{font_family}-Regular.ttf",
+            f"{font_family}.ttf",
+            f"{font_family}-Bold.ttf",
+            f"{font_family}-Bd.ttf",
+            f"{font_family}-Light.ttf",
+        ]
+        
+        local_fonts = {}
+        for pattern in local_font_patterns:
+            font_path = os.path.join(FONTS_DIR, pattern)
+            if os.path.exists(font_path):
+                # Categorize font by weight based on filename
+                pattern_lower = pattern.lower()
+                if "light" in pattern_lower:
+                    local_fonts["light"] = font_path
+                elif "bold" in pattern_lower or "-bd" in pattern_lower:
+                    local_fonts["bold"] = font_path
+                else:
+                    local_fonts["regular"] = font_path
+        
+        # Use local fonts if found
+        if local_fonts:
+            print(f"Using local font: {font_family}")
+            
+            # Fill missing weights with available ones
+            if "regular" in local_fonts:
+                base_font = local_fonts["regular"]
+                local_fonts.setdefault("bold", base_font)
+                local_fonts.setdefault("light", base_font)
+            elif local_fonts:
+                # Use any available font as fallback for missing weights
+                base_font = list(local_fonts.values())[0]
+                for weight in ["regular", "bold", "light"]:
+                    local_fonts.setdefault(weight, base_font)
+            
+            print(f"✓ Font '{font_family}' loaded successfully from local fonts")
+            return local_fonts
+        
+        # If not found locally, try to download from Google Fonts
         print(f"Loading Google Font: {font_family}")
         fonts = download_google_font(font_family)
         if fonts:

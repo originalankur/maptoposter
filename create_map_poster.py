@@ -5,6 +5,11 @@ City Map Poster Generator
 This module generates beautiful, minimalist map posters for any city in the world.
 It fetches OpenStreetMap data using OSMnx, applies customizable themes, and creates
 high-quality poster-ready images with roads, water features, and parks.
+
+Arabic/Kurdish Script Support:
+    Requires Pillow (PIL) with libraqm support for proper Arabic text shaping.
+    libraqm provides contextual letter forms and right-to-left text rendering.
+    Most Pillow installations include libraqm by default.
 """
 
 import argparse
@@ -26,7 +31,9 @@ from geopandas import GeoDataFrame
 from geopy.geocoders import Nominatim
 from lat_lon_parser import parse
 from matplotlib.font_manager import FontProperties
+from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 from networkx import MultiDiGraph
+from PIL import Image, ImageDraw, ImageFont
 from shapely.geometry import Point
 from tqdm import tqdm
 
@@ -142,6 +149,107 @@ def is_latin_script(text):
 
     # Consider it Latin if >80% of alphabetic characters are Latin
     return (latin_count / total_alpha) > 0.8
+
+
+def is_arabic_script(text):
+    """
+    Detect if text contains Arabic, Persian, or Kurdish script characters.
+    
+    Args:
+        text: String to analyze
+        
+    Returns:
+        bool: True if text contains Arabic-script characters, False otherwise
+    """
+    if not text:
+        return False
+    
+    # Check for characters in Arabic Unicode blocks
+    arabic_ranges = [
+        (0x0600, 0x06FF),  # Arabic
+        (0x0750, 0x077F),  # Arabic Supplement
+        (0x08A0, 0x08FF),  # Arabic Extended-A
+        (0xFB50, 0xFDFF),  # Arabic Presentation Forms-A
+        (0xFE70, 0xFEFF),  # Arabic Presentation Forms-B
+    ]
+    
+    for char in text:
+        char_code = ord(char)
+        for start, end in arabic_ranges:
+            if start <= char_code <= end:
+                return True
+    
+    return False
+
+
+def prepare_arabic_text(text):
+    """
+    Prepare Arabic/Kurdish text for rendering.
+    
+    This function returns text as-is because PIL with libraqm
+    handles proper Arabic text shaping (character connection,
+    RTL ordering) automatically during rendering.
+    
+    Args:
+        text: Arabic/Kurdish text string
+        
+    Returns:
+        str: Original text (PIL will handle shaping)
+    """
+    return text if not text or not is_arabic_script(text) else text
+
+
+def render_arabic_text_image(text, font_path, font_size, color):
+    """
+    Render Arabic/Kurdish text as a high-quality image using PIL.
+    
+    PIL with libraqm support provides proper Arabic text shaping including:
+    - Contextual letter forms (initial, medial, final, isolated)
+    - Right-to-left text ordering
+    - Ligatures and diacritics
+    
+    This is used as a workaround for matplotlib's limited Arabic support.
+    
+    Args:
+        text: Arabic/Kurdish text to render
+        font_path: Path to TTF font file
+        font_size: Font size in points
+        color: RGB color tuple (r, g, b) with values 0-255
+        
+    Returns:
+        PIL.Image: RGBA image with rendered text, or None if rendering fails
+    """
+    try:
+        # Scale up font for better quality, will be scaled down when composited
+        pil_font = ImageFont.truetype(font_path, int(font_size * 2))
+        
+        # Measure text dimensions
+        test_img = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+        test_draw = ImageDraw.Draw(test_img)
+        bbox = test_draw.textbbox((0, 0), text, font=pil_font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        
+        # Create image with padding
+        padding = int(font_size * 0.5)
+        img_width = text_width + padding * 2
+        img_height = text_height + padding * 2
+        img = Image.new('RGBA', (img_width, img_height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        
+        # Render text (PIL+libraqm handles Arabic shaping automatically)
+        draw.text(
+            (padding, padding - bbox[1]),
+            text,
+            font=pil_font,
+            fill=color + (255,)  # Add alpha channel
+        )
+        
+        return img
+    except Exception as e:
+        print(f"  ⚠ Warning: Could not render Arabic text with PIL: {e}")
+        print(f"     Falling back to matplotlib text rendering")
+        return None
 
 
 def generate_output_filename(city, theme_name, output_format):
@@ -628,13 +736,27 @@ def create_poster(
     # 4. Typography - use custom fonts if provided, otherwise use default FONTS
     active_fonts = fonts or FONTS
     if active_fonts:
-        # font_main is calculated dynamically later based on length
         font_sub = FontProperties(
             fname=active_fonts["light"], size=base_sub * scale_factor
         )
-        font_coords = FontProperties(
-            fname=active_fonts["regular"], size=base_coords * scale_factor
-        )
+        
+        # Fallback to Roboto for coordinates if custom font lacks Latin symbols (e.g., degree sign)
+        # Some specialized fonts like NRT don't include all Latin/symbol characters
+        if "NRT" in str(active_fonts.get("regular", "")):
+            roboto_coords_path = os.path.join(FONTS_DIR, "Roboto-Regular.ttf")
+            if os.path.exists(roboto_coords_path):
+                font_coords = FontProperties(
+                    fname=roboto_coords_path, size=base_coords * scale_factor
+                )
+            else:
+                font_coords = FontProperties(
+                    fname=active_fonts["regular"], size=base_coords * scale_factor
+                )
+        else:
+            font_coords = FontProperties(
+                fname=active_fonts["regular"], size=base_coords * scale_factor
+            )
+            
         font_attr = FontProperties(
             fname=active_fonts["light"], size=base_attr * scale_factor
         )
@@ -657,7 +779,11 @@ def create_poster(
     else:
         # Non-Latin script: no spacing, no forced uppercase
         # For scripts like Arabic, Thai, Japanese, etc.
-        spaced_city = display_city
+        # Apply Arabic reshaping if needed
+        spaced_city = prepare_arabic_text(display_city)
+    
+    # Process country name for Arabic script
+    display_country_processed = prepare_arabic_text(display_country) if not is_latin_script(display_country) else display_country.upper()
 
     # Dynamically adjust font size based on city name length to prevent truncation
     # We use the already scaled "main" font size as the starting point.
@@ -680,28 +806,128 @@ def create_poster(
             family="monospace", weight="bold", size=adjusted_font_size
         )
 
-    # --- BOTTOM TEXT ---
-    ax.text(
-        0.5,
-        0.14,
-        spaced_city,
-        transform=ax.transAxes,
-        color=THEME["text"],
-        ha="center",
-        fontproperties=font_main_adjusted,
-        zorder=11,
-    )
+    # --- RENDER CITY NAME ---
+    # Use PIL rendering for Arabic script (proper text shaping support)
+    # Use matplotlib rendering for Latin script (standard rendering)
+    if is_arabic_script(spaced_city) and active_fonts:
+        try:
+            # Convert matplotlib color to RGB tuple for PIL
+            text_color_rgb = mcolors.to_rgb(THEME["text"])
+            text_color_255 = tuple(int(c * 255) for c in text_color_rgb)
+            
+            # Render Arabic text as image using PIL
+            city_img = render_arabic_text_image(
+                spaced_city,
+                active_fonts["bold"],
+                adjusted_font_size * 2.5,
+                text_color_255
+            )
+            
+            if city_img:
+                # Composite PIL image onto matplotlib figure
+                imagebox = OffsetImage(city_img, zoom=0.28)
+                ab = AnnotationBbox(
+                    imagebox,
+                    (0.5, 0.17),  # Position: 17% from bottom (higher than Latin)
+                    xycoords='axes fraction',
+                    frameon=False,
+                    box_alignment=(0.5, 0.5)
+                )
+                ax.add_artist(ab)
+            else:
+                # Fallback to matplotlib if PIL fails
+                ax.text(
+                    0.5, 0.17,
+                    spaced_city,
+                    transform=ax.transAxes,
+                    color=THEME["text"],
+                    ha="center",
+                    fontproperties=font_main_adjusted,
+                    zorder=11,
+                )
+        except Exception as e:
+            print(f"  ⚠ PIL rendering failed: {e}, using matplotlib")
+            ax.text(
+                0.5, 0.17,
+                spaced_city,
+                transform=ax.transAxes,
+                color=THEME["text"],
+                ha="center",
+                fontproperties=font_main_adjusted,
+                zorder=11,
+            )
+    else:
+        # Standard matplotlib rendering for Latin text
+        ax.text(
+            0.5, 0.14,  # Position: 14% from bottom
+            spaced_city,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            ha="center",
+            fontproperties=font_main_adjusted,
+            zorder=11,
+        )
 
-    ax.text(
-        0.5,
-        0.10,
-        display_country.upper(),
-        transform=ax.transAxes,
-        color=THEME["text"],
-        ha="center",
-        fontproperties=font_sub,
-        zorder=11,
-    )
+    # --- RENDER COUNTRY NAME ---
+    if is_arabic_script(display_country_processed) and active_fonts:
+        try:
+            # Convert matplotlib color to RGB tuple for PIL
+            text_color_rgb = mcolors.to_rgb(THEME["text"])
+            text_color_255 = tuple(int(c * 255) for c in text_color_rgb)
+            
+            # Render Arabic text as image using PIL
+            country_img = render_arabic_text_image(
+                display_country_processed,
+                active_fonts["regular"],
+                (base_sub * scale_factor) * 2.5,
+                text_color_255
+            )
+            
+            if country_img:
+                # Composite PIL image onto matplotlib figure
+                imagebox = OffsetImage(country_img, zoom=0.28)
+                ab = AnnotationBbox(
+                    imagebox,
+                    (0.5, 0.10),  # Position: 10% from bottom
+                    xycoords='axes fraction',
+                    frameon=False,
+                    box_alignment=(0.5, 0.5)
+                )
+                ax.add_artist(ab)
+            else:
+                # Fallback to matplotlib if PIL fails
+                ax.text(
+                    0.5, 0.10,
+                    display_country_processed,
+                    transform=ax.transAxes,
+                    color=THEME["text"],
+                    ha="center",
+                    fontproperties=font_sub,
+                    zorder=11,
+                )
+        except Exception as e:
+            print(f"  ⚠ PIL rendering failed: {e}, using matplotlib")
+            ax.text(
+                0.5, 0.10,
+                display_country_processed,
+                transform=ax.transAxes,
+                color=THEME["text"],
+                ha="center",
+                fontproperties=font_sub,
+                zorder=11,
+            )
+    else:
+        # Standard matplotlib rendering for Latin text
+        ax.text(
+            0.5, 0.10,
+            0.10,
+            display_country_processed,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            ha="center",
+            fontproperties=font_sub,
+            zorder=11,
+        )
 
     lat, lon = point
     coords = (

@@ -7,18 +7,19 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 ## Examples
 
-| Country      | City           | Theme           | Poster |
-|:------------:|:--------------:|:---------------:|:------:|
-| USA          | San Francisco  | sunset          | <img src="posters/san_francisco_sunset_20260118_144726.png" width="250"> |
-| Spain        | Barcelona      | warm_beige      | <img src="posters/barcelona_warm_beige_20260118_140048.png" width="250"> |
-| Italy        | Venice         | blueprint       | <img src="posters/venice_blueprint_20260118_140505.png" width="250"> |
-| Japan        | Tokyo          | japanese_ink    | <img src="posters/tokyo_japanese_ink_20260118_142446.png" width="250"> |
-| India        | Mumbai         | contrast_zones  | <img src="posters/mumbai_contrast_zones_20260118_145843.png" width="250"> |
-| Morocco      | Marrakech      | terracotta      | <img src="posters/marrakech_terracotta_20260118_143253.png" width="250"> |
-| Singapore    | Singapore      | neon_cyberpunk  | <img src="posters/singapore_neon_cyberpunk_20260118_153328.png" width="250"> |
-| Australia    | Melbourne      | forest          | <img src="posters/melbourne_forest_20260118_153446.png" width="250"> |
-| UAE          | Dubai          | midnight_blue   | <img src="posters/dubai_midnight_blue_20260118_140807.png" width="250"> |
-| USA          | Seattle        | emerald         | <img src="posters/seattle_emerald_20260124_162244.png" width="250"> |
+|  Country  |     City      |     Theme      |                                    Poster                                    |
+| :-------: | :-----------: | :------------: | :--------------------------------------------------------------------------: |
+|    USA    | San Francisco |     sunset     |   <img src="posters/san_francisco_sunset_20260118_144726.png" width="250">   |
+|   Spain   |   Barcelona   |   warm_beige   |   <img src="posters/barcelona_warm_beige_20260118_140048.png" width="250">   |
+|   Italy   |    Venice     |   blueprint    |     <img src="posters/venice_blueprint_20260118_140505.png" width="250">     |
+|   Japan   |     Tokyo     |  japanese_ink  |    <img src="posters/tokyo_japanese_ink_20260118_142446.png" width="250">    |
+|   India   |    Mumbai     | contrast_zones |  <img src="posters/mumbai_contrast_zones_20260118_145843.png" width="250">   |
+|  Morocco  |   Marrakech   |   terracotta   |   <img src="posters/marrakech_terracotta_20260118_143253.png" width="250">   |
+| Singapore |   Singapore   | neon_cyberpunk | <img src="posters/singapore_neon_cyberpunk_20260118_153328.png" width="250"> |
+| Australia |   Melbourne   |     forest     |     <img src="posters/melbourne_forest_20260118_153446.png" width="250">     |
+|    UAE    |     Dubai     | midnight_blue  |   <img src="posters/dubai_midnight_blue_20260118_140807.png" width="250">    |
+|    USA    |    Seattle    |    emerald     |     <img src="posters/seattle_emerald_20260124_162244.png" width="250">      |
+| Kurdistan |     Erbil     |   blueprint    |     <img src="posters/erbil_blueprint_20260203_185200.png" width="250">      |
 
 ## Installation
 
@@ -61,34 +62,34 @@ python create_map_poster.py --city <city> --country <country> [options]
 
 ### Required Options
 
-| Option | Short | Description |
-|--------|-------|-------------|
-| `--city` | `-c` | City name (used for geocoding) |
-| `--country` | `-C` | Country name (used for geocoding) |
+| Option      | Short | Description                       |
+| ----------- | ----- | --------------------------------- |
+| `--city`    | `-c`  | City name (used for geocoding)    |
+| `--country` | `-C`  | Country name (used for geocoding) |
 
 ### Optional Flags
 
-| Option | Short | Description | Default |
-|--------|-------|-------------|---------|
-| **OPTIONAL:** `--latitude` | `-lat` | Override latitude center point (use with --longitude) | |
-| **OPTIONAL:** `--longitude` | `-long` | Override longitude center point (use with --latitude) | |
-| **OPTIONAL:** `--country-label` | | Override country text displayed on poster | |
-| **OPTIONAL:** `--theme` | `-t` | Theme name | terracotta |
-| **OPTIONAL:** `--distance` | `-d` | Map radius in meters | 18000 |
-| **OPTIONAL:** `--list-themes` | | List all available themes | |
-| **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
-| **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 (max: 20) |
-| **OPTIONAL:** `--height` | `-H` | Image height in inches | 16 (max: 20) |
+| Option                          | Short   | Description                                           | Default      |
+| ------------------------------- | ------- | ----------------------------------------------------- | ------------ |
+| **OPTIONAL:** `--latitude`      | `-lat`  | Override latitude center point (use with --longitude) |              |
+| **OPTIONAL:** `--longitude`     | `-long` | Override longitude center point (use with --latitude) |              |
+| **OPTIONAL:** `--country-label` |         | Override country text displayed on poster             |              |
+| **OPTIONAL:** `--theme`         | `-t`    | Theme name                                            | terracotta   |
+| **OPTIONAL:** `--distance`      | `-d`    | Map radius in meters                                  | 18000        |
+| **OPTIONAL:** `--list-themes`   |         | List all available themes                             |              |
+| **OPTIONAL:** `--all-themes`    |         | Generate posters for all available themes             |              |
+| **OPTIONAL:** `--width`         | `-W`    | Image width in inches                                 | 12 (max: 20) |
+| **OPTIONAL:** `--height`        | `-H`    | Image height in inches                                | 16 (max: 20) |
 
 ### Multilingual Support - i18n
 
 Display city and country names in your language with custom fonts from google fonts:
 
-| Option | Short | Description |
-|--------|-------|-------------|
-| `--display-city` | `-dc` | Custom display name for city (e.g., "東京") |
-| `--display-country` | `-dC` | Custom display name for country (e.g., "日本") |
-| `--font-family` | | Google Fonts family name (e.g., "Noto Sans JP") |
+| Option              | Short | Description                                     |
+| ------------------- | ----- | ----------------------------------------------- |
+| `--display-city`    | `-dc` | Custom display name for city (e.g., "東京")     |
+| `--display-country` | `-dC` | Custom display name for country (e.g., "日本")  |
+| `--font-family`     |       | Google Fonts family name (e.g., "Noto Sans JP") |
 
 **Examples:**
 
@@ -101,21 +102,24 @@ python create_map_poster.py -c "Seoul" -C "South Korea" -dc "서울" -dC "대한
 
 # Arabic
 python create_map_poster.py -c "Dubai" -C "UAE" -dc "دبي" -dC "الإمارات" --font-family "Cairo"
+
+# Kurdish (with local NRT font)
+python create_map_poster.py -c "Erbil" -C "Kurdistan" -dc "هەولێر" -dC "کوردستان" --font-family "NRT"
 ```
 
-**Note**: Fonts are automatically downloaded from Google Fonts and cached locally in `fonts/cache/`.
+**Note**: Fonts are automatically downloaded from Google Fonts and cached locally in `fonts/cache/`. You can also use local fonts by placing TTF files in the `fonts/` directory.
 
 ### Resolution Guide (300 DPI)
 
 Use these values for `-W` and `-H` to target specific resolutions:
 
-| Target | Resolution (px) | Inches (-W / -H) |
-|--------|-----------------|------------------|
-| **Instagram Post** | 1080 x 1080 | 3.6 x 3.6 |
-| **Mobile Wallpaper** | 1080 x 1920 | 3.6 x 6.4 |
-| **HD Wallpaper** | 1920 x 1080 | 6.4 x 3.6 |
-| **4K Wallpaper** | 3840 x 2160 | 12.8 x 7.2 |
-| **A4 Print** | 2480 x 3508 | 8.3 x 11.7 |
+| Target               | Resolution (px) | Inches (-W / -H) |
+| -------------------- | --------------- | ---------------- |
+| **Instagram Post**   | 1080 x 1080     | 3.6 x 3.6        |
+| **Mobile Wallpaper** | 1080 x 1920     | 3.6 x 6.4        |
+| **HD Wallpaper**     | 1920 x 1080     | 6.4 x 3.6        |
+| **4K Wallpaper**     | 3840 x 2160     | 12.8 x 7.2       |
+| **A4 Print**         | 2480 x 3508     | 8.3 x 11.7       |
 
 ### Usage Examples
 
@@ -195,35 +199,35 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 
 ### Distance Guide
 
-| Distance | Best for |
-|----------|----------|
-| 4000-6000m | Small/dense cities (Venice, Amsterdam center) |
-| 8000-12000m | Medium cities, focused downtown (Paris, Barcelona) |
-| 15000-20000m | Large metros, full city view (Tokyo, Mumbai) |
+| Distance     | Best for                                           |
+| ------------ | -------------------------------------------------- |
+| 4000-6000m   | Small/dense cities (Venice, Amsterdam center)      |
+| 8000-12000m  | Medium cities, focused downtown (Paris, Barcelona) |
+| 15000-20000m | Large metros, full city view (Tokyo, Mumbai)       |
 
 ## Themes
 
 17 themes available in `themes/` directory:
 
-| Theme | Style |
-|-------|-------|
-| `gradient_roads` | Smooth gradient shading |
-| `contrast_zones` | High contrast urban density |
-| `noir` | Pure black background, white roads |
-| `midnight_blue` | Navy background with gold roads |
-| `blueprint` | Architectural blueprint aesthetic |
-| `neon_cyberpunk` | Dark with electric pink/cyan |
-| `warm_beige` | Vintage sepia tones |
-| `pastel_dream` | Soft muted pastels |
-| `japanese_ink` | Minimalist ink wash style |
-| `emerald`      | Lush dark green aesthetic |
-| `forest` | Deep greens and sage |
-| `ocean` | Blues and teals for coastal cities |
-| `terracotta` | Mediterranean warmth |
-| `sunset` | Warm oranges and pinks |
-| `autumn` | Seasonal burnt oranges and reds |
-| `copper_patina` | Oxidized copper aesthetic |
-| `monochrome_blue` | Single blue color family |
+| Theme             | Style                              |
+| ----------------- | ---------------------------------- |
+| `gradient_roads`  | Smooth gradient shading            |
+| `contrast_zones`  | High contrast urban density        |
+| `noir`            | Pure black background, white roads |
+| `midnight_blue`   | Navy background with gold roads    |
+| `blueprint`       | Architectural blueprint aesthetic  |
+| `neon_cyberpunk`  | Dark with electric pink/cyan       |
+| `warm_beige`      | Vintage sepia tones                |
+| `pastel_dream`    | Soft muted pastels                 |
+| `japanese_ink`    | Minimalist ink wash style          |
+| `emerald`         | Lush dark green aesthetic          |
+| `forest`          | Deep greens and sage               |
+| `ocean`           | Blues and teals for coastal cities |
+| `terracotta`      | Mediterranean warmth               |
+| `sunset`          | Warm oranges and pinks             |
+| `autumn`          | Seasonal burnt oranges and reds    |
+| `copper_patina`   | Oxidized copper aesthetic          |
+| `monochrome_blue` | Single blue color family           |
 
 ## Output
 
@@ -269,7 +273,6 @@ map_poster/
 └── README.md
 ```
 
-
 ## Hacker's Guide
 
 Quick reference for contributors who want to extend or modify the script.
@@ -299,16 +302,16 @@ Quick reference for contributors who want to extend or modify the script.
 
 ### Key Functions
 
-| Function | Purpose | Modify when... |
-|----------|---------|----------------|
-| `get_coordinates()` | City → lat/lon via Nominatim | Switching geocoding provider |
-| `create_poster()` | Main rendering pipeline | Adding new map layers |
-| `get_edge_colors_by_type()` | Road color by OSM highway tag | Changing road styling |
-| `get_edge_widths_by_type()` | Road width by importance | Adjusting line weights |
-| `create_gradient_fade()` | Top/bottom fade effect | Modifying gradient overlay |
-| `load_theme()` | JSON theme → dict | Adding new theme properties |
-| `is_latin_script()` | Detects script for typography | Supporting new scripts |
-| `load_fonts()` | Load custom/default fonts | Changing font loading logic |
+| Function                    | Purpose                       | Modify when...               |
+| --------------------------- | ----------------------------- | ---------------------------- |
+| `get_coordinates()`         | City → lat/lon via Nominatim  | Switching geocoding provider |
+| `create_poster()`           | Main rendering pipeline       | Adding new map layers        |
+| `get_edge_colors_by_type()` | Road color by OSM highway tag | Changing road styling        |
+| `get_edge_widths_by_type()` | Road width by importance      | Adjusting line weights       |
+| `create_gradient_fade()`    | Top/bottom fade effect        | Modifying gradient overlay   |
+| `load_theme()`              | JSON theme → dict             | Adding new theme properties  |
+| `is_latin_script()`         | Detects script for typography | Supporting new scripts       |
+| `load_fonts()`              | Load custom/default fonts     | Changing font loading logic  |
 
 ### Rendering Layers (z-order)
 
@@ -336,7 +339,7 @@ residential, living_street  → Thinnest (0.4), lightest
 
 The script automatically detects text scripts to apply appropriate typography:
 
-- **Latin scripts** (English, French, Spanish, etc.): Letter spacing applied for elegant "P  A  R  I  S" effect
+- **Latin scripts** (English, French, Spanish, etc.): Letter spacing applied for elegant "P A R I S" effect
 - **Non-Latin scripts** (Japanese, Arabic, Thai, Korean, etc.): Natural spacing for "東京" (no gaps between characters)
 
 Script detection uses Unicode ranges (U+0000-U+024F for Latin). If >80% of alphabetic characters are Latin, spacing is applied.
