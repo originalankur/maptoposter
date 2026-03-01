@@ -12,8 +12,10 @@ import asyncio
 import json
 import os
 import pickle
+import colorsys
 import sys
 import time
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 from typing import cast
@@ -25,8 +27,10 @@ import osmnx as ox
 from geopandas import GeoDataFrame
 from geopy.geocoders import Nominatim
 from lat_lon_parser import parse
+from matplotlib.patches import Polygon
 from matplotlib.font_manager import FontProperties
 from networkx import MultiDiGraph
+from shapely import affinity
 from shapely.geometry import Point
 from tqdm import tqdm
 
@@ -46,6 +50,8 @@ FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
 
 FILE_ENCODING = "utf-8"
+COMPASS_SVG_PATH = Path("compass.svg")
+_COMPASS_SHAPES_CACHE = None
 
 FONTS = load_fonts()
 
@@ -252,6 +258,211 @@ def create_gradient_fade(ax, color, location="bottom", zorder=10):
     )
 
 
+def parse_bool_arg(value: str) -> bool:
+    """
+    Parse CLI boolean values from common true/false strings.
+    """
+    normalized = value.strip().lower()
+    truthy = {"true", "1", "yes", "y", "on"}
+    falsy = {"false", "0", "no", "n", "off"}
+    if normalized in truthy:
+        return True
+    if normalized in falsy:
+        return False
+    raise argparse.ArgumentTypeError(
+        f"Invalid boolean value '{value}'. Use true/false."
+    )
+
+
+def _parse_svg_points(points_str):
+    """
+    Parse SVG polygon point lists into numeric (x, y) tuples.
+    """
+    coords = []
+    for token in points_str.replace("\n", " ").replace("\t", " ").split():
+        if "," not in token:
+            continue
+        x_str, y_str = token.split(",", 1)
+        coords.append((float(x_str), float(y_str)))
+    return coords
+
+
+def _load_compass_shapes():
+    """
+    Load polygon geometry and style from compass.svg.
+    Returns a list of dicts: {"points": [...], "fill": str, "stroke": str}
+    """
+    global _COMPASS_SHAPES_CACHE
+    if _COMPASS_SHAPES_CACHE is not None:
+        return _COMPASS_SHAPES_CACHE
+
+    if not COMPASS_SVG_PATH.exists():
+        _COMPASS_SHAPES_CACHE = []
+        return _COMPASS_SHAPES_CACHE
+
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+    root = ET.parse(COMPASS_SVG_PATH).getroot()
+    symbol = root.find(".//svg:symbol[@id='elm']", ns)
+    if symbol is None:
+        _COMPASS_SHAPES_CACHE = []
+        return _COMPASS_SHAPES_CACHE
+
+    shapes = []
+    for poly in symbol.findall("svg:polygon", ns):
+        points = _parse_svg_points(poly.attrib.get("points", ""))
+        if not points:
+            continue
+        shapes.append(
+            {
+                "points": points,
+                "fill": poly.attrib.get("fill", "#FBFBFB"),
+                "stroke": poly.attrib.get("stroke", "#333"),
+            }
+        )
+
+    _COMPASS_SHAPES_CACHE = shapes
+    return _COMPASS_SHAPES_CACHE
+
+
+def _as_hex(color):
+    """
+    Convert a Matplotlib color string to canonical hex.
+    """
+    return mcolors.to_hex(color).lower()
+
+
+def _gray_to_main_shade(source_color, main_color):
+    """
+    Map grayscale source colors to tonal shades of the main theme color.
+    """
+    src_r, src_g, src_b = mcolors.to_rgb(source_color)
+    luminance = (src_r + src_g + src_b) / 3.0
+
+    main_r, main_g, main_b = mcolors.to_rgb(main_color)
+    hue, _lightness, saturation = colorsys.rgb_to_hls(main_r, main_g, main_b)
+
+    # Keep hue/saturation and vary lightness from dark to light tones.
+    target_lightness = 0.18 + (0.68 * luminance)
+    out_r, out_g, out_b = colorsys.hls_to_rgb(hue, target_lightness, saturation)
+    return mcolors.to_hex((out_r, out_g, out_b))
+
+
+def draw_north_badge(ax, orientation_offset):
+    """
+    Draw a north orientation badge in projected map coordinates.
+    """
+    # Anchor in map-local data coordinates (projected x/y, not lat/lon).
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+    x_range = xlim[1] - xlim[0]
+    y_range = ylim[1] - ylim[0]
+    cx = xlim[0] + (x_range * 0.08)
+    cy = ylim[0] + (y_range * 0.90)
+
+    compass_shapes = _load_compass_shapes()
+    theta = np.deg2rad(orientation_offset)
+    cos_t = np.cos(theta)
+    sin_t = np.sin(theta)
+    main_color = THEME["text"]
+    gray_palette = {"#ffffff", "#fbfbfb", "#999999", "#333333", "#000000"}
+
+    # Max diameter = 5% of image/map size -> radius = 2.5% of min extent.
+    max_compass_radius = 0.025 * min(x_range, y_range)
+    max_source_radius = 0.0
+    for shape in compass_shapes:
+        for x, y in shape["points"]:
+            max_source_radius = max(max_source_radius, (x * x + y * y) ** 0.5)
+    compass_scale = (
+        max_compass_radius / max_source_radius if max_source_radius > 0 else 0
+    )
+    compass_scale_x = compass_scale
+    compass_scale_y = compass_scale
+
+    # Positive user offset is clockwise; SVG point rotation math below is clockwise.
+    for shape in compass_shapes:
+        fill_hex = _as_hex(shape["fill"])
+        stroke_hex = _as_hex(shape["stroke"])
+        fill_color = (
+            _gray_to_main_shade(fill_hex, main_color)
+            if fill_hex in gray_palette
+            else shape["fill"]
+        )
+        stroke_color = (
+            main_color if stroke_hex in gray_palette else shape["stroke"]
+        )
+
+        transformed_points = []
+        for x, y in shape["points"]:
+            rx = x * cos_t + y * sin_t
+            ry = -x * sin_t + y * cos_t
+            transformed_points.append(
+                (cx + (rx * compass_scale_x), cy + (ry * compass_scale_y))
+            )
+
+        ax.add_patch(
+            Polygon(
+                transformed_points,
+                closed=True,
+                facecolor=fill_color,
+                edgecolor=stroke_color,
+                linewidth=0.8,
+                zorder=13,
+            )
+        )
+
+    # Fallback if compass.svg is unavailable or malformed.
+    if not compass_shapes:
+        arrow_len = max_compass_radius
+        dx = np.sin(theta) * arrow_len
+        dy = np.cos(theta) * arrow_len
+        ax.annotate(
+            "",
+            xy=(cx + dx, cy + dy),
+            xytext=(cx, cy),
+            arrowprops={
+                "arrowstyle": "-|>",
+                "color": THEME["text"],
+                "linewidth": 1.2,
+                "shrinkA": 0,
+                "shrinkB": 0,
+            },
+            zorder=13,
+        )
+
+    label_dir_x = np.sin(theta)
+    label_dir_y = np.cos(theta)
+    label_norm = np.hypot(label_dir_x, label_dir_y)
+    if label_norm == 0:
+        label_norm = 1.0
+    unit_x = label_dir_x / label_norm
+    unit_y = label_dir_y / label_norm
+
+    # Place label 12 screen pixels away from the compass north tip.
+    tip_x = cx + unit_x * max_compass_radius
+    tip_y = cy + unit_y * max_compass_radius
+    tip_disp = ax.transData.transform((tip_x, tip_y))
+    center_disp = ax.transData.transform((cx, cy))
+    disp_dir = tip_disp - center_disp
+    disp_norm = np.hypot(disp_dir[0], disp_dir[1])
+    if disp_norm == 0:
+        disp_dir = np.array([0.0, 1.0])
+        disp_norm = 1.0
+    label_disp = tip_disp + (disp_dir / disp_norm) * 12.0
+    label_x, label_y = ax.transData.inverted().transform(label_disp)
+
+    ax.text(
+        label_x,
+        label_y,
+        "N",
+        color=THEME["text"],
+        ha="center",
+        va="center",
+        fontsize=9,
+        fontweight="bold",
+        zorder=14,
+    )
+
+
 def get_edge_colors_by_type(g):
     """
     Assigns colors to edges based on road type hierarchy.
@@ -406,6 +617,77 @@ def get_crop_limits(g_proj, center_lat_lon, fig, dist):
     )
 
 
+def get_projected_center(g_proj, center_lat_lon):
+    """
+    Project center point into graph CRS and return metric x/y coordinates.
+    """
+    lat, lon = center_lat_lon
+    center = (
+        ox.projection.project_geometry(
+            Point(lon, lat),
+            crs="EPSG:4326",
+            to_crs=g_proj.graph["crs"],
+        )[0]
+    )
+    return center.x, center.y
+
+
+def rotate_graph_and_features(g_proj, features, center_lat_lon, orientation_offset):
+    """
+    Rotate graph and feature layers around the map center.
+
+    Positive user values are interpreted clockwise relative to north.
+    Shapely's positive angle is counter-clockwise, so we negate the value.
+    """
+    if orientation_offset == 0:
+        return g_proj, features
+
+    center_x, center_y = get_projected_center(g_proj, center_lat_lon)
+    angle_ccw = -orientation_offset
+
+    g_rotated = g_proj.copy()
+    cos_theta = np.cos(np.deg2rad(angle_ccw))
+    sin_theta = np.sin(np.deg2rad(angle_ccw))
+
+    for _node, data in g_rotated.nodes(data=True):
+        x = data.get("x")
+        y = data.get("y")
+        if x is None or y is None:
+            continue
+        dx = x - center_x
+        dy = y - center_y
+        data["x"] = center_x + (dx * cos_theta - dy * sin_theta)
+        data["y"] = center_y + (dx * sin_theta + dy * cos_theta)
+
+    for _u, _v, _k, data in g_rotated.edges(keys=True, data=True):
+        geom = data.get("geometry")
+        if geom is not None:
+            data["geometry"] = affinity.rotate(
+                geom,
+                angle_ccw,
+                origin=(center_x, center_y),
+                use_radians=False,
+            )
+
+    rotated_features = []
+    for gdf in features:
+        if gdf is None or gdf.empty:
+            rotated_features.append(gdf)
+            continue
+        gdf_rotated = gdf.copy()
+        gdf_rotated["geometry"] = gdf_rotated.geometry.apply(
+            lambda geom: affinity.rotate(
+                geom,
+                angle_ccw,
+                origin=(center_x, center_y),
+                use_radians=False,
+            )
+        )
+        rotated_features.append(gdf_rotated)
+
+    return g_rotated, rotated_features
+
+
 def fetch_graph(point, dist) -> MultiDiGraph | None:
     """
     Fetch street network graph from OpenStreetMap.
@@ -493,6 +775,8 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    orientation_offset=0.0,
+    show_north=False,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -568,6 +852,11 @@ def create_poster(
     # Project graph to a metric CRS so distances and aspect are linear (meters)
     g_proj = ox.project_graph(g)
 
+    # Apply optional orientation offset before plotting map layers
+    g_proj, (water, parks) = rotate_graph_and_features(
+        g_proj, [water, parks], point, orientation_offset
+    )
+
     # 3. Plot Layers
     # Layer 1: Polygons (filter to only plot polygon/multipolygon geometries, not points)
     if water is not None and not water.empty:
@@ -614,6 +903,10 @@ def create_poster(
     # Layer 3: Gradients (Top and Bottom)
     create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
     create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
+    # imshow(..., aspect="auto") in gradients can override equal metric scaling.
+    ax.set_aspect("equal", adjustable="box")
+    if show_north:
+        draw_north_badge(ax, orientation_offset)
 
     # Calculate scale factor based on smaller dimension (reference 12 inches)
     # This ensures text scales properly for both portrait and landscape orientations
@@ -955,6 +1248,27 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--orientation-offset",
+        "-O",
+        type=float,
+        default=0.0,
+        help="Map orientation offset in degrees relative to north (clockwise positive, range: -180 to 180)",
+    )
+    parser.add_argument(
+        "--show-north",
+        nargs="?",
+        const=True,
+        default=None,
+        type=parse_bool_arg,
+        metavar="true/false",
+        help="Show north badge. If omitted, defaults to true when --orientation-offset != 0, else false.",
+    )
+    parser.add_argument(
+        "--hide-north",
+        action="store_true",
+        help="Hide north badge (overrides --show-north).",
+    )
 
     args = parser.parse_args()
 
@@ -985,6 +1299,17 @@ Examples:
             f"⚠ Height {args.height} exceeds the maximum allowed limit of 20. It's enforced as max limit 20."
         )
         args.height = 20.0
+    if not -180 <= args.orientation_offset <= 180:
+        print(
+            f"Error: --orientation-offset must be between -180 and 180. Received {args.orientation_offset}."
+        )
+        sys.exit(1)
+    if args.hide_north:
+        show_north = False
+    elif args.show_north is None:
+        show_north = args.orientation_offset != 0
+    else:
+        show_north = args.show_north
 
     available_themes = get_available_themes()
     if not available_themes:
@@ -1037,6 +1362,8 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                orientation_offset=args.orientation_offset,
+                show_north=show_north,
             )
 
         print("\n" + "=" * 50)

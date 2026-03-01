@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simplified compass with cardinal directions only -->
+<!-- Based on https://commons.wikimedia.org/w/index.php?curid=544470 -->
+<!-- Original author, https://commons.wikimedia.org/wiki/User:Stefan-Xp -->
+<!-- L:cense:  -->
+<svg version="1.1" id="Compass"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="800px" height="800px"
+	 viewBox="0 0 800 800" enable-background="new 0 0 800 800" xml:space="preserve">
+<symbol  id="elm" viewBox="-300.5 -300.5 601 601">
+	<polygon fill="#FBFBFB" stroke="#333" stroke-linejoin="round" points="0,300 30,30 300,0 30,-30 0,-300 -30,-30 -300,0 -30,30
+			"/>
+	<polygon fill="#999" stroke="#333" stroke-linejoin="round" points="0,300 30,30 0,0 30,-30 0,-300 	"/>
+	<polygon fill="#999" stroke="#333" stroke-linejoin="round" points="300,0 30,-30 0,0 -30,-30 -300,0 	"/>
+	<line fill="none" stroke="#333" stroke-linejoin="round" x1="-30" y1="30" x2="0" y2="0"/>
+</symbol>
+<!-- North arrow -->
+<use xlink:href="#elm"  width="601" height="601" x="-300.5" y="-300.5" transform="matrix(1 0 0 -1 400 400)" overflow="visible"/>
+<g id="text">
+	<text transform="matrix(1 0 0 1 378.3352 72.4434)" fill="#333" font-family="'Helvetica'" font-size="60">N</text>
+	<text transform="matrix(1 0 0 1 379.9905 756.4434)" fill="#333" font-family="'Helvetica'" font-size="60">S</text>
+	<text transform="matrix(1 0 0 1 29.6843 414.4434)" fill="#333" font-family="'Helvetica'" font-size="60">W</text>
+	<text transform="matrix(1 0 0 1 718.6653 414.4434)" fill="#333" font-family="'Helvetica'" font-size="60">E</text>
+</g>
+</svg>
