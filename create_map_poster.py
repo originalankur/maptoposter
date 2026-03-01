@@ -493,6 +493,7 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    line_scale=1.0,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -594,7 +595,7 @@ def create_poster(
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
     edge_colors = get_edge_colors_by_type(g_proj)
-    edge_widths = get_edge_widths_by_type(g_proj)
+    edge_widths = [w * line_scale for w in get_edge_widths_by_type(g_proj)]
 
     # Determine cropping limits to maintain the poster aspect ratio
     crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
@@ -949,6 +950,13 @@ Examples:
         help='Google Fonts family name (e.g., "Noto Sans JP", "Open Sans"). If not specified, uses local Roboto fonts.',
     )
     parser.add_argument(
+        "--line-scale",
+        "-ls",
+        type=float,
+        default=1.0,
+        help="Multiplier for road/structure line thickness (default: 1.0, try 2-4 for small areas)",
+    )
+    parser.add_argument(
         "--format",
         "-f",
         default="png",
@@ -1037,6 +1045,7 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                line_scale=args.line_scale,
             )
 
         print("\n" + "=" * 50)
