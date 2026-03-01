@@ -552,7 +552,7 @@ def create_poster(
         parks = fetch_features(
             point,
             compensated_dist,
-            tags={"leisure": "park", "landuse": "grass"},
+            tags={"leisure": ["park", "nature_reserve"], "landuse": ["grass", "cemetery"], "natural": "wood"},
             name="parks",
         )
         pbar.update(1)
