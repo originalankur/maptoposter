@@ -106,16 +106,19 @@ python create_map_poster.py -c "Dubai" -C "UAE" -dc "دبي" -dC "الإمارا
 **Note**: Fonts are automatically downloaded from Google Fonts and cached locally in `fonts/cache/`.
 
 ### Resolution Guide (300 DPI)
+When generating a map, the tool adds an extra 0.1 inches to your specified width and height.
 
 Use these values for `-W` and `-H` to target specific resolutions:
 
 | Target | Resolution (px) | Inches (-W / -H) |
 |--------|-----------------|------------------|
-| **Instagram Post** | 1080 x 1080 | 3.6 x 3.6 |
-| **Mobile Wallpaper** | 1080 x 1920 | 3.6 x 6.4 |
-| **HD Wallpaper** | 1920 x 1080 | 6.4 x 3.6 |
-| **4K Wallpaper** | 3840 x 2160 | 12.8 x 7.2 |
-| **A4 Print** | 2480 x 3508 | 8.3 x 11.7 |
+| **Instagram Post** | 1080 x 1080 | 3.5 x 3.5 |
+| **Mobile Wallpaper** | 1080 x 1920 | 3.5 x 6.3 |
+| **HD Wallpaper** | 1920 x 1080 | 6.3 x 3.5 |
+| **4K Wallpaper** | 3840 x 2160 | 12.7 x 7.1 |
+| **A4 Print** | 2480 x 3508 | 8.2 x 11.6 |
+
+You can use this formula to hit the desired resolution: Input Value (`-W` or `-H`) = (Target pixels / DPI) - 0.1
 
 ### Usage Examples
 
