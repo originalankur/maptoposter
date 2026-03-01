@@ -20,6 +20,22 @@ Generate beautiful, minimalist map posters for any city in the world.
 | UAE          | Dubai          | midnight_blue   | <img src="posters/dubai_midnight_blue_20260118_140807.png" width="250"> |
 | USA          | Seattle        | emerald         | <img src="posters/seattle_emerald_20260124_162244.png" width="250"> |
 
+
+
+## Getting Started
+
+**1. Clone the Repository**
+
+First, clone the project:
+
+```bash
+git clone https://github.com/originalankur/maptoposter.git
+cd maptoposter     
+```
+**2. Choose Your Installation Method**
+
+Continue with one of the installation methods below.
+
 ## Installation
 
 ### With uv (Recommended)
