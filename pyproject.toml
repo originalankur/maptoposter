@@ -43,9 +43,21 @@ dependencies = [
     "urllib3==2.6.3",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "flake8>=7.0",
+    "mypy>=1.0",
+    "types-requests>=2.31",
+]
+
+[project.scripts]
+maptoposter = "maptoposter.cli:main"
+
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-py-modules = ["create_map_poster"]
+[tool.setuptools.packages.find]
+include = ["maptoposter*"]
