@@ -1,0 +1,15 @@
+{
+  "name": "Steppe Silver",
+  "description": "Inner Mongolian plateau at dawn — silver morning mist over vast grasslands, sage-grey roads stretching to the horizon, steel-blue steppe lakes, the feeling of wind turbines spinning in absolute silence",
+  "bg": "#EEEDE6",
+  "text": "#3A3E30",
+  "gradient_color": "#DDE0D4",
+  "water": "#6090B4",
+  "parks": "#7E9C60",
+  "road_motorway": "#566840",
+  "road_primary": "#6E8252",
+  "road_secondary": "#8A9C68",
+  "road_tertiary": "#9EAE7E",
+  "road_residential": "#B4BC98",
+  "road_default": "#BEC8A8"
+}

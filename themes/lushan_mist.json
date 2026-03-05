@@ -1,0 +1,17 @@
+{
+  "_name": "Lushan Mist",
+  "_description": "Jiangxi Lushan mountain — ink-washed misty deep forest-green background, vivid verdant mountain park mass clearly visible as the mountain body, bright Poyang Lake cerulean waterways, soft mint-mist road network, crisp celadon text",
+  "bg": "#0C2C10",
+  "gradient_color": "#0C2C10",
+  "text": "#C8ECD8",
+  "water": "#1C78A8",
+  "parks": "#6AC858",
+  "bg_patina": false,
+  "road_motorway": "#A0D8B8",
+  "road_primary": "#80B898",
+  "road_secondary": "#609878",
+  "road_tertiary": "#487860",
+  "road_residential": "#365848",
+  "road_default": "#3D6050",
+  "road_width_scale": 1.5
+}

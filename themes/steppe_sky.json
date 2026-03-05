@@ -1,0 +1,17 @@
+{
+  "_name": "Steppe Sky",
+  "_description": "Inner Mongolia Hohhot — bright fresh grass-green background, strong royal-blue waterways, warm cream road network for high contrast",
+  "bg": "#3A8C40",
+  "gradient_color": "#3A8C40",
+  "text": "#F0FFF0",
+  "water": "#0058E8",
+  "parks": "#286830",
+  "bg_patina": false,
+  "road_motorway": "#F0E8C0",
+  "road_primary": "#D8D0A8",
+  "road_secondary": "#C0B890",
+  "road_tertiary": "#A8A080",
+  "road_residential": "#907868",
+  "road_default": "#887060",
+  "road_width_scale": 2.5
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Guandi Red",
+  "description": "Yuncheng Shanxi — birthplace of Guan Yu, God of War and Commerce. Deep near-black background, vivid vermilion Guandi temple red water and parks, blazing golden road network evoking the legend of loyalty and righteousness, parchment gold text",
+  "bg": "#0E0806",
+  "gradient_color": "#0E0806",
+  "text": "#F0D880",
+  "water": "#C02020",
+  "parks": "#881818",
+  "bg_patina": true,
+  "bg_patina_color": "#8A2A18",
+  "road_motorway": "#F0B000",
+  "road_primary": "#D09000",
+  "road_secondary": "#B07800",
+  "road_tertiary": "#906000",
+  "road_residential": "#704800",
+  "road_default": "#805400",
+  "road_width_scale": 1.5
+}

@@ -70,15 +70,17 @@ python create_map_poster.py --city <city> --country <country> [options]
 
 | Option | Short | Description | Default |
 |--------|-------|-------------|---------|
-| **OPTIONAL:** `--latitude` | `-lat` | Override latitude center point (use with --longitude) | |
-| **OPTIONAL:** `--longitude` | `-long` | Override longitude center point (use with --latitude) | |
-| **OPTIONAL:** `--country-label` | | Override country text displayed on poster | |
-| **OPTIONAL:** `--theme` | `-t` | Theme name | terracotta |
-| **OPTIONAL:** `--distance` | `-d` | Map radius in meters | 18000 |
-| **OPTIONAL:** `--list-themes` | | List all available themes | |
-| **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
-| **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 (max: 20) |
-| **OPTIONAL:** `--height` | `-H` | Image height in inches | 16 (max: 20) |
+| `--latitude` | `-lat` | Override latitude center point (use with --longitude) | |
+| `--longitude` | `-long` | Override longitude center point (use with --latitude) | |
+| `--country-label` | | Override country text displayed on poster | |
+| `--theme` | `-t` | Theme name | `terracotta` |
+| `--distance` | `-d` | Map radius in meters | `18000` |
+| `--list-themes` | | List all available themes | |
+| `--all-themes` | | Generate posters for all available themes | |
+| `--width` | `-W` | Image width in inches | `12` (max: 20) |
+| `--height` | `-H` | Image height in inches | `16` (max: 20) |
+| `--map-x-offset` | `-mx` | Shift viewport left/right (−1.0 to +1.0) | `0.0` |
+| `--map-y-offset` | `-my` | Shift viewport up/down (−1.0 to +1.0) | `0.0` |
 
 ### Multilingual Support - i18n
 
@@ -90,20 +92,7 @@ Display city and country names in your language with custom fonts from google fo
 | `--display-country` | `-dC` | Custom display name for country (e.g., "日本") |
 | `--font-family` | | Google Fonts family name (e.g., "Noto Sans JP") |
 
-**Examples:**
-
-```bash
-# Japanese
-python create_map_poster.py -c "Tokyo" -C "Japan" -dc "東京" -dC "日本" --font-family "Noto Sans JP"
-
-# Korean
-python create_map_poster.py -c "Seoul" -C "South Korea" -dc "서울" -dC "대한민국" --font-family "Noto Sans KR"
-
-# Arabic
-python create_map_poster.py -c "Dubai" -C "UAE" -dc "دبي" -dC "الإمارات" --font-family "Cairo"
-```
-
-**Note**: Fonts are automatically downloaded from Google Fonts and cached locally in `fonts/cache/`.
+**Note**: Fonts are automatically downloaded from Google Fonts and cached locally in `fonts/cache/`. See [Multilingual Examples](#multilingual-examples-non-latin-scripts) below for full usage.
 
 ### Resolution Guide (300 DPI)
 
@@ -146,8 +135,8 @@ python create_map_poster.py -c "Bangkok" -C "Thailand" -dc "กรุงเท�
 # Arabic
 python create_map_poster.py -c "Dubai" -C "UAE" -dc "دبي" -dC "الإمارات" --font-family "Cairo" -t terracotta
 
-# Chinese (Simplified)
-python create_map_poster.py -c "Beijing" -C "China" -dc "北京" -dC "中国" --font-family "Noto Sans SC"
+# Chinese (Simplified) — with viewport offset to shift map center
+python create_map_poster.py -c "Beijing" -C "China" -dc "北京" -dC "中国" --font-family "Noto Sans SC" -t contrast_zones -d 25000
 
 # Khmer
 python create_map_poster.py -c "Phnom Penh" -C "Cambodia" -dc "ភ្នំពេញ" -dC "កម្ពុជា" --font-family "Noto Sans Khmer"
@@ -186,6 +175,12 @@ python create_map_poster.py -c "Budapest" -C "Hungary" -t copper_patina -d 8000 
 # Override center coordinates
 python create_map_poster.py --city "New York" --country "USA" -lat 40.776676 -long -73.971321 -t noir
 
+# Chinese cities with new themes
+python create_map_poster.py -c "Shanghai" -C "China" -dc "上海" -dC "中国" --font-family "Noto Sans SC" -t neon_cyberpunk -d 20000
+python create_map_poster.py -c "Lhasa" -C "China" -dc "拉萨" -dC "西藏" --font-family "Noto Sans SC" -t tibetan_sky -d 20000
+python create_map_poster.py -c "Guyuan" -C "China" -dc "固原" -dC "宁夏" --font-family "Noto Sans SC" -t loess_jin -d 30000 -mx 0.167
+python create_map_poster.py -c "Qinhuangdao" -C "China" -dc "秦皇岛" -dC "河北" --font-family "Noto Sans SC" -t qinhuangdao_coast -d 40000 -my 0.25
+
 # List available themes
 python create_map_poster.py --list-themes
 
@@ -203,7 +198,9 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 
 ## Themes
 
-17 themes available in `themes/` directory:
+**47 themes** available in `themes/` directory (17 built-in + 30 Chinese city themes).
+
+### Built-in Themes (17)
 
 | Theme | Style |
 |-------|-------|
@@ -224,6 +221,12 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 | `autumn` | Seasonal burnt oranges and reds |
 | `copper_patina` | Oxidized copper aesthetic |
 | `monochrome_blue` | Single blue color family |
+
+### Chinese City Themes (30)
+
+Curated themes for Chinese geography and culture:
+
+`tibetan_sky` · `lhasa_crimson` · `gongga_glacial` · `peach_spring` · `steppe_sky` · `datong_coal` · `loess_jin` · `loess_gobi` · `jinshan_gold` · `guandi_red` · `tang_dynasty` · `ming_purple` · `sichuan_spice` · `mountain_city` · `shenzhen_tech` · `victoria_harbour` · `taihu_ink` · `min_river` · `xiamen_sea` · `lushan_mist` · `qinhuangdao_coast` · `chengde_forest` · `haihe_night` · `tengger_sand` · `spring_youth` · `grassland_blueprint` · `zhao_bronze` · `putuo_zen` · `winter_peaks` · `steppe_silver`
 
 ## Output
 
@@ -251,9 +254,23 @@ Create a JSON file in `themes/` directory:
   "road_secondary": "#2A2A2A",
   "road_tertiary": "#3A3A3A",
   "road_residential": "#4A4A4A",
-  "road_default": "#3A3A3A"
+  "road_default": "#3A3A3A",
+
+  "road_width_scale": 1.5,
+  "bg_patina": true,
+  "bg_patina_color": "#40A880",
+  "bg_top": "#1A3A6A",
+  "bg_bottom": "#0A1A3A"
 }
 ```
+
+| New Key | Type | Default | Description |
+|---------|------|---------|-------------|
+| `road_width_scale` | float | `1.0` | Multiply all road stroke widths |
+| `bg_patina` | bool | `false` | Subtle aged-texture overlay on background |
+| `bg_patina_color` | hex | `"#40A880"` | Tint color for patina (requires `bg_patina: true`) |
+| `bg_top` | hex | — | Top color of vertical background gradient |
+| `bg_bottom` | hex | — | Bottom color of vertical background gradient |
 
 ## Project Structure
 

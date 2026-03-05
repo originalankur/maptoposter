@@ -1,0 +1,16 @@
+{
+  "name": "Victoria Harbour",
+  "description": "Hong Kong harbour night — deep midnight indigo sky, warm amber neon grid streets, Victoria Harbour deep blue, East-West colonial glow",
+  "bg": "#0C0E18",
+  "gradient_color": "#0C0E18",
+  "text": "#FFD888",
+  "water": "#091628",
+  "parks": "#0A130A",
+  "road_motorway": "#FFA030",
+  "road_primary": "#E08020",
+  "road_secondary": "#C06A10",
+  "road_tertiary": "#A05808",
+  "road_residential": "#804808",
+  "road_default": "#905010",
+  "road_width_scale": 1.5
+}

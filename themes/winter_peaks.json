@@ -1,0 +1,15 @@
+{
+  "name": "Winter Peaks",
+  "description": "A windswept mountain city in deep winter — crisp ice blue roads, frozen lake water, pine-shadow green parks, cold pale snow sky",
+  "bg": "#EBF0F5",
+  "text": "#3C4E62",
+  "gradient_color": "#D4E4F0",
+  "water": "#5A8FAA",
+  "parks": "#6B8C7A",
+  "road_motorway": "#4A6F96",
+  "road_primary": "#6A8DB8",
+  "road_secondary": "#8AAACE",
+  "road_tertiary": "#A4BCDA",
+  "road_residential": "#BCC8E0",
+  "road_default": "#C8D2E4"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Gongga Glacial",
+  "description": "Garzê Tibetan Autonomous Prefecture Sichuan — deep midnight-blue glacial high altitude background, vivid glacier ice-blue waterways evoking meltwater from Gongga and Haizi Mountain snowfields, cool pale jade-green alpine meadow parks, silver-white glacial road network of ancient tea-horse caravan routes, crisp white text",
+  "bg": "#060C14",
+  "gradient_color": "#060C14",
+  "text": "#E8F4FF",
+  "water": "#1870C0",
+  "parks": "#0E3820",
+  "road_motorway": "#C8E8FF",
+  "road_primary": "#A0C8E8",
+  "road_secondary": "#78A8C8",
+  "road_tertiary": "#5888A8",
+  "road_residential": "#3A6888",
+  "road_default": "#487898",
+  "road_width_scale": 1.5
+}

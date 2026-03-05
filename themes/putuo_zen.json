@@ -1,0 +1,16 @@
+{
+  "name": "Putuo Zen",
+  "description": "Buddhist island floating in Eastern Sea — ocean blue surrounds, golden temple paths glow on the island, bamboo forest green, jade bay waters",
+  "bg": "#2E6E92",
+  "text": "#F5EDD0",
+  "gradient_color": "#2E6E92",
+  "water": "#1A3F5C",
+  "parks": "#3D7A48",
+  "road_motorway": "#FFE070",
+  "road_primary": "#F5CF54",
+  "road_secondary": "#E8BC3E",
+  "road_tertiary": "#D8A830",
+  "road_residential": "#C89828",
+  "road_default": "#D8A830",
+  "road_width_scale": 2.2
+}

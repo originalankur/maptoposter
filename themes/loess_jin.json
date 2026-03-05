@@ -1,0 +1,18 @@
+{
+  "name": "Loess Jin",
+  "description": "Jinzhong Shanxi — warm loess-earth dark background, organic mottled yellow-ochre patina evoking ancient rammed earth walls, deep indigo waterways, bright loess-yellow golden road network tracing Jin merchant routes, parchment text",
+  "bg": "#120E08",
+  "gradient_color": "#120E08",
+  "text": "#E8D0A0",
+  "water": "#1A2D4A",
+  "parks": "#201C08",
+  "bg_patina": true,
+  "bg_patina_color": "#8A6428",
+  "road_motorway": "#E0A020",
+  "road_primary": "#C08820",
+  "road_secondary": "#A07020",
+  "road_tertiary": "#805A18",
+  "road_residential": "#604818",
+  "road_default": "#705418",
+  "road_width_scale": 1.5
+}

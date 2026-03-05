@@ -1,0 +1,15 @@
+{
+  "name": "Spring Youth",
+  "description": "Early spring in a youthful city — cherry blossom pinks, fresh lavender roads, soft spring morning light",
+  "bg": "#F2EEE8",
+  "text": "#7A6878",
+  "gradient_color": "#E8DFF0",
+  "water": "#7AB5C8",
+  "parks": "#A8C89A",
+  "road_motorway": "#C484A0",
+  "road_primary": "#D4A0B8",
+  "road_secondary": "#B8A8D0",
+  "road_tertiary": "#C8C0DC",
+  "road_residential": "#DDD4E4",
+  "road_default": "#CCBFD8"
+}

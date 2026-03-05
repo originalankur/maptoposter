@@ -1,0 +1,16 @@
+{
+  "name": "Tang Dynasty",
+  "description": "Xi'an ancient capital — deep cinnabar city walls at night, molten gold boulevard paths, jade pool water, verdant imperial garden parks",
+  "bg": "#1A0E08",
+  "text": "#F2DFA0",
+  "gradient_color": "#1A0E08",
+  "water": "#1C3040",
+  "parks": "#0F2010",
+  "road_motorway": "#F0C040",
+  "road_primary": "#D8A828",
+  "road_secondary": "#C09018",
+  "road_tertiary": "#A87810",
+  "road_residential": "#8C6010",
+  "road_default": "#966C12",
+  "road_width_scale": 1.5
+}
