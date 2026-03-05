@@ -1,0 +1,18 @@
+{
+  "name": "Tibetan Sky",
+  "description": "High-altitude Lhasa plateau — sky blue heaven meets pure grassland earth, crystalline cerulean roads, vivid blue rivers, a vertical split where altitude talks to soil",
+  "bg": "#5AAAD8",
+  "bg_top": "#0A5FC8",
+  "bg_bottom": "#1A9420",
+  "text": "#F0F8EE",
+  "gradient_color": "#2288D8",
+  "water": "#0460B0",
+  "parks": "#28AA28",
+  "road_motorway": "#FFFFFF",
+  "road_primary": "#E8F8FF",
+  "road_secondary": "#C8EAD8",
+  "road_tertiary": "#AADCC0",
+  "road_residential": "#90CCA8",
+  "road_default": "#AADCC0",
+  "road_width_scale": 1.8
+}

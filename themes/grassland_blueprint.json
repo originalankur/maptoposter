@@ -1,0 +1,15 @@
+{
+  "name": "Grassland Blueprint",
+  "description": "Inner Mongolian steppe as a blueprint — deep forest dark as the base, glowing grass-green roads from sunlit motorway shimmer down to shadowed meadow lanes",
+  "bg": "#1A3C1A",
+  "text": "#E0F4D0",
+  "gradient_color": "#1A3C1A",
+  "water": "#102812",
+  "parks": "#204C20",
+  "road_motorway": "#D8F2B8",
+  "road_primary": "#B0D888",
+  "road_secondary": "#88BC60",
+  "road_tertiary": "#64A040",
+  "road_residential": "#488830",
+  "road_default": "#64A040"
+}

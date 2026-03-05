@@ -1,0 +1,15 @@
+{
+  "name": "Loess Gobi",
+  "description": "Arid northwest China — bleached desert sand, sparse Gobi roads, warm sun over wide open land",
+  "bg": "#F0E5C0",
+  "text": "#8C8272",
+  "gradient_color": "#DED0A0",
+  "water": "#7A9FB5",
+  "parks": "#C8BD80",
+  "road_motorway": "#C4850A",
+  "road_primary": "#D4970A",
+  "road_secondary": "#E0AD30",
+  "road_tertiary": "#DBBB52",
+  "road_residential": "#D8C880",
+  "road_default": "#CCBA70"
+}

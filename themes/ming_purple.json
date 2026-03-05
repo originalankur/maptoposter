@@ -1,0 +1,16 @@
+{
+  "name": "Ming Dynasty Purple",
+  "description": "Nanjing ancient capital — deep imperial purple night on the Purple Mountain, jade Xuanwu Lake water, Ming city wall silhouette, warm gold palace road veins",
+  "bg": "#130C1E",
+  "text": "#EDD8A0",
+  "gradient_color": "#130C1E",
+  "water": "#1A2E40",
+  "parks": "#0E1A10",
+  "road_motorway": "#FFEEA0",
+  "road_primary": "#F0D870",
+  "road_secondary": "#D8C050",
+  "road_tertiary": "#C0A838",
+  "road_residential": "#A89028",
+  "road_default": "#B09830",
+  "road_width_scale": 1.5
+}

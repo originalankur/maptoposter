@@ -1,0 +1,18 @@
+{
+  "name": "Zhao Bronze",
+  "description": "Handan Warring States capital — deep dark olive-teal bg, organic mottled dark-umber patina texture, bright oxidized bronze-green motorways, warm golden-copper primaries",
+  "bg": "#060806",
+  "gradient_color": "#060806",
+  "text": "#D8C870",
+  "water": "#0A1520",
+  "parks": "#081208",
+  "bg_patina": true,
+  "bg_patina_color": "#7A3E18",
+  "road_motorway": "#3DA882",
+  "road_primary": "#D49A20",
+  "road_secondary": "#B88018",
+  "road_tertiary": "#A07218",
+  "road_residential": "#886018",
+  "road_default": "#906818",
+  "road_width_scale": 1.6
+}

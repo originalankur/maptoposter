@@ -1,0 +1,16 @@
+{
+  "name": "Mountain City",
+  "description": "Chongqing misty mountain city — deep slate fog night, neon orange-red streets glowing through rain haze, Jialing River deep blue, hillside forest dark green",
+  "bg": "#141820",
+  "text": "#F0DFC0",
+  "gradient_color": "#141820",
+  "water": "#1A2E48",
+  "parks": "#101C12",
+  "road_motorway": "#FF7830",
+  "road_primary": "#E86018",
+  "road_secondary": "#D05010",
+  "road_tertiary": "#B84010",
+  "road_residential": "#9C3410",
+  "road_default": "#A83C10",
+  "road_width_scale": 1.5
+}

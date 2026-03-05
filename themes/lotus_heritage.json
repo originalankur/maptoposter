@@ -1,0 +1,16 @@
+{
+  "name": "Lotus Heritage",
+  "description": "Baoding ancient capital — deep indigo ink night, warm amber lamplight on historic streets, lotus pond jade water, vermillion city gates",
+  "bg": "#12131F",
+  "text": "#F0E8C8",
+  "gradient_color": "#12131F",
+  "water": "#1C3A52",
+  "parks": "#142A1A",
+  "road_motorway": "#E8A840",
+  "road_primary": "#D49830",
+  "road_secondary": "#C08820",
+  "road_tertiary": "#A87018",
+  "road_residential": "#8C5C14",
+  "road_default": "#9A6818",
+  "road_width_scale": 1.6
+}

@@ -1,0 +1,17 @@
+{
+  "_name": "Jinshan Gold",
+  "_description": "Taiyuan, Shanxi — deep vermilion-black background evoking ancient Jin culture and mountain temples, brilliant gold road network like sunset over the Taihang Mountains, crimson waterways echoing the Fen River",
+  "bg": "#1A0808",
+  "gradient_color": "#1A0808",
+  "text": "#F8D880",
+  "water": "#C82828",
+  "parks": "#1E4018",
+  "bg_patina": true,
+  "road_motorway": "#FFD040",
+  "road_primary": "#E0B030",
+  "road_secondary": "#C09020",
+  "road_tertiary": "#A07018",
+  "road_residential": "#805010",
+  "road_default": "#604010",
+  "road_width_scale": 2.0
+}

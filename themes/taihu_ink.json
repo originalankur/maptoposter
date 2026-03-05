@@ -1,0 +1,16 @@
+{
+  "name": "Taihu Ink",
+  "description": "Wuxi Taihu lakeshore — deep navy sky, vivid deep-blue lake Taihu, rich forest green parks, jade-green road network evoking Jiangnan silk paths",
+  "bg": "#0A1520",
+  "gradient_color": "#0A1520",
+  "text": "#C8E8D0",
+  "water": "#1A5E8A",
+  "parks": "#1A5A2E",
+  "road_motorway": "#88D8A8",
+  "road_primary": "#68B888",
+  "road_secondary": "#50987A",
+  "road_tertiary": "#407868",
+  "road_residential": "#306058",
+  "road_default": "#386860",
+  "road_width_scale": 1.5
+}

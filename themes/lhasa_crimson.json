@@ -1,0 +1,18 @@
+{
+  "name": "Lhasa Crimson",
+  "description": "Chamdo Kham Tibet — deep ink-black high plateau night, vivid Potala Palace crimson-red waterways evoking the red walls of sacred temples, blazing golden road network of pilgrimage routes, mottled aged plaster patina texture, bright gold text",
+  "bg": "#0A0806",
+  "gradient_color": "#0A0806",
+  "text": "#F4D860",
+  "water": "#BB2020",
+  "parks": "#7A1818",
+  "bg_patina": false,
+  "bg_patina_color": "#7A2010",
+  "road_motorway": "#F2C000",
+  "road_primary": "#D4A000",
+  "road_secondary": "#B08200",
+  "road_tertiary": "#906800",
+  "road_residential": "#704E00",
+  "road_default": "#805800",
+  "road_width_scale": 1.5
+}

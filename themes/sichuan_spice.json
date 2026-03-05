@@ -1,0 +1,16 @@
+{
+  "name": "Sichuan Spice",
+  "description": "Chengdu teahouse warmth — deep aged tea brown night, fiery Sichuan pepper roads glowing like lanterns, bamboo forest green parks, jade creek water",
+  "bg": "#160C06",
+  "text": "#F5E8C8",
+  "gradient_color": "#160C06",
+  "water": "#1C3830",
+  "parks": "#162A16",
+  "road_motorway": "#FF6B35",
+  "road_primary": "#E85828",
+  "road_secondary": "#CC4818",
+  "road_tertiary": "#B03810",
+  "road_residential": "#943008",
+  "road_default": "#A0340C",
+  "road_width_scale": 1.5
+}

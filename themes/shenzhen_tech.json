@@ -1,0 +1,16 @@
+{
+  "name": "Shenzhen Tech",
+  "description": "Shenzhen Bay Area innovation city — deep midnight navy night, electric cyan-teal tech grid streets, innovation corridor glow, Shenzhen Bay deep blue water",
+  "bg": "#0A1428",
+  "text": "#C8F0F8",
+  "gradient_color": "#0A1428",
+  "water": "#0C2040",
+  "parks": "#0A1A10",
+  "road_motorway": "#40F0E0",
+  "road_primary": "#30D8C8",
+  "road_secondary": "#20C0B0",
+  "road_tertiary": "#18A898",
+  "road_residential": "#108880",
+  "road_default": "#149088",
+  "road_width_scale": 1.5
+}
