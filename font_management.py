@@ -34,6 +34,34 @@ def download_google_font(font_family: str, weights: list = None) -> Optional[dic
 
     font_files = {}
 
+    # --- Fast path: if all weight files already in cache, skip API request ---
+    weight_map_early = {300: "light", 400: "regular", 700: "bold"}
+    all_cached = True
+    for w in weights:
+        key = weight_map_early.get(w, "regular")
+        # Try both .ttf and .woff2
+        found = False
+        for ext in ("ttf", "woff2"):
+            fp = FONTS_CACHE_DIR / f"{font_name_safe}_{key}.{ext}"
+            if fp.exists():
+                font_files[key] = str(fp)
+                found = True
+                break
+        if not found:
+            all_cached = False
+            break
+
+    if all_cached and len(font_files) >= len(weights):
+        for key in font_files:
+            print(f"  Using cached {font_family} {key}")
+        # Fill in missing weight aliases
+        if "bold" not in font_files and "regular" in font_files:
+            font_files["bold"] = font_files["regular"]
+        if "light" not in font_files and "regular" in font_files:
+            font_files["light"] = font_files["regular"]
+        return font_files
+    # -------------------------------------------------------------------------
+
     try:
         # Google Fonts API endpoint - request all weights at once
         weights_str = ";".join(map(str, weights))

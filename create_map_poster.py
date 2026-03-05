@@ -10,6 +10,7 @@ high-quality poster-ready images with roads, water features, and parks.
 import argparse
 import asyncio
 import json
+import math
 import os
 import pickle
 import sys
@@ -31,6 +32,15 @@ from shapely.geometry import Point
 from tqdm import tqdm
 
 from font_management import load_fonts
+
+# Configure osmnx to respect HTTP_PROXY / HTTPS_PROXY environment variables
+# (needed for SOCKS5 proxies in corporate/school networks)
+_proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
+if _proxy:
+    ox.settings.requests_kwargs = {"proxies": {"http": _proxy, "https": _proxy}}
+ox.settings.timeout = 600          # Overpass QL server-side [timeout:N] param
+ox.settings.requests_timeout = 600  # HTTP client read timeout (actual network timeout)
+ox.settings.overpass_rate_limit = False  # Skip /status check — avoids hanging on status endpoint
 
 
 class CacheError(Exception):
@@ -199,7 +209,7 @@ def load_theme(theme_name="terracotta"):
             "road_default": "#D9A08A",
         }
 
-    with open(theme_file, "r", encoding=FILE_ENCODING) as f:
+    with open(theme_file, "r", encoding="utf-8-sig") as f:
         theme = json.load(f)
         print(f"✓ Loaded theme: {theme.get('name', theme_name)}")
         if "description" in theme:
@@ -213,42 +223,121 @@ THEME = dict[str, str]()  # Will be loaded later
 
 def create_gradient_fade(ax, color, location="bottom", zorder=10):
     """
-    Creates a fade effect at the top or bottom of the map.
+    Creates a perfectly smooth fade effect at the top or bottom of the map.
+    Uses a direct RGBA image array (no colormap quantisation) for banding-free gradients.
     """
-    vals = np.linspace(0, 1, 256).reshape(-1, 1)
-    gradient = np.hstack((vals, vals))
-
+    N = 1024  # rows in the gradient image — high enough for smooth output
     rgb = mcolors.to_rgb(color)
-    my_colors = np.zeros((256, 4))
-    my_colors[:, 0] = rgb[0]
-    my_colors[:, 1] = rgb[1]
-    my_colors[:, 2] = rgb[2]
+
+    # Build RGBA image: shape (N, 2, 4)
+    img = np.zeros((N, 2, 4), dtype=np.float32)
+    img[:, :, 0] = rgb[0]
+    img[:, :, 1] = rgb[1]
+    img[:, :, 2] = rgb[2]
 
     if location == "bottom":
-        my_colors[:, 3] = np.linspace(1, 0, 256)
-        extent_y_start = 0
+        # bottom: opaque → transparent (rows 0..N-1 map to alpha 1..0)
+        alpha = np.linspace(1.0, 0.0, N)
+        extent_y_start = 0.0
         extent_y_end = 0.25
     else:
-        my_colors[:, 3] = np.linspace(0, 1, 256)
+        # top: transparent → opaque
+        alpha = np.linspace(0.0, 1.0, N)
         extent_y_start = 0.75
         extent_y_end = 1.0
 
-    custom_cmap = mcolors.ListedColormap(my_colors)
+    img[:, :, 3] = alpha[:, np.newaxis]
 
     xlim = ax.get_xlim()
     ylim = ax.get_ylim()
     y_range = ylim[1] - ylim[0]
-
     y_bottom = ylim[0] + y_range * extent_y_start
-    y_top = ylim[0] + y_range * extent_y_end
+    y_top    = ylim[0] + y_range * extent_y_end
 
     ax.imshow(
-        gradient,
+        img,
         extent=[xlim[0], xlim[1], y_bottom, y_top],
         aspect="auto",
-        cmap=custom_cmap,
         zorder=zorder,
         origin="lower",
+        interpolation="bilinear",
+    )
+
+
+def create_patina_texture(ax, base_color, zorder=0.05, seed=42):
+    """
+    Overlays an organic mottled patina / verdigris texture on the background.
+    Uses Gaussian-blurred multi-frequency noise to create natural, irregular
+    blotch shapes (no grid/block artefacts).
+
+    base_color : hex/name – the colour tint of the patina patches
+    """
+    from scipy.ndimage import gaussian_filter
+
+    rng = np.random.default_rng(seed)
+    H, W = 768, 576  # internal texture resolution
+
+    # Two large-scale layers only — wide sigma for broad organic blotches
+    layer_huge  = gaussian_filter(rng.random((H, W)).astype(np.float32), sigma=120)
+    layer_large = gaussian_filter(rng.random((H, W)).astype(np.float32), sigma=50)
+
+    combined = layer_huge * 0.70 + layer_large * 0.30
+
+    # Normalise to [0, 1]
+    lo, hi = combined.min(), combined.max()
+    combined = (combined - lo) / (hi - lo + 1e-8)
+
+    # Threshold: only keep the top ~50% so patches are distinct, not a wash
+    combined = np.clip((combined - 0.45) / 0.55, 0, 1)
+
+    # Build RGBA image: base_color modulates the tint, alpha carries the mask
+    r, g, b = mcolors.to_rgb(base_color)
+    tex = np.zeros((H, W, 4), dtype=np.float32)
+    tex[:, :, 0] = r
+    tex[:, :, 1] = g
+    tex[:, :, 2] = b
+    tex[:, :, 3] = combined * 0.30   # max 30% opacity — subtle but visible
+
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+    ax.imshow(
+        tex,
+        extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
+        aspect="auto",
+        zorder=zorder,
+        origin="upper",
+        interpolation="bilinear",
+    )
+
+
+def create_bg_gradient(ax, color_top, color_bottom, zorder=0.1):
+    """
+    Creates a full-canvas vertical background gradient.
+    color_top is drawn at the top of the plot, color_bottom at the bottom.
+    Uses a low zorder so it sits above the solid facecolor but below all map layers.
+    """
+    n = 2048
+    # shape (n_rows, 2_cols, 4_channels); row 0 = bottom of image (origin='lower')
+    t_vals = np.linspace(0.0, 1.0, n)          # 0 = bottom colour, 1 = top colour
+
+    rgb_top = np.array(mcolors.to_rgb(color_top),  dtype=np.float32)
+    rgb_bot = np.array(mcolors.to_rgb(color_bottom), dtype=np.float32)
+
+    gradient_data = np.zeros((n, 2, 4), dtype=np.float32)
+    gradient_data[:, :, :3] = (rgb_bot[None, None, :] * (1 - t_vals[:, None, None])
+                                + rgb_top[None, None, :] * t_vals[:, None, None])
+    gradient_data[:, :, 3] = 1.0   # fully opaque
+
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+
+    ax.imshow(
+        gradient_data,
+        extent=[xlim[0], xlim[1], ylim[0], ylim[1]],
+        aspect="auto",
+        zorder=zorder,
+        origin="lower",
+        interpolation="bilinear",
     )
 
 
@@ -290,8 +379,10 @@ def get_edge_widths_by_type(g):
     """
     Assigns line widths to edges based on road type.
     Major roads get thicker lines.
+    Multiplied by THEME['road_width_scale'] if set.
     """
     edge_widths = []
+    scale = float(THEME.get("road_width_scale", 1.0))
 
     for _u, _v, data in g.edges(data=True):
         highway = data.get('highway', 'unclassified')
@@ -311,7 +402,7 @@ def get_edge_widths_by_type(g):
         else:
             width = 0.4
 
-        edge_widths.append(width)
+        edge_widths.append(width * scale)
 
     return edge_widths
 
@@ -370,10 +461,16 @@ def get_coordinates(city, country):
     raise ValueError(f"Could not find coordinates for {city}, {country}")
 
 
-def get_crop_limits(g_proj, center_lat_lon, fig, dist):
+def get_crop_limits(g_proj, center_lat_lon, fig, dist, text_area_frac: float = 0.05,
+                    x_offset_frac: float = 0.0, y_offset_frac: float = 0.0):
     """
     Crop inward to preserve aspect ratio while guaranteeing
     full coverage of the requested radius.
+
+    text_area_frac: fraction of figure height to compensate for bottom text block.
+                   0.05 = center at y=52.5% (default, slight upward bias).
+    x_offset_frac:  positive → crop window shifts LEFT → geo-centre moves RIGHT in poster.
+    y_offset_frac:  positive → crop window shifts UP   → geo-centre moves DOWN  in poster.
     """
     lat, lon = center_lat_lon
 
@@ -400,9 +497,17 @@ def get_crop_limits(g_proj, center_lat_lon, fig, dist):
     else:  # portrait → reduce width
         half_x = half_y * aspect
 
+    # Shift the crop window downward so the geographic centre sits at the
+    # visual mid-point of the area above the bottom text block.
+    # text_area_frac: negative y_shift raises centre slightly above 50%.
+    # y_offset_frac:  positive y_shift pushes window upward → centre appears lower.
+    # x_offset_frac:  negative x_shift slides window leftward → centre appears righter.
+    y_shift = -half_y * text_area_frac + half_y * y_offset_frac
+    x_shift = -half_x * x_offset_frac
+
     return (
-        (center_x - half_x, center_x + half_x),
-        (center_y - half_y, center_y + half_y),
+        (center_x - half_x + x_shift, center_x + half_x + x_shift),
+        (center_y - half_y + y_shift, center_y + half_y + y_shift),
     )
 
 
@@ -427,6 +532,11 @@ def fetch_graph(point, dist) -> MultiDiGraph | None:
         print("✓ Using cached street network")
         return cast(MultiDiGraph, cached)
 
+    # Apply a hard read-timeout so slow Overpass streams don't hang forever.
+    # ox.settings.requests_timeout is the actual HTTP request timeout used by osmnx.
+    # ox.settings.timeout only controls the Overpass QL [timeout:N] server-side setting.
+    original_requests_timeout = ox.settings.requests_timeout
+    ox.settings.requests_timeout = 600  # 10 minutes max for street network
     try:
         g = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all', truncate_by_edge=True)
         # Rate limit between requests
@@ -437,11 +547,19 @@ def fetch_graph(point, dist) -> MultiDiGraph | None:
             print(e)
         return g
     except Exception as e:
-        print(f"OSMnx error while fetching graph: {e}")
+        err_str = str(e).lower()
+        if any(kw in err_str for kw in ("timed out", "timeout", "read timed",
+                                         "time out", "readtimeout", "connectiontimeout")):
+            print(f"⚠ Street network download timed out — skipping (poster will render without roads)")
+        else:
+            print(f"OSMnx error while fetching graph: {e}")
         return None
+    finally:
+        ox.settings.requests_timeout = original_requests_timeout
 
 
-def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
+def fetch_features(point, dist, tags, name, max_dist: int | None = None,
+                   timeout: int | None = None) -> GeoDataFrame | None:
     """
     Fetch geographic features (water, parks, etc.) from OpenStreetMap.
 
@@ -453,30 +571,79 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
         dist: Distance in meters from center point
         tags: Dictionary of OSM tags to filter features
         name: Name for this feature type (for caching and logging)
+        timeout: Optional per-request timeout in seconds. If specified, overrides
+                 the global ox.settings.timeout for this fetch only, and also
+                 injects a read-timeout into requests_kwargs so that slow/hung
+                 HTTP responses are aborted.  If the request times out the layer
+                 is skipped gracefully.
 
     Returns:
         GeoDataFrame of features, or None if fetch fails
     """
     lat, lon = point
+    effective_dist = min(dist, max_dist) if max_dist is not None else dist
     tag_str = "_".join(tags.keys())
-    features = f"{name}_{lat}_{lon}_{dist}_{tag_str}"
+    features = f"{name}_{lat}_{lon}_{effective_dist}_{tag_str}"
     cached = cache_get(features)
     if cached is not None:
         print(f"✓ Using cached {name}")
         return cast(GeoDataFrame, cached)
 
+    # Temporarily override osmnx HTTP timeout.
+    # ox.settings.requests_timeout is the actual HTTP request timeout.
+    # ox.settings.timeout only sets the Overpass QL [timeout:N] server-side param.
+    original_requests_timeout = ox.settings.requests_timeout
+    if timeout is not None:
+        ox.settings.requests_timeout = timeout
+
+    def _do_fetch() -> GeoDataFrame:
+        return ox.features_from_point(point, tags=tags, dist=effective_dist)
+
     try:
-        data = ox.features_from_point(point, tags=tags, dist=dist)
-        # Rate limit between requests
-        time.sleep(0.3)
-        try:
-            cache_set(features, data)
-        except CacheError as e:
-            print(e)
-        return data
-    except Exception as e:
-        print(f"OSMnx error while fetching features: {e}")
-        return None
+        for attempt in range(2):  # 2 attempts when timeout is short
+            try:
+                if timeout is not None:
+                    # Use thread-based wall-clock timeout to cut off hung Overpass streams.
+                    # shutdown(wait=False) so we don't block waiting for the background
+                    # thread even after the timeout fires.
+                    import concurrent.futures
+                    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                    try:
+                        future = executor.submit(_do_fetch)
+                        try:
+                            data = future.result(timeout=timeout)
+                        except concurrent.futures.TimeoutError:
+                            print(f"⚠ {name} download timed out — skipping layer (poster will render without it)")
+                            executor.shutdown(wait=False)
+                            return None
+                    finally:
+                        executor.shutdown(wait=False)
+                else:
+                    data = _do_fetch()
+                # Rate limit between requests
+                time.sleep(0.3)
+                try:
+                    cache_set(features, data)
+                except CacheError as e:
+                    print(e)
+                return data
+            except Exception as e:
+                err_str = str(e).lower()
+                # Detect timeout-related errors — treat as non-retriable
+                if any(kw in err_str for kw in ("timed out", "timeout", "read timed",
+                                                 "time out", "readtimeout", "connectiontimeout")):
+                    print(f"⚠ {name} download timed out — skipping layer (poster will render without it)")
+                    return None
+                if attempt < 1:
+                    print(f"OSMnx retry {attempt+1}/2 for {name}: {e}")
+                    time.sleep(5 * (attempt + 1))
+                else:
+                    print(f"OSMnx error while fetching features: {e}")
+                    return None
+    finally:
+        # Always restore the original settings
+        ox.settings.requests_timeout = original_requests_timeout
+    return None
 
 
 def create_poster(
@@ -493,6 +660,8 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    map_x_offset=0.0,
+    map_y_offset=0.0,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -532,7 +701,21 @@ def create_poster(
         # 1. Fetch Street Network
         pbar.set_description("Downloading street network")
         compensated_dist = dist * (max(height, width) / min(height, width)) / 4  # To compensate for viewport crop
-        g = fetch_graph(point, compensated_dist)
+        # When map is offset, shift the fetch center so the offset region is covered.
+        # map_y_offset > 0 means content shifts DOWN → viewport looks NORTH → move fetch center north.
+        # map_x_offset > 0 means content shifts RIGHT → viewport looks WEST → move fetch center west.
+        lat_shift_m = map_y_offset * compensated_dist   # positive y_offset → look north → lat+
+        lon_shift_m = -map_x_offset * compensated_dist  # positive x_offset → look west → lon-
+        meters_per_deg_lat = 111320.0
+        meters_per_deg_lon = 111320.0 * abs(math.cos(math.radians(point[0])))
+        fetch_point = (
+            point[0] + lat_shift_m / meters_per_deg_lat,
+            point[1] + lon_shift_m / meters_per_deg_lon,
+        )
+        # Also expand radius slightly to ensure full coverage around shifted center
+        offset_extra = max(abs(map_x_offset), abs(map_y_offset)) * 0.5
+        fetch_dist = compensated_dist * (1 + offset_extra)
+        g = fetch_graph(fetch_point, fetch_dist)
         if g is None:
             raise RuntimeError("Failed to retrieve street network data.")
         pbar.update(1)
@@ -540,29 +723,34 @@ def create_poster(
         # 2. Fetch Water Features
         pbar.set_description("Downloading water features")
         water = fetch_features(
-            point,
-            compensated_dist,
+            fetch_point,
+            fetch_dist,
             tags={"natural": ["water", "bay", "strait"], "waterway": "riverbank"},
             name="water",
+            timeout=60,
         )
         pbar.update(1)
 
         # 3. Fetch Parks
         pbar.set_description("Downloading parks/green spaces")
         parks = fetch_features(
-            point,
-            compensated_dist,
+            fetch_point,
+            fetch_dist,
             tags={"leisure": "park", "landuse": "grass"},
             name="parks",
+            max_dist=4000,
+            timeout=60,
         )
         pbar.update(1)
+
 
     print("✓ All data retrieved successfully!")
 
     # 2. Setup Plot
     print("Rendering map...")
-    fig, ax = plt.subplots(figsize=(width, height), facecolor=THEME["bg"])
-    ax.set_facecolor(THEME["bg"])
+    bg_color = THEME["bg"]
+    fig, ax = plt.subplots(figsize=(width, height), facecolor=bg_color)
+    ax.set_facecolor(bg_color)
     ax.set_position((0.0, 0.0, 1.0, 1.0))
 
     # Project graph to a metric CRS so distances and aspect are linear (meters)
@@ -597,10 +785,12 @@ def create_poster(
     edge_widths = get_edge_widths_by_type(g_proj)
 
     # Determine cropping limits to maintain the poster aspect ratio
-    crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
+    crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist,
+                                            x_offset_frac=map_x_offset,
+                                            y_offset_frac=map_y_offset)
     # Plot the projected graph and then apply the cropped limits
     ox.plot_graph(
-        g_proj, ax=ax, bgcolor=THEME['bg'],
+        g_proj, ax=ax, bgcolor=bg_color,
         node_size=0,
         edge_color=edge_colors,
         edge_linewidth=edge_widths,
@@ -611,9 +801,22 @@ def create_poster(
     ax.set_xlim(crop_xlim)
     ax.set_ylim(crop_ylim)
 
+    # Optional background gradient (triggered by bg_top + bg_bottom in theme)
+    if THEME.get("bg_top") and THEME.get("bg_bottom"):
+        create_bg_gradient(ax, THEME["bg_top"], THEME["bg_bottom"], zorder=0.1)
+
+    # Optional patina / mottled texture overlay (triggered by bg_patina in theme)
+    if THEME.get("bg_patina"):
+        patina_color = THEME.get("bg_patina_color") or THEME.get("road_motorway") or "#40A880"
+        create_patina_texture(ax, patina_color, zorder=0.08)
+
     # Layer 3: Gradients (Top and Bottom)
-    create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
-    create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
+    # When bg_top/bg_bottom are set, use them for the fade so colours are consistent
+    _default_fade = THEME["gradient_color"]
+    fade_top_color = THEME.get("bg_top") or _default_fade
+    fade_bottom_color = THEME.get("bg_bottom") or _default_fade
+    create_gradient_fade(ax, fade_bottom_color, location='bottom', zorder=10)
+    create_gradient_fade(ax, fade_top_color, location='top', zorder=10)
 
     # Calculate scale factor based on smaller dimension (reference 12 inches)
     # This ensures text scales properly for both portrait and landscape orientations
@@ -843,7 +1046,7 @@ def list_themes():
     for theme_name in available_themes:
         theme_path = os.path.join(THEMES_DIR, f"{theme_name}.json")
         try:
-            with open(theme_path, "r", encoding=FILE_ENCODING) as f:
+            with open(theme_path, "r", encoding="utf-8-sig") as f:
                 theme_data = json.load(f)
                 display_name = theme_data.get('name', theme_name)
                 description = theme_data.get('description', '')
@@ -955,6 +1158,22 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--map-x-offset",
+        "-mx",
+        dest="map_x_offset",
+        type=float,
+        default=0.0,
+        help="Horizontal map offset fraction (positive → content shifts right in poster, default: 0.0)",
+    )
+    parser.add_argument(
+        "--map-y-offset",
+        "-my",
+        dest="map_y_offset",
+        type=float,
+        default=0.0,
+        help="Vertical map offset fraction (positive → content shifts down in poster, default: 0.0)",
+    )
 
     args = parser.parse_args()
 
@@ -1037,6 +1256,8 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                map_x_offset=args.map_x_offset,
+                map_y_offset=args.map_y_offset,
             )
 
         print("\n" + "=" * 50)
