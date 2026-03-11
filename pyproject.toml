@@ -24,8 +24,11 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = [ "hatchling" ]
+build-backend = "hatchling.build"
 
-[tool.setuptools]
-py-modules = ["create_map_poster"]
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[project.scripts]
+maptoposter = "create_map_poster:main"
