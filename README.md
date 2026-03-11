@@ -354,6 +354,7 @@ except:
 
 # Then plot before roads:
 if railways is not None and not railways.empty:
+    railways = railways.to_crs(g_proj.graph["crs"])
     railways.plot(ax=ax, color=THEME['railway'], linewidth=0.5, zorder=2.5)
 ```
 
