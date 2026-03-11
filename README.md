@@ -22,20 +22,84 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 ## Installation
 
-### With uv (Recommended)
+### 1. Using `uv` (Recommended)
 
-Make sure [uv](https://docs.astral.sh/uv/) is installed. Running the script by prepending `uv run` automatically creates and manages a virtual environment.
+The easiest and fastest way to run **maptoposter** is with [`uv`](https://docs.astral.sh/uv/), which automatically manages dependencies and virtual environments.
+
+Install `uv` first, then choose one of the following options.
+
+---
+
+#### Run instantly with `uvx`
+
+Use `uvx` if you just want to run the tool without installing it permanently.
 
 ```bash
-# First run will automatically install dependencies
-uv run ./create_map_poster.py --city "Paris" --country "France"
+uvx --from https://github.com/originalankur/maptoposter \
+  maptoposter --city "Paris" --country "France"
+```
 
-# Or sync dependencies explicitly first (using locked versions)
+`uvx` will automatically download the project, install dependencies, and run the command.
+
+---
+
+#### Install as a reusable CLI (`uv tool install`)
+
+If you plan to use the tool frequently, install it as a CLI command:
+
+```bash
+uv tool install git+https://github.com/originalankur/maptoposter
+```
+
+Then run it anywhere:
+
+```bash
+maptoposter --city "Paris" --country "France"
+```
+
+---
+
+### 2. Local Installation
+
+If you want to run or modify the project locally, clone the repository.
+
+#### 2.1 Clone the repository
+
+```bash
+git clone https://github.com/originalankur/maptoposter
+cd maptoposter
+```
+
+You can then run it in several ways.
+
+---
+
+##### Run directly with `uv run`
+
+`uv run` automatically creates and manages a virtual environment.
+
+```bash
+uv run ./create_map_poster.py --city "Paris" --country "France"
+```
+
+Dependencies will be installed automatically on first run.
+
+---
+
+##### Sync dependencies first (`uv sync`)
+
+If you want reproducible environments using the locked versions:
+
+```bash
 uv sync --locked
 uv run ./create_map_poster.py --city "Paris" --country "France"
 ```
 
-### With pip + venv
+---
+
+##### Using `pip` + `venv`
+
+Alternatively, you can install dependencies manually.
 
 ```bash
 python -m venv .venv
@@ -43,19 +107,55 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Usage
+Then run the script:
 
-### Generate Poster
+```bash
+python create_map_poster.py --city "Paris" --country "France"
+```
 
-If you're using `uv`:
+---
+
+## Usage (Poster Generation)
+
+After installation, generate a map poster using the preferred CLI or method.
+
+### Using the `maptoposter` CLI (Recommended)
+
+If you installed the CLI via `uv tool install`, you can run:
+
+```bash
+maptoposter --city <city> --country <country> [options]
+```
+
+Example:
+
+```bash
+maptoposter --city "Paris" --country "France"
+```
+
+---
+
+### Using `uv run` (without permanent installation)
 
 ```bash
 uv run ./create_map_poster.py --city <city> --country <country> [options]
 ```
 
-Otherwise (pip + venv):
+You can optionally sync dependencies first for reproducible versions:
 
 ```bash
+uv sync --locked
+uv run ./create_map_poster.py --city <city> --country <country>
+```
+
+---
+
+### 3.3 Using `pip` + `venv` (Manual setup)
+
+```bash
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 python create_map_poster.py --city <city> --country <country> [options]
 ```
 
