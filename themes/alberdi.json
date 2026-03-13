@@ -1,0 +1,15 @@
+{
+  "name": "Alberdi",
+  "description": "Warm cream with bold dark streets and teal-highlighted avenues",
+  "bg": "#F5EDE4",
+  "text": "#8B4513",
+  "gradient_color": "#F5EDE4",
+  "water": "#7BAFC4",
+  "parks": "#D6DEAD",
+  "road_motorway": "#1A5276",
+  "road_primary": "#1A6B5A",
+  "road_secondary": "#1F8A70",
+  "road_tertiary": "#6B3A2A",
+  "road_residential": "#8B6B5A",
+  "road_default": "#7B5B4A"
+}
