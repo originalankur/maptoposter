@@ -493,6 +493,7 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    no_text=False,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -681,57 +682,58 @@ def create_poster(
         )
 
     # --- BOTTOM TEXT ---
-    ax.text(
-        0.5,
-        0.14,
-        spaced_city,
-        transform=ax.transAxes,
-        color=THEME["text"],
-        ha="center",
-        fontproperties=font_main_adjusted,
-        zorder=11,
-    )
+    if not no_text:
+        ax.text(
+            0.5,
+            0.14,
+            spaced_city,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            ha="center",
+            fontproperties=font_main_adjusted,
+            zorder=11,
+        )
 
-    ax.text(
-        0.5,
-        0.10,
-        display_country.upper(),
-        transform=ax.transAxes,
-        color=THEME["text"],
-        ha="center",
-        fontproperties=font_sub,
-        zorder=11,
-    )
+        ax.text(
+            0.5,
+            0.10,
+            display_country.upper(),
+            transform=ax.transAxes,
+            color=THEME["text"],
+            ha="center",
+            fontproperties=font_sub,
+            zorder=11,
+        )
 
-    lat, lon = point
-    coords = (
-        f"{lat:.4f}° N / {lon:.4f}° E"
-        if lat >= 0
-        else f"{abs(lat):.4f}° S / {lon:.4f}° E"
-    )
-    if lon < 0:
-        coords = coords.replace("E", "W")
+        lat, lon = point
+        coords = (
+            f"{lat:.4f}° N / {lon:.4f}° E"
+            if lat >= 0
+            else f"{abs(lat):.4f}° S / {lon:.4f}° E"
+        )
+        if lon < 0:
+            coords = coords.replace("E", "W")
 
-    ax.text(
-        0.5,
-        0.07,
-        coords,
-        transform=ax.transAxes,
-        color=THEME["text"],
-        alpha=0.7,
-        ha="center",
-        fontproperties=font_coords,
-        zorder=11,
-    )
+        ax.text(
+            0.5,
+            0.07,
+            coords,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            alpha=0.7,
+            ha="center",
+            fontproperties=font_coords,
+            zorder=11,
+        )
 
-    ax.plot(
-        [0.4, 0.6],
-        [0.125, 0.125],
-        transform=ax.transAxes,
-        color=THEME["text"],
-        linewidth=1 * scale_factor,
-        zorder=11,
-    )
+        ax.plot(
+            [0.4, 0.6],
+            [0.125, 0.125],
+            transform=ax.transAxes,
+            color=THEME["text"],
+            linewidth=1 * scale_factor,
+            zorder=11,
+        )
 
     # --- ATTRIBUTION (bottom right) ---
     if FONTS:
@@ -955,6 +957,12 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--no-text",
+        action="store_true",
+        default=False,
+        help="Omit city name, country, and coordinates text from the poster",
+    )
 
     args = parser.parse_args()
 
@@ -1037,6 +1045,7 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                no_text=args.no_text,
             )
 
         print("\n" + "=" * 50)
