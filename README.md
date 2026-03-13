@@ -2,6 +2,7 @@
 
 Generate beautiful, minimalist map posters for any city in the world.
 
+<img src="posters/alberdi_alberdi_20260313_203613.png" width="250">
 <img src="posters/singapore_neon_cyberpunk_20260118_153328.png" width="250">
 <img src="posters/dubai_midnight_blue_20260118_140807.png" width="250">
 
@@ -9,6 +10,7 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 | Country      | City           | Theme           | Poster |
 |:------------:|:--------------:|:---------------:|:------:|
+| Argentina    | Alberdi        | alberdi         | <img src="posters/alberdi_alberdi_20260313_203613.png" width="250"> |
 | USA          | San Francisco  | sunset          | <img src="posters/san_francisco_sunset_20260118_144726.png" width="250"> |
 | Spain        | Barcelona      | warm_beige      | <img src="posters/barcelona_warm_beige_20260118_140048.png" width="250"> |
 | Italy        | Venice         | blueprint       | <img src="posters/venice_blueprint_20260118_140505.png" width="250"> |
@@ -203,7 +205,7 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 
 ## Themes
 
-17 themes available in `themes/` directory:
+18 themes available in `themes/` directory:
 
 | Theme | Style |
 |-------|-------|
@@ -224,6 +226,7 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 | `autumn` | Seasonal burnt oranges and reds |
 | `copper_patina` | Oxidized copper aesthetic |
 | `monochrome_blue` | Single blue color family |
+| `alberdi` | Warm cream with bold dark streets and teal avenues |
 
 ## Output
 
