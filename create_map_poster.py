@@ -301,15 +301,15 @@ def get_edge_widths_by_type(g):
 
         # Assign width based on road importance
         if highway in ["motorway", "motorway_link"]:
-            width = 1.8
+            width = 2.4
         elif highway in ["trunk", "trunk_link", "primary", "primary_link"]:
-            width = 1.5
+            width = 2.0
         elif highway in ["secondary", "secondary_link"]:
-            width = 1.2
+            width = 1.6
         elif highway in ["tertiary", "tertiary_link"]:
-            width = 0.7
+            width = 0.9
         else:
-            width = 0.5
+            width = 0.6
 
         edge_widths.append(width)
 
