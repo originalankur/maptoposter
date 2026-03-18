@@ -79,6 +79,30 @@ python create_map_poster.py --city <city> --country <country> [options]
 | **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
 | **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 (max: 20) |
 | **OPTIONAL:** `--height` | `-H` | Image height in inches | 16 (max: 20) |
+| **OPTIONAL:** `--mark` |  | Mark a location on the map: `--mark <lat,lon> <Text> <position>` (can be used multiple times) | |
+
+### Marking Locations on the Map
+
+You can add custom markers with text labels to your poster using the `--mark` option. This is useful for highlighting landmarks, neighborhoods, or any point of interest.
+
+**Syntax:**
+
+```bash
+--mark <lat,lon> <Text> <position>
+```
+
+- `<lat,lon>`: Latitude and longitude of the marker (comma-separated, no spaces)
+- `<Text>`: The label to display next to the marker
+- `<position>`: Where to place the label relative to the marker. Valid values:
+  - `left`, `right`, `top`, `bottom`, `topleft`, `topright`, `bottomleft`, `bottomright`
+
+You can use `--mark` multiple times to add several markers:
+
+```bash
+python create_map_poster.py -c "Paris" -C "France" \
+  --mark 48.8584,2.2945 "Eiffel Tower" topleft \
+  --mark 48.8606,2.3376 "Louvre" right
+```
 
 ### Multilingual Support - i18n
 
