@@ -493,6 +493,7 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    show_date=False,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -733,6 +734,21 @@ def create_poster(
         zorder=11,
     )
 
+    #-- display date --
+    if show_date:
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        ax.text(
+            0.5,
+            0.04,  # 放在坐标下面
+            current_date,
+            transform=ax.transAxes,
+            color=THEME["text"],
+            alpha=0.5,
+            ha="center",
+            fontproperties=font_coords,
+            zorder=11,
+        )
+
     # --- ATTRIBUTION (bottom right) ---
     if FONTS:
         font_attr = FontProperties(fname=FONTS["light"], size=8)
@@ -879,6 +895,11 @@ Examples:
         dest="latitude",
         type=str,
         help="Override latitude center point",
+    )
+    parser.add_argument(
+        "--show-date",
+        action="store_true",
+        help="Display date on the poster",
     )
     parser.add_argument(
         "--longitude",
@@ -1037,6 +1058,7 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                show_date=args.show_date,
             )
 
         print("\n" + "=" * 50)
