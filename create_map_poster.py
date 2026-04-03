@@ -663,7 +663,7 @@ def create_poster(
                 route_x.append(x)
                 route_y.append(y)
 
-            route_color = THEME.get('route_color', '#E74C3C')
+            route_color = THEME.get('route_color', THEME.get('text', '#E74C3C'))
             route_width = 5.0 * scale_factor
             ax.plot(route_x, route_y, color=route_color, linewidth=route_width,
                     solid_capstyle='round', solid_joinstyle='round', zorder=8, alpha=0.9)
