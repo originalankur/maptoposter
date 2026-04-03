@@ -663,10 +663,10 @@ def create_poster(
                 route_x.append(x)
                 route_y.append(y)
 
-            route_color = THEME.get('route_color', THEME.get('road_motorway', '#FF4444'))
-            route_width = 3.0 * scale_factor
+            route_color = THEME.get('route_color', '#E74C3C')
+            route_width = 5.0 * scale_factor
             ax.plot(route_x, route_y, color=route_color, linewidth=route_width,
-                    solid_capstyle='round', solid_joinstyle='round', zorder=5, alpha=0.85)
+                    solid_capstyle='round', solid_joinstyle='round', zorder=8, alpha=0.9)
             print(f"✓ GPX route rendered ({len(trackpoints)} trackpoints)")
 
     # Layer 3: Gradients (Top and Bottom)
