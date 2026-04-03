@@ -251,9 +251,12 @@ Create a JSON file in `themes/` directory:
   "road_secondary": "#2A2A2A",
   "road_tertiary": "#3A3A3A",
   "road_residential": "#4A4A4A",
-  "road_default": "#3A3A3A"
+  "road_default": "#3A3A3A",
+  "route_color": "#FF4444"
 }
 ```
+
+`route_color` is optional and only used for GPX route overlays. If omitted, the script falls back to `road_motorway`.
 
 ## Project Structure
 
