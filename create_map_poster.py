@@ -14,6 +14,7 @@ import os
 import pickle
 import sys
 import time
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 from typing import cast
@@ -31,6 +32,35 @@ from shapely.geometry import Point
 from tqdm import tqdm
 
 from font_management import load_fonts
+
+
+def parse_gpx(gpx_path):
+    """
+    Parse a GPX file and extract trackpoints as (lat, lon) tuples.
+
+    Args:
+        gpx_path: Path to GPX file
+
+    Returns:
+        List of (lat, lon) tuples from <trkpt> elements
+    """
+    try:
+        tree = ET.parse(gpx_path)
+        root = tree.getroot()
+        namespace = "{http://www.topografix.com/GPX/1/1}"
+        trackpoints = []
+        for trkpt in root.findall(f".//{namespace}trkpt"):
+            lat = trkpt.attrib.get("lat")
+            lon = trkpt.attrib.get("lon")
+            if lat is not None and lon is not None:
+                trackpoints.append((float(lat), float(lon)))
+        return trackpoints
+    except FileNotFoundError:
+        print(f"✗ GPX file not found: {gpx_path}")
+        return []
+    except (ET.ParseError, ValueError) as e:
+        print(f"✗ Failed to parse GPX file '{gpx_path}': {e}")
+        return []
 
 
 class CacheError(Exception):
@@ -493,6 +523,7 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    gpx_path=None,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -511,6 +542,7 @@ def create_poster(
         height: Poster height in inches (default: 16)
         country_label: Optional override for country text on poster
         _name_label: Optional override for city name (unused, reserved for future use)
+        gpx_path: Optional path to GPX file for route overlay
 
     Raises:
         RuntimeError: If street network data cannot be retrieved
@@ -611,13 +643,35 @@ def create_poster(
     ax.set_xlim(crop_xlim)
     ax.set_ylim(crop_ylim)
 
-    # Layer 3: Gradients (Top and Bottom)
-    create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
-    create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
-
     # Calculate scale factor based on smaller dimension (reference 12 inches)
     # This ensures text scales properly for both portrait and landscape orientations
     scale_factor = min(height, width) / 12.0
+
+    # Layer 2.5: GPX Route overlay
+    if gpx_path:
+        trackpoints = parse_gpx(gpx_path)
+        if trackpoints:
+            import pyproj
+            # The graph is in a projected CRS - we need to transform lat/lon to the same CRS
+            crs_proj = g_proj.graph['crs']
+            transformer = pyproj.Transformer.from_crs("EPSG:4326", crs_proj, always_xy=True)
+
+            route_x = []
+            route_y = []
+            for lat, lon in trackpoints:
+                x, y = transformer.transform(lon, lat)
+                route_x.append(x)
+                route_y.append(y)
+
+            route_color = THEME.get('route_color', THEME.get('road_motorway', '#FF4444'))
+            route_width = 3.0 * scale_factor
+            ax.plot(route_x, route_y, color=route_color, linewidth=route_width,
+                    solid_capstyle='round', solid_joinstyle='round', zorder=5, alpha=0.85)
+            print(f"✓ GPX route rendered ({len(trackpoints)} trackpoints)")
+
+    # Layer 3: Gradients (Top and Bottom)
+    create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
+    create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
 
     # Base font sizes (at 12 inches width)
     base_main = 60
@@ -955,6 +1009,11 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--gpx",
+        type=str,
+        help="Path to a GPX file to overlay a travel route on the map",
+    )
 
     args = parser.parse_args()
 
@@ -1037,6 +1096,7 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                gpx_path=args.gpx,
             )
 
         print("\n" + "=" * 50)
