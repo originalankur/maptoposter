@@ -11,5 +11,6 @@
   "road_secondary": "#9FC5E8",
   "road_tertiary": "#7BAED4",
   "road_residential": "#5A96C0",
-  "road_default": "#7BAED4"
+  "road_default": "#7BAED4",
+  "route_color": "#FF6B35"
 }
