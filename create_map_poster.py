@@ -167,11 +167,16 @@ def get_available_themes():
         return []
 
     themes = []
-    for file in sorted(os.listdir(THEMES_DIR)):
-        if file.endswith(".json"):
-            theme_name = file[:-5]  # Remove .json extension
-            themes.append(theme_name)
-    return themes
+    for root, _, files in os.walk(THEMES_DIR):
+        for file in files:
+            if file.endswith(".json"):
+                theme_file = os.path.join(root, file)
+                rel_path = os.path.relpath(theme_file, THEMES_DIR)
+                theme_name = os.path.splitext(rel_path)[0]
+                # Keep theme names platform-independent (always forward slash).
+                themes.append(theme_name.replace(os.sep, "/").replace("\\", "/"))
+
+    return sorted(themes, key=lambda name: ("/" in name, name.lower(), name))
 
 
 def load_theme(theme_name="terracotta"):
@@ -838,9 +843,7 @@ def list_themes():
         print("No themes found in 'themes/' directory.")
         return
 
-    print("\nAvailable Themes:")
-    print("-" * 60)
-    for theme_name in available_themes:
+    def print_theme_entry(theme_name, indent="  "):
         theme_path = os.path.join(THEMES_DIR, f"{theme_name}.json")
         try:
             with open(theme_path, "r", encoding=FILE_ENCODING) as f:
@@ -850,11 +853,30 @@ def list_themes():
         except (OSError, json.JSONDecodeError):
             display_name = theme_name
             description = ""
-        print(f"  {theme_name}")
-        print(f"    {display_name}")
+
+        print(f"{indent}{theme_name}")
+        print(f"{indent}  {display_name}")
         if description:
-            print(f"    {description}")
+            print(f"{indent}  {description}")
         print()
+
+    print("\nAvailable Themes:")
+    print("-" * 60)
+    flat_themes = [theme for theme in available_themes if "/" not in theme]
+    nested_themes = [theme for theme in available_themes if "/" in theme]
+
+    for theme_name in flat_themes:
+        print_theme_entry(theme_name)
+
+    grouped_themes = {}
+    for theme_name in nested_themes:
+        group_name = theme_name.rsplit("/", 1)[0]
+        grouped_themes.setdefault(group_name, []).append(theme_name)
+
+    for group_name in sorted(grouped_themes):
+        print(f"  [{group_name}]")
+        for theme_name in grouped_themes[group_name]:
+            print_theme_entry(theme_name, indent="    ")
 
 
 if __name__ == "__main__":
