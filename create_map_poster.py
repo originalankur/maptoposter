@@ -9,6 +9,7 @@ high-quality poster-ready images with roads, water features, and parks.
 
 import argparse
 import asyncio
+import csv
 import json
 import os
 import pickle
@@ -197,6 +198,7 @@ def load_theme(theme_name="terracotta"):
             "road_tertiary": "#D9A08A",
             "road_residential": "#E5C4B0",
             "road_default": "#D9A08A",
+            "venue": "#2A6B9C",
         }
 
     with open(theme_file, "r", encoding=FILE_ENCODING) as f:
@@ -479,6 +481,33 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
         return None
 
 
+def load_venues(venues_path):
+    """
+    Load venue locations from a CSV file.
+
+    The CSV must have 'latitude' and 'longitude' columns.
+
+    Args:
+        venues_path: Path to the CSV file
+
+    Returns:
+        List of (lat, lon, name) tuples
+    """
+    venues = []
+    with open(venues_path, "r", encoding=FILE_ENCODING) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                lat = float(row["latitude"])
+                lon = float(row["longitude"])
+                name = row.get("name", "")
+                venues.append((lat, lon, name))
+            except (ValueError, KeyError):
+                continue
+    print(f"✓ Loaded {len(venues)} venues from {venues_path}")
+    return venues
+
+
 def create_poster(
     city,
     country,
@@ -493,6 +522,7 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    venues=None,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -610,6 +640,21 @@ def create_poster(
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlim(crop_xlim)
     ax.set_ylim(crop_ylim)
+
+    # Layer 2.5: Venue dots overlay
+    if venues:
+        venue_color = THEME.get("venue", THEME["text"])
+        crs = g_proj.graph["crs"]
+        in_bounds = 0
+        for lat, lon, _name in venues:
+            projected = ox.projection.project_geometry(
+                Point(lon, lat), crs="EPSG:4326", to_crs=crs
+            )[0]
+            px, py = projected.x, projected.y
+            if crop_xlim[0] <= px <= crop_xlim[1] and crop_ylim[0] <= py <= crop_ylim[1]:
+                ax.plot(px, py, 'o', color=venue_color, markersize=3, zorder=11, alpha=0.85)
+                in_bounds += 1
+        print(f"✓ Plotted {in_bounds} venues within map bounds (out of {len(venues)} total)")
 
     # Layer 3: Gradients (Top and Bottom)
     create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
@@ -955,6 +1000,11 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--venues",
+        type=str,
+        help="Path to a CSV file with venue locations to plot as dots (must have latitude and longitude columns)",
+    )
 
     args = parser.parse_args()
 
@@ -1011,6 +1061,14 @@ Examples:
         if not custom_fonts:
             print(f"⚠ Failed to load '{args.font_family}', falling back to Roboto")
 
+    # Load venues if specified
+    venues_data = None
+    if args.venues:
+        if not os.path.exists(args.venues):
+            print(f"Error: Venues file '{args.venues}' not found.")
+            sys.exit(1)
+        venues_data = load_venues(args.venues)
+
     # Get coordinates and generate poster
     try:
         if args.latitude and args.longitude:
@@ -1037,6 +1095,7 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                venues=venues_data,
             )
 
         print("\n" + "=" * 50)

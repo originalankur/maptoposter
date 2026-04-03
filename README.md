@@ -79,6 +79,21 @@ python create_map_poster.py --city <city> --country <country> [options]
 | **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
 | **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 (max: 20) |
 | **OPTIONAL:** `--height` | `-H` | Image height in inches | 16 (max: 20) |
+| **OPTIONAL:** `--venues` | | Path to a CSV file with venue locations to plot as dots | |
+
+### Venue Overlay
+
+Plot venue locations as colored dots on your map poster. The CSV file must have `latitude` and `longitude` columns. Only venues within the map bounds are plotted -- out-of-bounds venues are automatically filtered out.
+
+```bash
+# Plot Philly venues on a Philadelphia map (ignores venues in other cities)
+python create_map_poster.py -c "Philadelphia" -C "USA" -t midnight_blue --venues data/venues.csv
+
+# Full Manhattan with venues
+python create_map_poster.py -c "New York" -C "USA" -t noir -d 14000 -lat 40.75 -long -73.98 --venues data/venues.csv
+```
+
+Each theme includes a `venue` color that contrasts with the theme's palette. You can customize it by adding a `"venue"` key to any theme JSON file.
 
 ### Multilingual Support - i18n
 
@@ -251,7 +266,8 @@ Create a JSON file in `themes/` directory:
   "road_secondary": "#2A2A2A",
   "road_tertiary": "#3A3A3A",
   "road_residential": "#4A4A4A",
-  "road_default": "#3A3A3A"
+  "road_default": "#3A3A3A",
+  "venue": "#FF6B6B"
 }
 ```
 
@@ -360,7 +376,7 @@ if railways is not None and not railways.empty:
 
 **New theme property:**
 
-1. Add to theme JSON: `"railway": "#FF0000"`
+1. Add to theme JSON: `"railway": "#FF0000"` (see `"venue"` for a working example)
 2. Use in code: `THEME['railway']`
 3. Add fallback in `load_theme()` default dict
 
