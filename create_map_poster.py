@@ -20,6 +20,7 @@ from typing import cast
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import arabic_reshaper
 import numpy as np
 import osmnx as ox
 from geopandas import GeoDataFrame
@@ -29,6 +30,7 @@ from matplotlib.font_manager import FontProperties
 from networkx import MultiDiGraph
 from shapely.geometry import Point
 from tqdm import tqdm
+from bidi.algorithm import get_display
 
 from font_management import load_fonts
 
@@ -478,6 +480,15 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
         print(f"OSMnx error while fetching features: {e}")
         return None
 
+def shape_rtl_text(text: str) -> str:
+    """Fix Arabic/Persian text rendering for matplotlib."""
+    if not text:
+        return text
+
+    reshaped = arabic_reshaper.reshape(text)
+    bidi_text = get_display(reshaped)
+    return bidi_text
+
 
 def create_poster(
     city,
@@ -657,7 +668,7 @@ def create_poster(
     else:
         # Non-Latin script: no spacing, no forced uppercase
         # For scripts like Arabic, Thai, Japanese, etc.
-        spaced_city = display_city
+        spaced_city = shape_rtl_text(display_city)
 
     # Dynamically adjust font size based on city name length to prevent truncation
     # We use the already scaled "main" font size as the starting point.
@@ -695,7 +706,7 @@ def create_poster(
     ax.text(
         0.5,
         0.10,
-        display_country.upper(),
+        shape_rtl_text(display_country) if not is_latin_script(display_country) else display_country.upper(),
         transform=ax.transAxes,
         color=THEME["text"],
         ha="center",
