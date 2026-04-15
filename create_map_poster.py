@@ -545,6 +545,13 @@ def create_poster(
             tags={"natural": ["water", "bay", "strait"], "waterway": "riverbank"},
             name="water",
         )
+
+        # Get rivers that are only mapped as single line, common in many cities with rivers that aren't too wide 
+        try:
+            rivers = ox.features_from_point(point, tags={'waterway': 'river'}, dist=dist)
+        except:
+            rivers = None
+        
         pbar.update(1)
 
         # 3. Fetch Parks
@@ -556,7 +563,7 @@ def create_poster(
             name="parks",
         )
         pbar.update(1)
-
+    
     print("✓ All data retrieved successfully!")
 
     # 2. Setup Plot
@@ -591,7 +598,12 @@ def create_poster(
             except Exception:
                 parks_polys = parks_polys.to_crs(g_proj.graph['crs'])
             parks_polys.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=0.8)
-    # Layer 2: Roads with hierarchy coloring
+    # Layer 2: Small rivers and roads with hierarchy coloring
+
+    if rivers is not None and not rivers.empty:
+        rivers = ox.projection.project_gdf(rivers)
+        rivers.plot(ax=ax, color=THEME['water'], linewidth=1.5, zorder=0.5)
+    
     print("Applying road hierarchy colors...")
     edge_colors = get_edge_colors_by_type(g_proj)
     edge_widths = get_edge_widths_by_type(g_proj)
