@@ -563,12 +563,6 @@ def create_poster(
             name="parks",
         )
         pbar.update(1)
-
-    # Get rivers that are only mapped as part of the 
-    try:
-        rivers= ox.features_from_point(point, tags={'waterway': 'river'}, dist=dist)
-    except:
-        rivers = None
     
     print("✓ All data retrieved successfully!")
 
