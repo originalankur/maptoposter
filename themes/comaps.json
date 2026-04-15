@@ -1,0 +1,15 @@
+{
+  "name": "CoMaps",
+  "description": "Creates maps that look like slightly simplified screenshot of the mobile app CoMaps (https://comaps.app)",
+  "bg": "#F5E8D6",
+  "text": "#000000",
+  "gradient_color": "#F5F0E8",
+  "water": "#89CDDC",
+  "parks": "#D5DB8F",
+  "road_motorway": "#F08800",
+  "road_primary": "#F5B74E",
+  "road_secondary": "#FFCE5A",
+  "road_tertiary": "#FFFFFF",
+  "road_residential": "#FFFEFE",
+  "road_default": "#FFFFFF"
+}
