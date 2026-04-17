@@ -50,6 +50,9 @@ uv run python3 create_map_poster.py -c "Bengaluru" -C "India" --display-city "Th
 echo "Overriding latitude and longitude (central Bengaluru)"
 uv run python3 create_map_poster.py -c "Bengaluru" -C "India" -lat 12.9716 -long 77.5946
 
+echo "Generating without text (--no-text)"
+uv run python3 create_map_poster.py -c "Bengaluru" -C "India" --no-text
+
 # 4. Multilingual Support (from i18n section)
 echo "--- Multilingual Support (i18n) ---"
 echo "Kannada (Native script)"

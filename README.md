@@ -75,6 +75,7 @@ python create_map_poster.py --city <city> --country <country> [options]
 | **OPTIONAL:** `--country-label` | | Override country text displayed on poster | |
 | **OPTIONAL:** `--theme` | `-t` | Theme name | terracotta |
 | **OPTIONAL:** `--distance` | `-d` | Map radius in meters | 18000 |
+| **OPTIONAL:** `--no-text` | | Hide all text overlays (city, country, coordinates, attribution) | false |
 | **OPTIONAL:** `--list-themes` | | List all available themes | |
 | **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
 | **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 (max: 20) |
@@ -127,6 +128,9 @@ python create_map_poster.py -c "Paris" -C "France"
 
 # With custom theme and distance
 python create_map_poster.py -c "New York" -C "USA" -t noir -d 12000
+
+# Map-only poster (no title/subtitle/coordinates/attribution text)
+python create_map_poster.py -c "Tokyo" -C "Japan" -t terracotta --no-text
 ```
 
 #### Multilingual Examples (Non-Latin Scripts)
