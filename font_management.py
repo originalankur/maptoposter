@@ -13,6 +13,64 @@ import requests
 FONTS_DIR = "fonts"
 FONTS_CACHE_DIR = Path(FONTS_DIR) / "cache"
 
+# System TTC fonts: name → (ttc_path, {weight_key: face_index})
+_SYSTEM_TTC_FONTS = {
+    "helvetica": (
+        "/System/Library/Fonts/Helvetica.ttc",
+        {"regular": 0, "bold": 1, "light": 4},
+    ),
+    "helvetica neue": (
+        "/System/Library/Fonts/HelveticaNeue.ttc",
+        {"regular": 0, "bold": 1, "light": 7},
+    ),
+}
+
+
+def _extract_ttc_face(ttc_path: str, face_index: int, out_path: Path) -> bool:
+    """Extract a single face from a TTC collection into a TTF file."""
+    try:
+        from fontTools.ttLib import TTCollection
+    except ImportError:
+        print("⚠ fontTools not available; cannot extract TTC face")
+        return False
+    try:
+        tc = TTCollection(ttc_path)
+        font = tc.fonts[face_index]
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        font.save(str(out_path))
+        return True
+    except Exception as e:
+        print(f"⚠ Failed to extract face {face_index} from {ttc_path}: {e}")
+        return False
+
+
+def load_system_font(font_family: str) -> Optional[dict]:
+    """Extract and cache a system TTC font, returning paths for light/regular/bold."""
+    key = font_family.lower()
+    if key not in _SYSTEM_TTC_FONTS:
+        return None
+
+    ttc_path, face_map = _SYSTEM_TTC_FONTS[key]
+    if not os.path.exists(ttc_path):
+        print(f"⚠ System font not found: {ttc_path}")
+        return None
+
+    safe_name = key.replace(" ", "_")
+    FONTS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+    font_files = {}
+    for weight_key, face_index in face_map.items():
+        out_path = FONTS_CACHE_DIR / f"{safe_name}_{weight_key}.ttf"
+        if out_path.exists():
+            print(f"  Using cached {font_family} {weight_key}")
+        else:
+            print(f"  Extracting {font_family} {weight_key} (face {face_index})...")
+            if not _extract_ttc_face(ttc_path, face_index, out_path):
+                return None
+        font_files[weight_key] = str(out_path)
+
+    return font_files
+
 
 def download_google_font(font_family: str, weights: list = None) -> Optional[dict]:
     """
@@ -144,8 +202,15 @@ def load_fonts(font_family: Optional[str] = None) -> Optional[dict]:
     :return: Dict with 'bold', 'regular', 'light' keys mapping to font file paths,
              or None if all loading methods fail
     """
-    # If custom font family specified, try to download from Google Fonts
+    # If custom font family specified, try system TTC first, then Google Fonts
     if font_family and font_family.lower() != "roboto":
+        # 1. Try system font (e.g. Helvetica from macOS TTC)
+        fonts = load_system_font(font_family)
+        if fonts:
+            print(f"✓ Font '{font_family}' loaded from system")
+            return fonts
+
+        # 2. Fall back to Google Fonts download
         print(f"Loading Google Font: {font_family}")
         fonts = download_google_font(font_family)
         if fonts:

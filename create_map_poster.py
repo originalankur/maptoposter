@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import cast
 
 import matplotlib.colors as mcolors
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import osmnx as ox
@@ -211,9 +212,14 @@ def load_theme(theme_name="terracotta"):
 THEME = dict[str, str]()  # Will be loaded later
 
 
-def create_gradient_fade(ax, color, location="bottom", zorder=10):
+def create_gradient_fade(ax, color, location="bottom", zorder=10,
+                          end_frac=0.25, solid_end_frac=0.0):
     """
     Creates a fade effect at the top or bottom of the map.
+
+    end_frac: how far up/down the gradient extends (fraction of axes height).
+    solid_end_frac: fraction of axes height that is fully opaque before the fade begins.
+                    Must be <= end_frac. Only used for the bottom gradient.
     """
     vals = np.linspace(0, 1, 256).reshape(-1, 1)
     gradient = np.hstack((vals, vals))
@@ -225,12 +231,16 @@ def create_gradient_fade(ax, color, location="bottom", zorder=10):
     my_colors[:, 2] = rgb[2]
 
     if location == "bottom":
-        my_colors[:, 3] = np.linspace(1, 0, 256)
+        # Build alpha: solid zone then linear fade to transparent
+        n_solid = int(256 * solid_end_frac / end_frac) if end_frac > 0 else 0
+        fade_n = 256 - n_solid
+        fade_alpha = np.linspace(1, 0, fade_n) if fade_n > 0 else np.array([])
+        my_colors[:, 3] = np.concatenate([np.ones(n_solid), fade_alpha])
         extent_y_start = 0
-        extent_y_end = 0.25
+        extent_y_end = end_frac
     else:
         my_colors[:, 3] = np.linspace(0, 1, 256)
-        extent_y_start = 0.75
+        extent_y_start = 1.0 - end_frac
         extent_y_end = 1.0
 
     custom_cmap = mcolors.ListedColormap(my_colors)
@@ -479,6 +489,53 @@ def fetch_features(point, dist, tags, name) -> GeoDataFrame | None:
         return None
 
 
+def add_border_frame(ax, color, bg_color, fig_width, fig_height, scale_factor=1.0):
+    """Draw a double-border frame with clean masking.
+
+    Layout from edge inward:
+      white/empty strip → thin outer border → 4px bg gap → thick inner border → map
+    """
+    # Outer thin border inset from the poster edge, in inches
+    outer_inset_in = 0.18
+    # 4-pixel gap at 300 DPI between the two border lines
+    gap_in = 4 / 300
+    inner_inset_in = outer_inset_in + gap_in
+
+    # Convert to axes-fraction coordinates (axes fills the full figure)
+    ox = outer_inset_in / fig_width
+    oy = outer_inset_in / fig_height
+    ix = inner_inset_in / fig_width
+    iy = inner_inset_in / fig_height
+
+    def _rect(x, y, w, h, fc, ec="none", lw=0, z=12):
+        ax.add_patch(mpatches.Rectangle(
+            (x, y), w, h,
+            facecolor=fc, edgecolor=ec, linewidth=lw,
+            transform=ax.transAxes, zorder=z, clip_on=False,
+        ))
+
+    # --- Background-colour masks outside the outer border ---
+    # Cover the four strips from the axes edge to the outer border line.
+    # Same background as the poster — no map details, just clean colour.
+    _rect(0,      0,      ox,       1,        fc=bg_color, z=12)   # left
+    _rect(1-ox,   0,      ox,       1,        fc=bg_color, z=12)   # right
+    _rect(ox,     0,      1-2*ox,   oy,       fc=bg_color, z=12)   # bottom
+    _rect(ox,     1-oy,   1-2*ox,   oy,       fc=bg_color, z=12)   # top
+
+    # --- bg-color gap strips between outer and inner borders ---
+    # The 4px frame between the two lines shows the poster background colour.
+    _rect(ox,     oy,     ix-ox,    1-2*oy,   fc=bg_color, z=12)  # left gap
+    _rect(1-ix,   oy,     ix-ox,    1-2*oy,   fc=bg_color, z=12)  # right gap
+    _rect(ox,     oy,     1-2*ox,   iy-oy,    fc=bg_color, z=12)  # bottom gap
+    _rect(ox,     1-iy,   1-2*ox,   iy-oy,    fc=bg_color, z=12)  # top gap
+
+    # --- Border lines ---
+    _rect(ox, oy, 1-2*ox, 1-2*oy,
+          fc="none", ec=color, lw=0.75 * scale_factor, z=13)  # outer thin
+    _rect(ix, iy, 1-2*ix, 1-2*iy,
+          fc="none", ec=color, lw=1.5 * scale_factor,  z=13)  # inner thick
+
+
 def create_poster(
     city,
     country,
@@ -493,6 +550,7 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    border=False,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -612,18 +670,24 @@ def create_poster(
     ax.set_ylim(crop_ylim)
 
     # Layer 3: Gradients (Top and Bottom)
-    create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
-    create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
+    # Bottom: solid cover over text area, then fade up into the map
+    create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10,
+                         end_frac=0.45, solid_end_frac=0.20)
+    create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10,
+                         end_frac=0.15)
 
     # Calculate scale factor based on smaller dimension (reference 12 inches)
     # This ensures text scales properly for both portrait and landscape orientations
     scale_factor = min(height, width) / 12.0
 
+    # Layer 4: Optional double-border frame
+    if border:
+        add_border_frame(ax, THEME["text"], THEME["bg"], width, height, scale_factor)
+
     # Base font sizes (at 12 inches width)
     base_main = 60
     base_sub = 22
     base_coords = 14
-    base_attr = 8
 
     # 4. Typography - use custom fonts if provided, otherwise use default FONTS
     active_fonts = fonts or FONTS
@@ -635,9 +699,6 @@ def create_poster(
         font_coords = FontProperties(
             fname=active_fonts["regular"], size=base_coords * scale_factor
         )
-        font_attr = FontProperties(
-            fname=active_fonts["light"], size=base_attr * scale_factor
-        )
     else:
         # Fallback to system fonts
         font_sub = FontProperties(
@@ -646,7 +707,6 @@ def create_poster(
         font_coords = FontProperties(
             family="monospace", size=base_coords * scale_factor
         )
-        font_attr = FontProperties(family="monospace", size=base_attr * scale_factor)
 
     # Format city name based on script type
     # Latin scripts: apply uppercase and letter spacing for aesthetic
@@ -730,25 +790,6 @@ def create_poster(
         transform=ax.transAxes,
         color=THEME["text"],
         linewidth=1 * scale_factor,
-        zorder=11,
-    )
-
-    # --- ATTRIBUTION (bottom right) ---
-    if FONTS:
-        font_attr = FontProperties(fname=FONTS["light"], size=8)
-    else:
-        font_attr = FontProperties(family="monospace", size=8)
-
-    ax.text(
-        0.98,
-        0.02,
-        "© OpenStreetMap contributors",
-        transform=ax.transAxes,
-        color=THEME["text"],
-        alpha=0.5,
-        ha="right",
-        va="bottom",
-        fontproperties=font_attr,
         zorder=11,
     )
 
@@ -955,6 +996,13 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--border",
+        "-b",
+        action="store_true",
+        default=False,
+        help="Add a double-border frame: thick inner border + 4px gap + thin outer border",
+    )
 
     args = parser.parse_args()
 
@@ -1037,6 +1085,7 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                border=args.border,
             )
 
         print("\n" + "=" * 50)
