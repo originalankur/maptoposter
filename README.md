@@ -1,24 +1,152 @@
+**Fork from [originalankur/maptoposter](https://github.com/originalankur/maptoposter)**
+
+I encountered frequent timeouts when using the original project due to unstable network access to the Nominatim service in China. 
+To solve this problem, I modified the core logic to support direct latitude/longitude input, making the tool usable globally without relying on external geocoding services.
+
+```bush
+python create_map_poster.py --city "Chengdu" --country "China"
+```
+<img width="500"  alt="image" src="https://github.com/user-attachments/assets/bfd1dffc-2f42-426d-a72b-e956c66b7232" />
+
+
+**Key Modifications:**
+- **Network Adaptation**: Directly uses latitude/longitude coordinates to bypass the Nominatim geocoding service (often unreachable in China), ensuring reliable map generation.
+- **CJK Localization**: Pre-configured examples for Chengdu (Chinese) and Seoul (Korean), with built-in support for Noto Sans SC and Noto Sans KR fonts.
+- **Any Location Support**: No need to provide city/country names – just input coordinates, even for villages without names.
+
+
+```bush
+# 成都
+python create_map_poster.py --city "Chengdu" --country "China" --lat 30.6598 --long 104.0633 -dc "成都" -dC "中国" --font-family "Noto Sans SC" -t warm_beige -d 12000
+```
+| Parameter | Description |
+|:----------|:------------|
+| `--lat 30.6598 --long 104.0633` | Coordinates of central Chengdu, directly bypassing external network requests. |
+| `-dc "成都" -dC "中国"` | Displays Chinese names "Chengdu" and "China" on the poster. |
+| `--font-family "Noto Sans SC"` | Uses a Chinese-compatible font to prevent garbled text. |
+| `-t warm_beige` | Warm beige retro theme with a gentle and cozy vibe. |
+| `-d 12000` | Covers a radius of 12 km, covering the main urban road network of Chengdu. |y
+<img height="483" alt="chengdu_warm_beige_20260517_192142" src="https://github.com/user-attachments/assets/0989a977-7d9c-4173-a17d-b43336a13298" />
+
+```bush
+#서울
+python create_map_poster.py --city "Seoul" --country "South Korea" --lat 37.5665 --long 126.9780 -dc "서울" -dC "대한민국" --font-family "Noto Sans KR" -t noir -d 15000
+```
+
+| Parameter | Description |
+|:----------|:------------|
+| `--lat 37.5665 --long 126.9780` | Coordinates of central Seoul (near Gyeongbokgung Palace), bypassing external network requests directly. |
+| `-dc "서울" -dC "대한민국"` | Displays Korean names "Seoul" and "South Korea" on the poster. |
+| `--font-family "Noto Sans KR"` | Applies Korean-supported font to avoid garbled characters. |
+| `-t noir` | Pure black minimalist theme, matching the urban style of Seoul. |
+| `-d 15000` | Covers a radius of 15 km, including major road networks and the Han River. |
+
+<img width="483" alt="seoul_noir_20260517_192428" src="https://github.com/user-attachments/assets/c6de598a-c676-43f5-bab1-4408bd4a5d52" />
+
+
+**1. We can add a judgment near the get_coordinates() function to completely resolve network issues.
+As long as latitude and longitude are provided, the program will never access Nominatim, and there is no need to force a city name to be supplied.**
+
+```bush
+if args.latitude and args.longitude:
+    coords = (args.latitude, args.longitude)
+    # Use coordinates as fallback if no city name is provided
+    if not args.city:
+        args.city = f"{args.latitude}_{args.longitude}"
+    if not args.country:
+        args.country = "Unknown"
+else:
+    # Original Nominatim geocoding logic
+    coords = get_coordinates_from_nominatim(args.city, args.country)
+```
+
+
+**2**
+ Original Code:
+
+```bush
+if args.latitude and args.longitude:
+    lat = parse(args.latitude)
+    lon = parse(args.longitude)
+    coords = [lat, lon]
+    print(f"✓ Coordinates: {', '.join([str(i) for i in coords])}")
+else:
+    coords = get_coordinates(args.city, args.country, args.latitude, args.longitude)
+```
+Change it to:
+```bush
+ if args.latitude and args.longitude:
+    lat = parse(args.latitude)
+    lon = parse(args.longitude)
+    coords = (lat, lon)  # ←change to tuple
+    print(f"✓ Coordinates: {lat}, {lon}")
+else:
+    coords = get_coordinates(args.city, args.country, args.latitude, args.longitude)
+```
+
+**3. besides I delete the required validity and change it to intelligent judgment**
+
+Original code:
+```bush
+# Validate required arguments
+if not args.city or not args.country:
+    print("Error: --city and --country are required.\n")
+    print_examples()
+    sys.exit(1)
+```
+Change it to:
+
+```bush
+# Validate required arguments - Only longitude and latitude are allowed to be transmitted.
+if not args.city and not (args.latitude and args.longitude):
+    print("Error: Either --city/--country or --lat/--long are required.\n")
+    print_examples()
+    sys.exit(1)
+
+# If only coordinates are given without a city name,use latitude and longitude as the default value
+if not args.city and args.latitude and args.longitude:
+    args.city = f"{args.latitude}_{args.longitude}"
+if not args.country and args.latitude and args.longitude:
+    args.country = "Unknown"
+```
+
+**In this way, we can draw anywhere at will without city/country** 
+
+```bush
+python create_map_poster.py --lat 27.8940 --long 102.2640 -t warm_beige -d 15000 --display-city "凉山区域" --display-country "中国" --font-family "Noto Sans SC"
+```
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/608a62f2-9947-4fbb-9c24-7d4608e0210c" />
+
+(the picture shows the mountainous areas in western China)
+
+<img width="250" alt="27 8940_102 2640_warm_beige_20260517_212519" src="https://github.com/user-attachments/assets/ec654fb6-521c-4bad-bec6-63528648d6c1" />
+
+Take my hometown as an example. There are fewer roads in rural areas, so the generated images may not look very beautiful. For this reason, we can expand the scope. Maps can still be generated even without specifying cities or countries, using only latitude and longitude coordinates.
+
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/67377767-4d36-4214-97d1-58134e41d4a9" />
+
+It can run with only latitude and longitude entered.
+
+```bush
+python create_map_poster.py --lat 28.983234 --long 105.092062 -t midnight_blue -d 30000 --display-city "MY HOMETWON" --display-country "China"
+```
+
+<img width="250" alt="28 983234_105 092062_midnight_blue_20260518_092354" src="https://github.com/user-attachments/assets/150fda5f-5542-4546-b50b-28616b6a2bc1" />
+
+In addition, map generation is still supported by only providing the city and country names, so relevant demonstrations will be omitted for brevity.
+
+---
+**Acknowledgments**: Thanks to [originalankur](https://github.com/originalankur) for the base project, and to OpenStreetMap contributors for map data. MIT License.
+
+________________________________________________________________________________________
+> The following is the original README content, with some example images removed for brevity.
+
 # City Map Poster Generator
 
 Generate beautiful, minimalist map posters for any city in the world.
 
 <img src="posters/singapore_neon_cyberpunk_20260118_153328.png" width="250">
 <img src="posters/dubai_midnight_blue_20260118_140807.png" width="250">
-
-## Examples
-
-| Country      | City           | Theme           | Poster |
-|:------------:|:--------------:|:---------------:|:------:|
-| USA          | San Francisco  | sunset          | <img src="posters/san_francisco_sunset_20260118_144726.png" width="250"> |
-| Spain        | Barcelona      | warm_beige      | <img src="posters/barcelona_warm_beige_20260118_140048.png" width="250"> |
-| Italy        | Venice         | blueprint       | <img src="posters/venice_blueprint_20260118_140505.png" width="250"> |
-| Japan        | Tokyo          | japanese_ink    | <img src="posters/tokyo_japanese_ink_20260118_142446.png" width="250"> |
-| India        | Mumbai         | contrast_zones  | <img src="posters/mumbai_contrast_zones_20260118_145843.png" width="250"> |
-| Morocco      | Marrakech      | terracotta      | <img src="posters/marrakech_terracotta_20260118_143253.png" width="250"> |
-| Singapore    | Singapore      | neon_cyberpunk  | <img src="posters/singapore_neon_cyberpunk_20260118_153328.png" width="250"> |
-| Australia    | Melbourne      | forest          | <img src="posters/melbourne_forest_20260118_153446.png" width="250"> |
-| UAE          | Dubai          | midnight_blue   | <img src="posters/dubai_midnight_blue_20260118_140807.png" width="250"> |
-| USA          | Seattle        | emerald         | <img src="posters/seattle_emerald_20260124_162244.png" width="250"> |
 
 ## Installation
 

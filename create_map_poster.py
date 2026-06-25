@@ -316,11 +316,19 @@ def get_edge_widths_by_type(g):
     return edge_widths
 
 
-def get_coordinates(city, country):
+def get_coordinates(city, country, latitude=None, longitude=None):
     """
     Fetches coordinates for a given city and country using geopy.
     Includes rate limiting to be respectful to the geocoding service.
+    
+    If latitude and longitude are provided directly, they are used instead.
     """
+    # Use user-specified lat/lon first
+    if latitude is not None and longitude is not None:
+        print(f"✓ Using provided coordinates: {latitude}, {longitude}")
+        return (latitude, longitude)
+    
+    # Original Nominatim geocoding logic
     coords = f"coords_{city.lower()}_{country.lower()}"
     cached = cache_get(coords)
     if cached:
@@ -368,7 +376,6 @@ def get_coordinates(city, country):
         return (location.latitude, location.longitude)
 
     raise ValueError(f"Could not find coordinates for {city}, {country}")
-
 
 def get_crop_limits(g_proj, center_lat_lon, fig, dist):
     """
@@ -969,10 +976,17 @@ Examples:
         sys.exit(0)
 
     # Validate required arguments
-    if not args.city or not args.country:
-        print("Error: --city and --country are required.\n")
+    # Validate required arguments - Support pure latitude-longitude input
+    if not args.city and not (args.latitude and args.longitude):
+        print("Error: Either --city/--country or --lat/--long are required.\n")
         print_examples()
         sys.exit(1)
+
+# If coordinates are given while the city name is omitted, take the coordinates as defaults
+    if not args.city and args.latitude and args.longitude:
+        args.city = f"{args.latitude}_{args.longitude}"
+    if not args.country and args.latitude and args.longitude:
+        args.country = "Unknown"
 
     # Enforce maximum dimensions
     if args.width > 20:
@@ -1013,15 +1027,15 @@ Examples:
 
     # Get coordinates and generate poster
     try:
-        if args.latitude and args.longitude:
-            lat = parse(args.latitude)
-            lon = parse(args.longitude)
-            coords = [lat, lon]
-            print(f"✓ Coordinates: {', '.join([str(i) for i in coords])}")
-        else:
-            coords = get_coordinates(args.city, args.country)
+       if args.latitude and args.longitude:
+           lat = parse(args.latitude)
+           lon = parse(args.longitude)
+           coords = (lat, lon)  # ← Change to tuple
+           print(f"✓ Coordinates: {lat}, {lon}")
+       else:
+           coords = get_coordinates(args.city, args.country, args.latitude, args.longitude)
 
-        for theme_name in themes_to_generate:
+       for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
             output_file = generate_output_filename(args.city, theme_name, args.format)
             create_poster(
@@ -1039,9 +1053,9 @@ Examples:
                 fonts=custom_fonts,
             )
 
-        print("\n" + "=" * 50)
-        print("✓ Poster generation complete!")
-        print("=" * 50)
+            print("\n" + "=" * 50)
+            print("✓ Poster generation complete!")
+            print("=" * 50)
 
     except Exception as e:
         print(f"\n✗ Error: {e}")
