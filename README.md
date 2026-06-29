@@ -43,6 +43,25 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Dev
+
+### Setup
+
+```bash
+apt install shellcheck
+pre-commit install
+```
+
+### Usage
+
+| Linter       | command                                                         | 
+|:------------:|:---------------------------------------------------------------:|
+| All          | `uv run pre-commit run --all-files`                             |
+| Ruff         | `uv run ruff format --diff`                                     |
+| Ty           | `uv run ty check`                                               |
+| Shellcheck   | `find -name "*.sh" -not -path "*.venv*" -exec shellcheck {} \;` |
+
+
 ## Usage
 
 ### Generate Poster

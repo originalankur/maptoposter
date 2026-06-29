@@ -49,3 +49,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 py-modules = ["create_map_poster"]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "ruff>=0.15.20",
+    "ty>=0.0.55",
+]

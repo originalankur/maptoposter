@@ -1,0 +1,20 @@
+repos:
+    - repo: local
+      hooks:
+          - id: ruff-format-diff
+            name: ruff format diff
+            language: system
+            entry: uv run ruff format --diff
+            types: [python]
+
+          # - id: ty-check
+          #   name: ty check
+          #   language: system
+          #   entry: uv run ty check
+          #   types: [python]
+
+          - id: shellcheck
+            name: run shellcheck
+            language: system
+            entry: shellcheck
+            files: .(sh.j2|sh)$

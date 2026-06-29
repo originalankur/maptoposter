@@ -261,11 +261,11 @@ def get_edge_colors_by_type(g):
 
     for _u, _v, data in g.edges(data=True):
         # Get the highway type (can be a list or string)
-        highway = data.get('highway', 'unclassified')
+        highway = data.get("highway", "unclassified")
 
         # Handle list of highway types (take the first one)
         if isinstance(highway, list):
-            highway = highway[0] if highway else 'unclassified'
+            highway = highway[0] if highway else "unclassified"
 
         # Assign color based on road type
         if highway in ["motorway", "motorway_link"]:
@@ -279,7 +279,7 @@ def get_edge_colors_by_type(g):
         elif highway in ["residential", "living_street", "unclassified"]:
             color = THEME["road_residential"]
         else:
-            color = THEME['road_default']
+            color = THEME["road_default"]
 
         edge_colors.append(color)
 
@@ -294,10 +294,10 @@ def get_edge_widths_by_type(g):
     edge_widths = []
 
     for _u, _v, data in g.edges(data=True):
-        highway = data.get('highway', 'unclassified')
+        highway = data.get("highway", "unclassified")
 
         if isinstance(highway, list):
-            highway = highway[0] if highway else 'unclassified'
+            highway = highway[0] if highway else "unclassified"
 
         # Assign width based on road importance
         if highway in ["motorway", "motorway_link"]:
@@ -378,13 +378,9 @@ def get_crop_limits(g_proj, center_lat_lon, fig, dist):
     lat, lon = center_lat_lon
 
     # Project center point into graph CRS
-    center = (
-        ox.projection.project_geometry(
-            Point(lon, lat),
-            crs="EPSG:4326",
-            to_crs=g_proj.graph["crs"]
-        )[0]
-    )
+    center = ox.projection.project_geometry(
+        Point(lon, lat), crs="EPSG:4326", to_crs=g_proj.graph["crs"]
+    )[0]
     center_x, center_y = center.x, center.y
 
     fig_width, fig_height = fig.get_size_inches()
@@ -428,7 +424,13 @@ def fetch_graph(point, dist) -> MultiDiGraph | None:
         return cast(MultiDiGraph, cached)
 
     try:
-        g = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all', truncate_by_edge=True)
+        g = ox.graph_from_point(
+            point,
+            dist=dist,
+            dist_type="bbox",
+            network_type="all",
+            truncate_by_edge=True,
+        )
         # Rate limit between requests
         time.sleep(0.5)
         try:
@@ -531,7 +533,9 @@ def create_poster(
     ) as pbar:
         # 1. Fetch Street Network
         pbar.set_description("Downloading street network")
-        compensated_dist = dist * (max(height, width) / min(height, width)) / 4  # To compensate for viewport crop
+        compensated_dist = (
+            dist * (max(height, width) / min(height, width)) / 4
+        )  # To compensate for viewport crop
         g = fetch_graph(point, compensated_dist)
         if g is None:
             raise RuntimeError("Failed to retrieve street network data.")
@@ -578,8 +582,10 @@ def create_poster(
             try:
                 water_polys = ox.projection.project_gdf(water_polys)
             except Exception:
-                water_polys = water_polys.to_crs(g_proj.graph['crs'])
-            water_polys.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=0.5)
+                water_polys = water_polys.to_crs(g_proj.graph["crs"])
+            water_polys.plot(
+                ax=ax, facecolor=THEME["water"], edgecolor="none", zorder=0.5
+            )
 
     if parks is not None and not parks.empty:
         # Filter to only polygon/multipolygon geometries to avoid point features showing as dots
@@ -589,8 +595,10 @@ def create_poster(
             try:
                 parks_polys = ox.projection.project_gdf(parks_polys)
             except Exception:
-                parks_polys = parks_polys.to_crs(g_proj.graph['crs'])
-            parks_polys.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=0.8)
+                parks_polys = parks_polys.to_crs(g_proj.graph["crs"])
+            parks_polys.plot(
+                ax=ax, facecolor=THEME["parks"], edgecolor="none", zorder=0.8
+            )
     # Layer 2: Roads with hierarchy coloring
     print("Applying road hierarchy colors...")
     edge_colors = get_edge_colors_by_type(g_proj)
@@ -600,7 +608,9 @@ def create_poster(
     crop_xlim, crop_ylim = get_crop_limits(g_proj, point, fig, compensated_dist)
     # Plot the projected graph and then apply the cropped limits
     ox.plot_graph(
-        g_proj, ax=ax, bgcolor=THEME['bg'],
+        g_proj,
+        ax=ax,
+        bgcolor=THEME["bg"],
         node_size=0,
         edge_color=edge_colors,
         edge_linewidth=edge_widths,
@@ -612,8 +622,8 @@ def create_poster(
     ax.set_ylim(crop_ylim)
 
     # Layer 3: Gradients (Top and Bottom)
-    create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
-    create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
+    create_gradient_fade(ax, THEME["gradient_color"], location="bottom", zorder=10)
+    create_gradient_fade(ax, THEME["gradient_color"], location="top", zorder=10)
 
     # Calculate scale factor based on smaller dimension (reference 12 inches)
     # This ensures text scales properly for both portrait and landscape orientations
@@ -845,8 +855,8 @@ def list_themes():
         try:
             with open(theme_path, "r", encoding=FILE_ENCODING) as f:
                 theme_data = json.load(f)
-                display_name = theme_data.get('name', theme_name)
-                description = theme_data.get('description', '')
+                display_name = theme_data.get("name", theme_name)
+                description = theme_data.get("description", "")
         except (OSError, json.JSONDecodeError):
             display_name = theme_name
             description = ""
