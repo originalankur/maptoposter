@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>City Map Poster Generator</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>City Map Poster Generator</h1>
+    <p>Turn any city into a minimalist map poster.</p>
+  </header>
+
+  <main class="layout">
+    <form id="poster-form" class="panel form-panel">
+      <fieldset>
+        <legend>Location</legend>
+
+        <div class="field-row">
+          <label for="city">City</label>
+          <input id="city" name="city" type="text" placeholder="Paris" required />
+        </div>
+
+        <div class="field-row">
+          <label for="country">Country</label>
+          <input id="country" name="country" type="text" placeholder="France" required />
+        </div>
+
+        <div class="field-row">
+          <label for="country_label">Country label override</label>
+          <input id="country_label" name="country_label" type="text" placeholder="(optional, shown on poster)" />
+        </div>
+
+        <div class="field-row locate-row">
+          <button type="button" id="locate-btn">Find center point</button>
+          <span id="locate-status" class="hint"></span>
+        </div>
+
+        <div class="field-row two-col">
+          <div>
+            <label for="latitude">Latitude</label>
+            <input id="latitude" name="latitude" type="number" step="any" placeholder="auto" />
+          </div>
+          <div>
+            <label for="longitude">Longitude</label>
+            <input id="longitude" name="longitude" type="number" step="any" placeholder="auto" />
+          </div>
+        </div>
+        <p class="hint">Leave latitude/longitude blank to geocode the city automatically at generation time, or use "Find center point" to look it up and fine-tune it first.</p>
+
+        <div class="field-row" id="map-preview-row" hidden>
+          <label>Map preview</label>
+          <iframe id="map-preview-frame" class="map-preview-frame" title="Map preview of the selected center point" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          <a id="map-preview-link" class="hint" href="#" target="_blank" rel="noopener noreferrer">View larger map on OpenStreetMap &rarr;</a>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Scale</legend>
+        <div class="field-row">
+          <label for="distance">Map radius: <span id="distance-value">18000</span> m</label>
+          <input id="distance" name="distance" type="range" min="1000" max="30000" step="500" value="18000" />
+          <p class="hint" id="distance-hint"></p>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Map type</legend>
+        <div id="theme-grid" class="theme-grid" role="radiogroup" aria-label="Map theme"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Poster size</legend>
+        <div class="field-row">
+          <label for="size-preset">Preset</label>
+          <select id="size-preset">
+            <option value="12x16" selected>Portrait (12 x 16 in)</option>
+            <option value="12x12">Square (12 x 12 in)</option>
+            <option value="16x12">Landscape (16 x 12 in)</option>
+            <option value="3.6x3.6">Instagram post (1080 x 1080 px)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="field-row two-col" id="custom-size-row" hidden>
+          <div>
+            <label for="width">Width (in)</label>
+            <input id="width" name="width" type="number" min="3" max="20" step="0.1" value="12" />
+          </div>
+          <div>
+            <label for="height">Height (in)</label>
+            <input id="height" name="height" type="number" min="3" max="20" step="0.1" value="16" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label for="format">File format</label>
+          <select id="format" name="format">
+            <option value="png" selected>PNG (best for previewing &amp; sharing)</option>
+            <option value="svg">SVG (vector, scalable)</option>
+            <option value="pdf">PDF (print-ready, no inline preview)</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <button type="submit" id="generate-btn" class="primary-btn">Generate poster</button>
+      <p id="form-error" class="error-banner" hidden></p>
+    </form>
+
+    <section class="panel preview-panel">
+      <div id="preview-empty" class="preview-placeholder">
+        <p>Your poster preview will appear here.</p>
+      </div>
+
+      <div id="preview-loading" class="preview-loading" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <p id="progress-message">Starting...</p>
+      </div>
+
+      <div id="preview-result" class="preview-result" hidden>
+        <img id="preview-image" alt="Generated map poster preview" />
+        <div id="preview-pdf-note" class="hint" hidden>PDF generated — no inline preview available.</div>
+        <a id="download-link" class="primary-btn" download>Download poster</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

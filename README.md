@@ -22,6 +22,22 @@ Generate beautiful, minimalist map posters for any city in the world.
 
 ## Installation
 
+### Quick install (Linux/macOS)
+
+`install.sh` clones the repo and installs its dependencies for you, using [uv](https://docs.astral.sh/uv/) if it's available or falling back to a pip virtual environment:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/tiuchs/maptoposter/main/install.sh | bash
+```
+
+Add `-s`/`--serve` to start the [web UI](#web-ui) immediately after installing, or `-d`/`--dir <path>` to choose the install directory (default: `./maptoposter`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/tiuchs/maptoposter/main/install.sh | bash -s -- --serve
+```
+
+Already have the repo cloned? Run `./install.sh` from inside it to install/update dependencies in place instead of cloning a nested copy.
+
 ### With uv (Recommended)
 
 Make sure [uv](https://docs.astral.sh/uv/) is installed. Running the script by prepending `uv run` automatically creates and manages a virtual environment.
@@ -201,6 +217,31 @@ python create_map_poster.py -c "Tokyo" -C "Japan" --all-themes
 | 8000-12000m | Medium cities, focused downtown (Paris, Barcelona) |
 | 15000-20000m | Large metros, full city view (Tokyo, Mumbai) |
 
+## Web UI
+
+A small browser-based UI is included in `webapp/` for generating posters without the command line. Enter a city, pick a scale and a map theme, preview the result, then download it.
+
+Install the extra web dependencies (already included in `requirements.txt` / `pyproject.toml`) and start the server from the project root:
+
+```bash
+# With uv
+uv sync --locked
+uv run python webapp/server.py
+
+# With pip + venv
+pip install -r requirements.txt
+python webapp/server.py
+```
+
+Then open <http://127.0.0.1:8000> in a browser. The UI lets you:
+
+- Enter a **city** and **country** (used for the poster's text and for geocoding), with an optional "Find center point" lookup to preview and fine-tune the exact latitude/longitude before generating.
+- Pick the **scale** (map radius in meters) with the same guidance as the [Distance Guide](#distance-guide).
+- Pick a **map type** (theme) from a swatch grid built from the files in `themes/`.
+- Choose a poster size preset (or custom width/height) and output format (PNG, SVG, or PDF).
+
+Generation runs the existing `create_map_poster.py` CLI as a background job per request, so multiple posters can be generated without one job's theme or figure state leaking into another. Once a job finishes, the poster is shown inline (PNG/SVG) and a **Download poster** button serves the file.
+
 ## Themes
 
 17 themes available in `themes/` directory:
@@ -260,12 +301,16 @@ Create a JSON file in `themes/` directory:
 ```text
 map_poster/
 ├── create_map_poster.py    # Main script
+├── install.sh              # One-line installer (clone + dependency setup)
 ├── font_management.py      # Font loading and Google Fonts integration
 ├── themes/                 # Theme JSON files
 ├── fonts/                  # Font files
 │   ├── Roboto-*.ttf        # Default Roboto fonts
 │   └── cache/              # Downloaded Google Fonts (auto-generated)
 ├── posters/                # Generated posters
+├── webapp/                 # Browser-based UI (FastAPI backend + static frontend)
+│   ├── server.py
+│   └── static/
 └── README.md
 ```
 
