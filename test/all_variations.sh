@@ -75,7 +75,18 @@ uv run python3 create_map_poster.py -c "Bengaluru" -C "India" -W 12.8 -H 7.2
 echo "A4 Print (8.3x11.7)"
 uv run python3 create_map_poster.py -c "Bengaluru" -C "India" -W 8.3 -H 11.7
 
-# 6. Distance Guide Variations
+# 6. Quality / DPI Variations
+echo "--- Quality / DPI Variations ---"
+echo "Low quality preset (150 DPI)"
+uv run python3 create_map_poster.py -c "Bengaluru" -C "India" -q low
+
+echo "Ultra quality preset (600 DPI)"
+uv run python3 create_map_poster.py -c "Bengaluru" -C "India" --quality ultra
+
+echo "Explicit DPI with custom size"
+uv run python3 create_map_poster.py -c "Bengaluru" -C "India" -W 8.3 -H 11.7 --dpi 200
+
+# 7. Distance Guide Variations
 echo "--- Distance Guide Variations ---"
 echo "Small/Dense focal (5000m)"
 uv run python3 create_map_poster.py -c "Bengaluru" -C "India" -d 5000
@@ -86,7 +97,7 @@ uv run python3 create_map_poster.py -c "Bengaluru" -C "India" -d 10000
 echo "Large metro view (default 18000m)"
 uv run python3 create_map_poster.py -c "Bengaluru" -C "India" -d 18000
 
-# 7. Utility flags
+# 8. Utility flags
 echo "--- Utility Flags ---"
 echo "Listing themes"
 uv run python3 create_map_poster.py --list-themes
