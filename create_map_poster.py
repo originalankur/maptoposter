@@ -45,6 +45,14 @@ THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
 
+# Output DPI presets for --quality (applies to png only; svg/pdf are vector)
+QUALITY_DPI = {
+    "low": 150,
+    "standard": 300,
+    "high": 400,
+    "ultra": 600,
+}
+
 FILE_ENCODING = "utf-8"
 
 FONTS = load_fonts()
@@ -493,6 +501,7 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    dpi=300,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -511,6 +520,7 @@ def create_poster(
         height: Poster height in inches (default: 16)
         country_label: Optional override for country text on poster
         _name_label: Optional override for city name (unused, reserved for future use)
+        dpi: Output resolution in dots per inch (png only; default: 300)
 
     Raises:
         RuntimeError: If street network data cannot be retrieved
@@ -764,7 +774,7 @@ def create_poster(
 
     # DPI matters mainly for raster formats
     if fmt == "png":
-        save_kwargs["dpi"] = 300
+        save_kwargs["dpi"] = dpi
 
     plt.savefig(output_file, format=fmt, **save_kwargs)
 
@@ -928,6 +938,24 @@ Examples:
         default=16,
         help="Image height in inches (default: 16, max: 20)",
     )
+    quality_group = parser.add_mutually_exclusive_group()
+    quality_group.add_argument(
+        "--quality",
+        "-q",
+        type=str,
+        default="standard",
+        choices=list(QUALITY_DPI.keys()),
+        help=(
+            "Output quality preset for png: "
+            + ", ".join(f"{k} ({v} DPI)" for k, v in QUALITY_DPI.items())
+            + " (default: standard)"
+        ),
+    )
+    quality_group.add_argument(
+        "--dpi",
+        type=int,
+        help="Explicit output DPI for png (overrides --quality)",
+    )
     parser.add_argument(
         "--list-themes", action="store_true", help="List all available themes"
     )
@@ -986,6 +1014,17 @@ Examples:
         )
         args.height = 20.0
 
+    # Resolve output DPI (explicit --dpi wins over --quality preset)
+    dpi = args.dpi if args.dpi is not None else QUALITY_DPI[args.quality]
+    if dpi <= 0:
+        print(f"Error: --dpi must be a positive integer, got {dpi}.")
+        sys.exit(1)
+    if args.format == "png":
+        print(
+            f"Output: {args.width}x{args.height} in @ {dpi} DPI "
+            f"(~{round(args.width * dpi)}x{round(args.height * dpi)} px)"
+        )
+
     available_themes = get_available_themes()
     if not available_themes:
         print("No themes found in 'themes/' directory.")
@@ -1037,6 +1076,7 @@ Examples:
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                dpi=dpi,
             )
 
         print("\n" + "=" * 50)

@@ -79,6 +79,8 @@ python create_map_poster.py --city <city> --country <country> [options]
 | **OPTIONAL:** `--all-themes` | | Generate posters for all available themes | |
 | **OPTIONAL:** `--width` | `-W` | Image width in inches | 12 (max: 20) |
 | **OPTIONAL:** `--height` | `-H` | Image height in inches | 16 (max: 20) |
+| **OPTIONAL:** `--quality` | `-q` | Output DPI preset for png: `low` (150), `standard` (300), `high` (400), `ultra` (600) | standard |
+| **OPTIONAL:** `--dpi` | | Explicit output DPI for png (overrides `--quality`) | 300 |
 
 ### Multilingual Support - i18n
 
@@ -107,7 +109,7 @@ python create_map_poster.py -c "Dubai" -C "UAE" -dc "دبي" -dC "الإمارا
 
 ### Resolution Guide (300 DPI)
 
-Use these values for `-W` and `-H` to target specific resolutions:
+Use these values for `-W` and `-H` to target specific resolutions (pixels = inches x DPI; change DPI with `--quality` or `--dpi`):
 
 | Target | Resolution (px) | Inches (-W / -H) |
 |--------|-----------------|------------------|
@@ -396,4 +398,4 @@ G = ox.graph_from_point(point, dist=dist, network_type='walk')   # pedestrian
 - Large `dist` values (>20km) = slow downloads + memory heavy
 - Cache coordinates locally to avoid Nominatim rate limits
 - Use `network_type='drive'` instead of `'all'` for faster renders
-- Reduce `dpi` from 300 to 150 for quick previews
+- Use `--quality low` (150 DPI) for quick previews
