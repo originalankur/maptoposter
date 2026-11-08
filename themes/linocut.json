@@ -1,0 +1,16 @@
+{
+  "name": "Linocut",
+  "description": "Maximum contrast for relief printing - pure black roads and water on white, no midtones",
+  "bg": "#FFFFFF",
+  "text": "#000000",
+  "gradient_color": "#FFFFFF",
+  "fade": false,
+  "water": "#000000",
+  "parks": "#FFFFFF",
+  "road_motorway": "#000000",
+  "road_primary": "#000000",
+  "road_secondary": "#000000",
+  "road_tertiary": "#000000",
+  "road_residential": "#000000",
+  "road_default": "#000000"
+}

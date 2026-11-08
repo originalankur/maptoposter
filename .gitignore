@@ -1,10 +1,26 @@
-cache/*
+# Generated map posters / images
+posters/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.pdf
+
+# OSM / geocode cache
+cache/
+.cache/
+
+# Downloaded Google Fonts cache (keep bundled Roboto fonts tracked)
+fonts/cache/
 
 # Virtual environments
 env/
 .env/
 .venv/
 venv/
+test_venv/
 
 # Build artifacts
 *.egg-info/
@@ -23,13 +39,11 @@ __pycache__/
 # OS files
 .DS_Store
 Thumbs.db
-.cache/*
 
-# Package manager
+# Package manager lock (optional local tooling)
 uv.lock
 
-# Test outputs
-test_venv/
+# Test / coverage
 htmlcov/
 .coverage
 .pytest_cache/
