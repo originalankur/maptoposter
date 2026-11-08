@@ -47,7 +47,72 @@ POSTERS_DIR = "posters"
 
 FILE_ENCODING = "utf-8"
 
+# Linocut print format: 11 cm wide, A5 aspect ratio, A4 companion PDF
+A5_WIDTH_CM = 14.8
+A5_HEIGHT_CM = 21.0
+LINOCUT_WIDTH_CM = 11.0
+LINOCUT_HEIGHT_CM = LINOCUT_WIDTH_CM * (A5_HEIGHT_CM / A5_WIDTH_CM)
+LINOCUT_DPI = 300
+A4_WIDTH_MM = 210.0
+A4_HEIGHT_MM = 297.0
+
 FONTS = load_fonts()
+
+
+def linocut_figure_size_inches(width_cm=LINOCUT_WIDTH_CM):
+    """Return (width_in, height_in) for linocut print size at A5 aspect ratio."""
+    height_cm = width_cm * (A5_HEIGHT_CM / A5_WIDTH_CM)
+    return (width_cm / 2.54, height_cm / 2.54)
+
+
+def finalize_linocut_png(output_file, width_cm=LINOCUT_WIDTH_CM, dpi=LINOCUT_DPI):
+    """
+    Resize poster to exact physical size and threshold to pure black/white.
+    """
+    from PIL import Image
+
+    height_cm = width_cm * (A5_HEIGHT_CM / A5_WIDTH_CM)
+    target_w = round(width_cm / 2.54 * dpi)
+    target_h = round(height_cm / 2.54 * dpi)
+
+    im = Image.open(output_file).convert("RGB")
+    im = im.resize((target_w, target_h), Image.Resampling.LANCZOS)
+    arr = np.array(im)
+    lum = arr.astype(np.float32).mean(axis=2)
+    bw = np.where(lum < 128, 0, 255).astype(np.uint8)
+    out = Image.fromarray(np.stack([bw, bw, bw], axis=2))
+    out.save(output_file, dpi=(dpi, dpi))
+    return width_cm, height_cm
+
+
+def save_a4_print_pdf(image_path, pdf_path, width_cm, height_cm):
+    """
+    Embed image on an A4 page at true physical size (centered) for printing.
+    """
+    from PIL import Image
+
+    a4_w_in = A4_WIDTH_MM / 25.4
+    a4_h_in = A4_HEIGHT_MM / 25.4
+    img_w_in = width_cm / 2.54
+    img_h_in = height_cm / 2.54
+
+    if img_w_in > a4_w_in or img_h_in > a4_h_in:
+        raise ValueError(
+            f"Image {width_cm:.2f}×{height_cm:.2f} cm does not fit on A4 "
+            f"({A4_WIDTH_MM:.0f}×{A4_HEIGHT_MM:.0f} mm)."
+        )
+
+    im = Image.open(image_path).convert("RGB")
+    fig = plt.figure(figsize=(a4_w_in, a4_h_in), dpi=LINOCUT_DPI)
+    left = (a4_w_in - img_w_in) / 2 / a4_w_in
+    bottom = (a4_h_in - img_h_in) / 2 / a4_h_in
+    ax = fig.add_axes([left, bottom, img_w_in / a4_w_in, img_h_in / a4_h_in])
+    ax.imshow(np.asarray(im), interpolation="nearest")
+    ax.set_axis_off()
+    fig.savefig(pdf_path, format="pdf", dpi=LINOCUT_DPI, facecolor="white")
+    plt.close(fig)
+    print(f"✓ A4 print PDF saved as {pdf_path}")
+    print(f"  Image size on page: {width_cm:.2f}×{height_cm:.2f} cm (print at 100%)")
 
 
 def _cache_path(key: str) -> str:
@@ -493,6 +558,8 @@ def create_poster(
     display_city=None,
     display_country=None,
     fonts=None,
+    linocut_print=False,
+    linocut_width_cm=LINOCUT_WIDTH_CM,
 ):
     """
     Generate a complete map poster with roads, water, parks, and typography.
@@ -511,10 +578,19 @@ def create_poster(
         height: Poster height in inches (default: 16)
         country_label: Optional override for country text on poster
         _name_label: Optional override for city name (unused, reserved for future use)
+        linocut_print: If True, use exact print size, pure B/W, and write A4 PDF
+        linocut_width_cm: Physical width in cm when linocut_print is True
 
     Raises:
         RuntimeError: If street network data cannot be retrieved
     """
+    if linocut_print:
+        width, height = linocut_figure_size_inches(linocut_width_cm)
+        output_format = "png"
+        print(
+            f"✓ Linocut print format: {linocut_width_cm:.2f}×"
+            f"{linocut_width_cm * (A5_HEIGHT_CM / A5_WIDTH_CM):.2f} cm (A5 ratio)"
+        )
     # Handle display names for i18n support
     # Priority: display_city/display_country > name_label/country_label > city/country
     display_city = display_city or name_label or city
@@ -761,18 +837,29 @@ def create_poster(
     fmt = output_format.lower()
     save_kwargs = dict(
         facecolor=THEME["bg"],
-        bbox_inches="tight",
-        pad_inches=0.05,
     )
 
-    # DPI matters mainly for raster formats
-    if fmt == "png":
-        save_kwargs["dpi"] = 300
+    # Linocut needs exact physical size; other formats keep tight crop
+    if linocut_print:
+        save_kwargs["bbox_inches"] = None
+        save_kwargs["pad_inches"] = 0
+        save_kwargs["dpi"] = LINOCUT_DPI
+    else:
+        save_kwargs["bbox_inches"] = "tight"
+        save_kwargs["pad_inches"] = 0.05
+        if fmt == "png":
+            save_kwargs["dpi"] = 300
 
     plt.savefig(output_file, format=fmt, **save_kwargs)
-
     plt.close()
     print(f"✓ Done! Poster saved as {output_file}")
+
+    if linocut_print:
+        width_cm, height_cm = finalize_linocut_png(
+            output_file, width_cm=linocut_width_cm, dpi=LINOCUT_DPI
+        )
+        pdf_path = str(Path(output_file).with_suffix("")) + "_print_A4.pdf"
+        save_a4_print_pdf(output_file, pdf_path, width_cm, height_cm)
 
 
 def print_examples():
@@ -958,6 +1045,21 @@ Examples:
         choices=["png", "svg", "pdf"],
         help="Output format for the poster (default: png)",
     )
+    parser.add_argument(
+        "--linocut-print",
+        action="store_true",
+        help=(
+            "Export at linocut print size (11 cm wide, A5 aspect ratio), "
+            "pure black/white, and always write a companion A4 print PDF. "
+            "Enabled automatically when --theme linocut is used."
+        ),
+    )
+    parser.add_argument(
+        "--linocut-width-cm",
+        type=float,
+        default=LINOCUT_WIDTH_CM,
+        help=f"Linocut print width in cm (default: {LINOCUT_WIDTH_CM})",
+    )
 
     args = parser.parse_args()
 
@@ -1024,22 +1126,31 @@ Examples:
         else:
             coords = get_coordinates(args.city, args.country)
 
+        # Linocut theme always uses the print-ready 11 cm / A5-ratio + A4 PDF flow
+        linocut_print = args.linocut_print or (
+            not args.all_themes and args.theme == "linocut"
+        )
+
         for theme_name in themes_to_generate:
             THEME = load_theme(theme_name)
-            output_file = generate_output_filename(args.city, theme_name, args.format)
+            use_linocut = linocut_print or theme_name == "linocut"
+            out_fmt = "png" if use_linocut else args.format
+            output_file = generate_output_filename(args.city, theme_name, out_fmt)
             create_poster(
                 args.city,
                 args.country,
                 coords,
                 args.distance,
                 output_file,
-                args.format,
+                out_fmt,
                 args.width,
                 args.height,
                 country_label=args.country_label,
                 display_city=args.display_city,
                 display_country=args.display_country,
                 fonts=custom_fonts,
+                linocut_print=use_linocut,
+                linocut_width_cm=args.linocut_width_cm,
             )
 
         print("\n" + "=" * 50)
